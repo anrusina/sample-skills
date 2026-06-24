@@ -1,4 +1,4 @@
-# LLD format (`docs/design/lld-<subsystem>.md`)
+# LLD format (`docs/specs/LLD-<subsystem>.md`)
 
 One file per subsystem. Filename must match the subsystem name used in the HLD exactly.
 Required sections in order:
@@ -30,4 +30,4 @@ SUBSYSTEM-NNN: one-line summary
 ### 8. Open questions
 Unresolved decisions that need answers before implementation begins.
 
-**Does NOT belong in LLD:** actual code, details of other subsystems (reference them, don't describe them).
+**Does NOT belong in LLD:** actual code, details of other subsystems (reference them, don't describe them), look-and-feel specifics (exact colours, pixel sizes, font names, animation parameters — those belong in wireframes or the design system). Open-questions sections hold design/architecture decisions only, not UI/wireframe questions.

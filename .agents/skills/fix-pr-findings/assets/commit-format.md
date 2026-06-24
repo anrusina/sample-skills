@@ -14,13 +14,13 @@ Ref: <discussion URL>
 When one fix covers multiple findings:
 
 ```
-fix: cancel subscriptions and controllers in dispose (PR #9 high #2, medium #3)
+fix: cancel subscriptions and release resources in dispose (PR #9 high #2, medium #3)
 
 Addresses review findings from PR #9:
-- High #2: StreamSubscription leak in PdfViewerState
-- Medium #3: AnimationController not disposed in GridOverlayState
+- High #2: SubscriptionManager leak in PdfViewerState
+- Medium #3: AnimationController not released in GridOverlayState
 
-Both resources cancelled in dispose() per Flutter widget lifecycle.
+Both resources released in dispose() per component lifecycle contract.
 
 Ref: https://github.com/{owner}/{repo}/pull/9#discussion_r188675
 Ref: https://github.com/{owner}/{repo}/pull/9#discussion_r188684

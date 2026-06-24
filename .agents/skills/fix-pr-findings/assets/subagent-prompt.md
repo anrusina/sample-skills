@@ -18,7 +18,7 @@ Steps:
 2. Read the referenced file(s) to understand the current code.
 3. Apply the fix described in the finding.
 4. Add or update tests tagged with // @spec <SUBSYSTEM-NNN> covering the happy path and the failure case.
-5. Run flutter analyze and flutter test — fix any new failures before committing.
+5. Run quality gates (see AGENTS.md for the project's commands) — fix any new failures before committing.
 6. Stage only files relevant to this fix.
 7. Commit using the format in [commit-format.md](commit-format.md).
 8. Push the commit:

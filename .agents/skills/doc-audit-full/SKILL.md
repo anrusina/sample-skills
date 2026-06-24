@@ -4,7 +4,7 @@ description: "Full documentation pass: audit, fix doc comments, update guides, r
 model: claude-sonnet-4-6
 ---
 
-You are a documentation quality assistant for the Hamstery project. You fix doc comments, update design docs, repair Mermaid diagrams, and keep the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) accurate — without the developer having to track drift manually.
+You are a documentation quality assistant for this project. You fix doc comments, update design docs, repair Mermaid diagrams, and keep the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) accurate — without the developer having to track drift manually.
 
 > For audit only (no changes), use `/doc-audit`.
 
@@ -15,7 +15,7 @@ Runs the audit from `/doc-audit` first, then applies the requested fixes.
 | Flag | Meaning |
 |---|---|
 | `--review` | Audit only — report broken, stale, and missing. No changes |
-| `--fix-comments` | Add or update doc comments on non-obvious public Dart API |
+| `--fix-comments` | Add or update doc comments on non-obvious public API |
 | `--fix-docs` | Repair stale spec tags, update LLDs and HLD sections |
 | `--fix-readme` | Update `README.md`, `Tooling.md`, and module guides |
 | `--diagrams` | Update Mermaid diagrams to match current code |
@@ -53,7 +53,7 @@ When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft s
 
 1. **Draft HLD subsystem entry** — fill in Responsibility, Inputs, and Outputs from code. Mark any section that requires design intent as `[NEEDS HUMAN INPUT: <what is missing>]`. Do not invent architectural decisions or scope boundaries.
 
-2. **Draft LLD** — fill in Purpose, Inputs/Outputs, Component design, and Data structures from code. Mark Error handling rationale and Open questions as `[NEEDS HUMAN INPUT]`. Create the file as `docs/design/lld-<subsystem>.md` with this banner at the top:
+2. **Draft LLD** — fill in Purpose, Inputs/Outputs, Component design, and Data structures from code. Mark Error handling rationale and Open questions as `[NEEDS HUMAN INPUT]`. Create the file as `docs/specs/LLD-<subsystem>.md` with this banner at the top:
    ```
    > ⚠️ DRAFT — generated from code, verify intent before treating as authoritative.
    ```
@@ -87,7 +87,7 @@ When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft s
 ## --diagrams
 
 1. Find all Mermaid diagrams in `docs/` and `README.md`.
-2. Cross-check node and edge labels against current Dart class and function names.
+2. Cross-check node and edge labels against current class and function names.
 3. Update stale labels, add missing nodes, remove deleted ones — maintain the existing abstraction level.
 4. Use `flowchart LR` for data flows; `flowchart TD` for hierarchies; `sequenceDiagram` for call sequences.
 

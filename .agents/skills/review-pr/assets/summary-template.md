@@ -37,7 +37,7 @@ Use this structure for the overall review summary comment body.
 
 /fix-pr-findings <url1>
 /fix-pr-findings <url2>
-Run flutter test after all changes.
+Run quality gates after all changes.
 
 </details>
 </details>

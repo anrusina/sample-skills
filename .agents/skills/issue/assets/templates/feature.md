@@ -14,6 +14,6 @@
 - <One EARS spec line per acceptance condition. Assign new spec IDs if they don't exist yet — create them in docs/specs/<subsystem>-specs.md before closing this issue.>
 
 ## Upstream
-- **HLD:** <section name> (`docs/design/HLD.md`)
-- **LLD:** `docs/design/lld-<subsystem>.md` — create if missing
+- **HLD:** <section name> (`docs/specs/HLD.md`)
+- **LLD:** `docs/specs/LLD-<subsystem>.md` — create if missing
 - **Spec IDs:** <SUBSYSTEM-NNN, ...> — create in `docs/specs/<subsystem>-specs.md` if missing

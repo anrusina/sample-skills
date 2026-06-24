@@ -12,7 +12,7 @@ allowed-tools:
   - Bash(gh repo *)
 ---
 
-You are a GitHub PR assistant for the Hamstery project. You synthesise commits into a clear pull request — without requiring the developer to write boilerplate.
+You are a GitHub PR assistant for this project. You synthesise commits into a clear pull request — without requiring the developer to write boilerplate.
 
 > After the PR is open, use `/review-pr` for code review and `/pre-merge` for thread triage before merging.
 
@@ -29,6 +29,12 @@ Check for an existing open PR first — if one exists, report its URL and stop:
 gh pr view --json url -q '.url' 2>/dev/null
 ```
 
+Check for a PR body template:
+```bash
+cat .github/pull_request_template.md 2>/dev/null
+```
+If the file exists and has content, use it as the PR body template in step 7 instead of the default format.
+
 ## create PR
 
 1. **Collect commits:**
@@ -38,7 +44,7 @@ gh pr view --json url -q '.url' 2>/dev/null
    ```
    Extract every `[#N]` issue reference from commit subjects.
 
-2. **Title:** single commit → use the commit subject. Multiple commits → synthesise the theme. Prefix `[#N]` from branch name (`feature-42/...` → `[#42]`). Max 72 chars.
+2. **Title:** single commit → use the commit subject verbatim (it already carries `[#N] type:`). Multiple commits → synthesise the theme with format `[#N] type: <theme>` where N and type come from the branch name (`feature-42/...` → `[#42]`, prefix `feature` → `feat`). If commits reference multiple issues, list all: `[#12][#13] feat: ...`. Max 72 chars.
 
 3. **`## What changed:`** group by concern — not one bullet per commit:
 
@@ -53,6 +59,17 @@ gh pr view --json url -q '.url' 2>/dev/null
    - `Ref #N` — related but not closed
    - Omit section if none
 
+4.5. **Issue-coverage check** — for each `Closes #N` found in step 4, fetch the issue body and all its comments:
+   ```bash
+   gh api repos/{owner}/{repo}/issues/{N} --jq '{title, body}'
+   gh api repos/{owner}/{repo}/issues/{N}/comments --jq '[.[].body] | join("\n---\n")'
+   ```
+   Extract acceptance criteria from both body **and all comments** — `- [ ]` task list items and content under "Acceptance criteria", "Done when", or "Requirements" headers. Review the commit diff against each criterion. If any item appears unaddressed, surface it before creating the PR:
+   > "Issue #N has the following items not clearly covered by the commits:
+   > - [ ] \<item\>
+   > Confirm these are out of scope, or add the missing work first."
+   If the developer confirms intentional exclusions, add a `### Out of scope` section to the PR body. Skip if no `Closes #N` references.
+
 5. **`## Arrow of Intent:`** check whether the diff contains files under `lib/` or `test/`:
    - **No `lib/` or `test/` changes** (tooling, docs, config only) → omit this section entirely.
    - **`lib/` or `test/` changes present** → scan commit bodies for `@spec` tags and HLD references:
@@ -64,18 +81,14 @@ gh pr view --json url -q '.url' 2>/dev/null
 6. **`## Testing:`** load [flutter/testing-checklist.md](flutter/testing-checklist.md) for the test gate items.
    <!-- TODO: replace `flutter/` with your language or framework conventions file -->
 
-7. **Create:**
+7. **Create** (fetch assignee first so assignment is atomic with PR creation):
    ```bash
-   gh pr create --title "<title>" --body-file /tmp/pr-body.md --base ${DEFAULT_BRANCH}
+   ASSIGNEE=$(gh api user -q '.login')
+   gh pr create --title "<title>" --body-file /tmp/pr-body.md --base ${DEFAULT_BRANCH} --assignee "${ASSIGNEE}"
    rm /tmp/pr-body.md
    ```
 
-8. **Assign author:**
-   ```bash
-   gh pr edit <number> --add-assignee "$(gh api user -q '.login')"
-   ```
-
-9. **Labels** — apply from existing labels only (`gh label list`):
+8. **Labels** — apply from existing labels only (`gh label list`):
 
    | Signal | Label |
    |---|---|
@@ -90,7 +103,7 @@ gh pr view --json url -q '.url' 2>/dev/null
    gh pr edit <number> --add-label "<label>"
    ```
 
-10. Print the PR URL.
+9. Print the PR URL.
 
 ## rules
 

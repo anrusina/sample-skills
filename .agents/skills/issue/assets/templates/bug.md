@@ -27,4 +27,4 @@
 
 ## Upstream
 - **Violates spec:** SUBSYSTEM-NNN — <spec text>
-- **LLD:** `docs/design/lld-<subsystem>.md`
+- **LLD:** `docs/specs/LLD-<subsystem>.md`

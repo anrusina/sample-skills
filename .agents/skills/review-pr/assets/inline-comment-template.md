@@ -8,7 +8,7 @@ Use this structure for each inline comment body.
 
 <2-4 sentences describing the problem and its impact.>
 
-**Suggestion:** <Concrete fix with Dart code snippet if applicable.>
+**Suggestion:** <Concrete fix with code snippet if applicable.>
 
 **Blast radius:** <emoji> <level> — <one sentence on what could break.>
 
@@ -18,7 +18,7 @@ Use this structure for each inline comment body.
 <summary><strong>Prompt for AI</strong></summary>
 
 /fix-pr-findings
-<Step-by-step fix instructions referencing exact file paths, line numbers, and what to change. End with "Run flutter test after changes.">
+<Step-by-step fix instructions referencing exact file paths, line numbers, and what to change. End with "Run quality gates after changes.">
 
 </details>
 
@@ -28,7 +28,10 @@ Use this structure for each inline comment body.
 
 | Blast radius | Emoji | When |
 |---|---|---|
-| Isolated | ✅ | Single widget, single test, config constant |
-| Localised | 🔵 | Private method, one BLoC, one screen |
-| Cross-cutting | ⚠️ | BLoC event/state interface change, shared state, spec update |
-| Systemic | 🔴 | Storage schema, navigation model, `CellState` model, PDF parser |
+| Isolated | ✅ | Single component, single test, config constant |
+| Localised | 🔵 | Private method, one service/BLoC, one screen |
+| Cross-cutting | ⚠️ | Interface change, shared state, spec update |
+| Systemic | 🔴 | Storage schema, navigation model, shared domain entity, core service interface |
+
+For framework-specific blast radius examples, see [flutter/review-categories.md](flutter/review-categories.md).
+<!-- TODO: replace with your framework's blast radius guidance -->
