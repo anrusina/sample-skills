@@ -5,7 +5,7 @@ model: claude-sonnet-4-6
 disable-model-invocation: true
 ---
 
-Orchestrate fixes for GitHub PR review findings in the Hamstery project. Fetches review comments, presents findings for selection, and spawns sub-agents to apply each fix in isolation with properly formatted commits.
+Orchestrate fixes for GitHub PR review findings in this project. Fetches review comments, presents findings for selection, and spawns sub-agents to apply each fix in isolation with properly formatted commits.
 
 Findings may come from any reviewer — a second AI model, the developer, or `/review-pr`.
 

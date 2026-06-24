@@ -1,8 +1,8 @@
 # Flutter quality gates
 
-Run in order — stop and report on first failure:
+Fallback commands when `make check` is unavailable. Run in order — stop and report on first failure:
 
-1. `dart format --output=none --set-exit-if-changed .` — if it fails, run `dart format .`, re-read edited files, then continue
+1. `dart format --output=none --set-exit-if-changed .` — if it fails, run `dart format .`, re-stage edited files (`git add -u`), then continue
 2. `flutter analyze` — warnings are acceptable; errors block
 3. `flutter test` — any failure blocks
 

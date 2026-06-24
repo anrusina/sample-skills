@@ -20,7 +20,15 @@ HLD → LLDs → EARS Specs → Tests → Code
 
 If any answer is no — stop and create the missing upstream artifact first.
 
-**New feature:** check HLD → find or create LLD → write EARS spec → write failing test → implement code.
+**New feature:** run `/start-task <issue-number>` → it checks HLD → LLD → EARS spec chain → write failing test → implement code.
+
+### LLD altitude — UI boundary
+
+LLDs capture **behaviour, data structures, inputs/outputs, state machines, contracts, and what/when information is shown** — anything that can be expressed as an EARS spec and tested.
+
+LLDs must **not** pin look-and-feel: exact colours, sizes, fonts, icon glyphs, animation style, or pixel layout. Those belong in wireframes (`docs/design/`) or the design system. Use named design-system tokens to reference values if needed; never hardcode literals in an LLD.
+
+The `arrow-check` and `doc-audit` skills enforce this boundary during review.
 
 **Bug fix:** trace up the arrow to where intent was missing or wrong. Fix the doc first, update the spec, fix the test, then fix the code.
 
@@ -30,7 +38,7 @@ If any answer is no — stop and create the missing upstream artifact first.
 
 ## EARS spec format
 
-Specs live in `docs/specs/<subsystem>-specs.md`. Each spec has a unique ID and follows this format:
+Specs live in `docs/specs/<subsystem>-specs.md` (alongside HLD and LLDs). Each spec has a unique ID and follows this format:
 
 ```
 SUBSYSTEM-NNN: When [condition], the system shall [action].
@@ -57,11 +65,11 @@ test('confirm selection marks all selected cells as done', () { ... });
   skills/
     <name>/SKILL.md     ← AI workflow skills (Agent Skills standard)
 docs/
-  design/
-    HLD.md              ← system architecture (read this first)
-    lld-*.md            ← one LLD per subsystem
   specs/
+    HLD.md              ← system architecture (read this first)
+    LLD-*.md            ← one LLD per subsystem
     *-specs.md          ← EARS specs per subsystem
+  design/               ← UI/UX artefacts (wireframes, prototypes, screen maps)
   spikes/
     *.md                ← research findings
 lib/                    ← source code  # TODO: adjust to your project layout
@@ -111,6 +119,7 @@ test('description', () { ... });
 
 | Task | Skill |
 |---|---|
+| **Start any code task** | `/start-task` |
 | Write a commit message | `/commit` |
 | Commit and open a PR | `/commit-and-pr` |
 | Open a PR | `/pr` |
@@ -121,6 +130,7 @@ test('description', () { ... });
 | Validate design chain | `/arrow-check` |
 | Write/update design docs | `/design-docs` |
 | Audit documentation | `/doc-audit` |
+| End a CLI session | `/close-cli` |
 
 ---
 
@@ -129,6 +139,7 @@ test('description', () { ... });
 ### Dependency policy
 
 Before adding any package:
+
 1. Verify the specific version being added has been published for at least **14 days**.
 2. Check the package's source repo for unusual recent commits, new maintainers, or activity spikes.
 3. Never add a package published less than 14 days ago, regardless of how well-known the author is.

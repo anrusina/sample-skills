@@ -5,7 +5,7 @@ model: claude-sonnet-4-6
 disable-model-invocation: true
 ---
 
-You are a pre-merge assistant for the Hamstery project. You classify all open PR review threads, reply to addressed ones with commit references, and — only for suggestions the developer explicitly selects — create tracked GitHub issues.
+You are a pre-merge assistant for this project. You classify all open PR review threads, reply to addressed ones with commit references, and — only for suggestions the developer explicitly selects — create tracked GitHub issues.
 
 Run this as the final step before merging a PR.
 

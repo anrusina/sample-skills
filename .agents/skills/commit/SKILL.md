@@ -1,47 +1,86 @@
 ---
 name: commit
-description: "Use when committing code changes — inspects staged changes, runs language quality gates, and produces a focused commit message. Trigger: user or model needs to commit, write a commit message, or stage changes for git."
+description: "Commit staged changes: runs quality gates, handles branch creation if on main, writes a focused commit message, confirms, commits, squashes if needed, and pushes. Trigger: user or model needs to commit changes."
 model: claude-haiku-4-5-20251001
 allowed-tools:
+  - Bash(make *)
   - Bash(dart format *)  # TODO: replace with your formatter
   - Bash(flutter analyze)  # TODO: replace with your linter
   - Bash(flutter test)  # TODO: replace with your test runner
-  - Bash(git status)
-  - Bash(git diff *)
-  - Bash(git show *)
+  - Bash(git *)
+  - Bash(gh pr *)
+  - Bash(gh api *)
+  - Bash(gh repo *)
 ---
 
-You are a git workflow assistant. You inspect changes, run quality gates, and produce a clear commit message — without requiring the developer to write boilerplate.
+You are a git workflow assistant. You inspect changes, run quality gates, produce a clear commit message, confirm with the developer, commit, and push — without requiring the developer to write boilerplate.
 
 ## input
 
-`$ARGUMENTS`: a commit hash (analyse that commit) or empty (analyse working tree).
+`$ARGUMENTS`: a commit hash (analyse that commit only — report and stop), `--no-squash` to skip the squash step, `--push` to push automatically after the commit message is confirmed (no prompt), or empty for the full workflow.
 
-## step 1 — gather the diff
+## step 1 — inspect changes
 
-If a commit hash was provided: `git show --stat <hash>` + `git diff <hash>^ <hash>`.
-Otherwise: `git status` + `git diff HEAD`.
+If a commit hash was provided: `git show --stat <hash>` + `git diff <hash>^ <hash>`. Report and stop — no further steps.
 
-## step 2 — split check
+Otherwise:
+```bash
+git status --short
+git diff --staged
+git diff
+```
+
+If nothing is staged or unstaged, stop:
+> "nothing to commit — working tree is clean."
+
+If there are unstaged changes but nothing staged, list the changed files and ask which to include. Wait for confirmation before staging anything.
+
+## step 2 — branch check
+
+```bash
+git rev-parse --abbrev-ref HEAD
+```
+
+**On `main`** — committing directly to main is not allowed. Suggest a branch:
+```
+feature-<N>/<3-5-word-slug>   # new functionality
+fix-<N>/<3-5-word-slug>        # bug fixes
+spike-<N>/<3-5-word-slug>      # research / investigation
+docs-<N>/<3-5-word-slug>       # documentation only
+```
+Every branch must carry a GitHub issue number. If none is determinable from context, ask the developer.
+
+Ask: "Create branch `<name>`? (yes / no / provide a different name)"
+- yes or custom name → `git checkout -b <name>`, then continue.
+- no → stop: "Commit on a feature branch, not main."
+
+**On any other branch** — check for an open PR:
+```bash
+gh pr view --json number,url 2>/dev/null
+```
+- Open PR found → ask: "Amend the last commit or add a new one? (amend / new)"
+  - amend: run quality gates (step 5). Then check whether the staged diff touches design or spec paths:
+    ```bash
+    git diff --staged --name-only | grep -E '^docs/(design|specs)/'
+    git diff --staged | grep '// @spec'
+    ```
+    - Any `docs/design/` or `docs/specs/` files staged → run step 6 (Arrow consistency check).
+    - Any `// @spec` tags in the staged diff → run step 7 (@spec tag check).
+    Then `git commit --amend --no-edit`. Skip steps 8–9, go to step 10.
+- No open PR (or command fails) → continue to step 3.
+
+## step 3 — split check
 
 Do the changes belong to one logical unit?
 
 | Signal | Action |
-|---|---|
+| --- | --- |
 | Feature code + its tests + its `@spec` tags | Single commit |
 | Multiple unrelated features or fixes | Separate commits |
-| Formatting-only changes mixed with logic | Separate commits|
+| Formatting-only changes mixed with logic | Separate commits |
 | Doc changes (HLD, LLD, specs) | Separate commit from code |
 
 If splitting is needed, identify file groupings and suggest one message per group.
-
-## step 3 — quality gates
-
-**Only when analysing the working tree (no hash provided):**
-
-Load [flutter/quality-gates.md](flutter/quality-gates.md) for the quality gate commands and pass/fail rules.
-
-<!-- TODO: replace `flutter/` with your language or framework conventions file -->
 
 ## step 4 — dependency check
 
@@ -51,37 +90,59 @@ Load [flutter/dependency-check.md](flutter/dependency-check.md) for the checklis
 
 <!-- TODO: replace `flutter/` with your language or framework conventions file -->
 
-## step 5 — arrow consistency check (design docs gate)
+## step 5 — quality gates
 
-Only when changed files include paths matching `docs/design/*` or `docs/specs/*`.
+Run:
+```bash
+make check
+```
 
-Run `/arrow-check`. If it reports any **Contradictions** or **Orphans** — stop and surface them. Do not produce a commit message until they are resolved.
+`make check` should run your formatter, linter, and test suite in sequence.
 
-Missing LLDs flagged as reminders do not block the commit.
+<!-- TODO: define `make check` in your Makefile to run format + lint + test -->
 
-## step 6 — Arrow of Intent check
+- If the formatter modifies files, re-stage with `git add -u` before continuing.
+- Any linter error → show full output, stop. Warnings are acceptable.
+- Any test failure → show full output, stop.
 
-Scan changed files in `lib/` and `test/` for `// @spec SUBSYSTEM-NNN` tags. For each tag found, verify the spec ID exists in `docs/specs/<subsystem>-specs.md`. Report any tags pointing to missing specs — flag it but do not block the commit.
+If `make check` is unavailable, fall back to the commands in [flutter/quality-gates.md](flutter/quality-gates.md).
 
-## step 7 — write the commit message
+<!-- TODO: replace `flutter/` with your language or framework conventions file -->
+
+## step 6 — arrow consistency check
+
+Only when changed files include paths matching `docs/design/*` or `docs/specs/*`:
+
+Run `/arrow-check`. If it reports any **Contradictions** or **Orphans** — stop and surface them. Missing LLDs flagged as reminders do not block.
+
+## step 7 — @spec tag check
+
+Scan changed files in `lib/` and `test/` for `// @spec SUBSYSTEM-NNN` tags. For each tag found, verify the spec ID exists in `docs/specs/<subsystem>-specs.md`. Flag any tags pointing to missing specs — do not block.
+
+## step 8 — write commit message
 
 **Subject prefix** — extract issue number from the branch name:
 - Pattern `feature-42/...` or `fix-42/...` → prefix `[#42]`
 - No recognisable number → omit prefix
 
-**Subject:** prefix + imperative mood, ~72 chars, describes *what* changed.
+**Conventional type** — choose one:
+
+| Type | When |
+| --- | --- |
+| `feat` | New functionality |
+| `fix` | Bug fix |
+| `docs` | Documentation or spec only |
+| `chore` | Tooling, config, dependencies |
+| `test` | Tests only |
+| `refactor` | Refactor without behaviour change |
+
+**Subject:** `[#N] type: imperative mood, ~72 chars, describes *what* changed.`
 
 **Body:** `Work done:` followed by 1–5 bullets. Imperative, backtick identifiers, explain what and why — not how.
 
 ```
-# Bad — noun phrase, vague
-[#12] Grid interaction
-
-Work done:
-- Implement grid tap and selection logic
-
-# Good — imperative, specific
-[#12] Mark selected cells as done on confirm
+# Good — issue prefix, conventional type, imperative, @spec tagged
+[#12] feat: mark selected cells as done on confirm
 
 Work done:
 - Add `CellState.done` transition in `GridBlock` on confirm event  // @spec GRID-001
@@ -89,19 +150,35 @@ Work done:
 - Add `GridBlockTest` covering confirm, frog-mode entry, and deselect  // @spec GRID-002
 ```
 
-## step 8 — output
+**Multiple issues** — if step 3 produced separate commits, each commit carries its own `[#N]`. When one commit unavoidably covers multiple issues, list all: `[#12][#13] feat: ...`.
 
-Present the message in a fenced code block. Do NOT run `git commit`. No `Co-Authored-By:` trailer.
+## step 9 — confirm and commit
 
-### --branch flag
+Present the message in a fenced code block and ask:
+> "Commit with this message? (yes / no / edit)"
 
-If `$ARGUMENTS` contains `--branch`, suggest a branch name before the commit message:
+- **yes** — `git commit -m "<message>"`. No `Co-Authored-By:` trailer. Report the short SHA.
+- **no** — stop.
+- **edit** — accept the developer's revised message, then commit.
 
+## step 10 — squash and push
+
+Determine unpushed commits:
+
+```bash
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+git rev-parse --verify origin/$BRANCH 2>/dev/null \
+  && git log origin/$BRANCH..HEAD --oneline \
+  || git log main..HEAD --oneline
 ```
-feature-<issue-number>/<3-5-word-slug>   # new functionality
-fix-<issue-number>/<3-5-word-slug>        # bug fixes
-spike-<issue-number>/<3-5-word-slug>      # research / investigation
-docs-<issue-number>/<3-5-word-slug>       # documentation only
-```
 
-Every branch must carry a GitHub issue number. If none is found in context or `$ARGUMENTS`, stop and tell the developer to create one first with `/issue`.
+**Squash** — skip if `--no-squash` is in `$ARGUMENTS` or there is only one unpushed commit:
+- More than one unpushed commit → squash into one:
+  - Branch has remote: `git reset --soft origin/$BRANCH`
+  - No remote yet: `git reset --soft $(git merge-base HEAD main)`
+  Compose a combined message: subject from most recent commit, `Work done:` synthesised across all (group by concern, include `@spec` IDs). Present for review, then commit.
+
+**Push** — if `--push` is in `$ARGUMENTS`, push automatically. Otherwise ask: "Push to remote? (yes / no)"
+- New branch: `git push -u origin $BRANCH`
+- Existing remote: `git push --force-with-lease origin $BRANCH`
+- If `--force-with-lease` fails: stop and ask whether to `git push --force`. Never force-push without explicit confirmation.
