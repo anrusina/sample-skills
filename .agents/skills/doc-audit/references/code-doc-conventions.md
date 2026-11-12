@@ -2,10 +2,10 @@
 
 Write for the developer who needs to understand intent, not implementation.
 
-This is the generic default `/doc-audit` and `/doc-audit-full` apply to doc
-comments and diagrams. A project tailors it to its language by editing this
-file — its doc-comment syntax, the tool that renders the docs, the
-identifier-linking style that tool understands.
+These are the language-neutral rules `/doc-audit` and `/doc-audit-full` apply
+to doc comments and diagrams. The doc-comment syntax, the identifier-linking
+style and an example come from the *Doc comments* section of the loaded stack
+asset (`assets/stack/<id>.md`).
 
 | Rule | What it means |
 |---|---|
@@ -16,8 +16,9 @@ identifier-linking style that tool understands.
 ## Doc comment style
 
 Use the language's standard doc-comment syntax — the one its documentation
-tool and editors pick up (for example `///` line comments, `/** … */` blocks,
-or docstrings) — never a plain comment where a doc comment is meant.
+tool and editors pick up — never a plain comment where a doc comment is meant.
+With no stack asset loaded, that is the language's own convention (for example
+`///` line comments, `/** … */` blocks, or docstrings).
 
 - Doc comments go only on public API whose contract is non-obvious: what a
   caller must pass, what comes back in each case, what it guarantees or
@@ -25,21 +26,16 @@ or docstrings) — never a plain comment where a doc comment is meant.
 - Open with one summary sentence that states the contract.
 - Document parameters and return values as short fragments, with no
   trailing period on a fragment.
-- Mark identifiers the way the language's doc tool links them (backticks,
-  brackets, or its link syntax), so renamed symbols are caught.
+- Mark identifiers the way the language's doc tool links them, so renamed
+  symbols are caught.
 - No doc comments on trivial getters, test helpers, or generated code.
 
-```ts
-// Bad — paraphrases the name
-/** Returns the cart total. */
-function cartTotal(cart: Cart): Money {}
+The shape of a good comment against a bad one, whatever the language:
 
-// Good — explains the contract
-/** Sum of line prices after discounts, before tax and shipping.
- *  Zero for an empty cart; never negative, since a discount is capped
- *  at its line's price. */
-function cartTotal(cart: Cart): Money {}
-```
+- Bad: "Returns the cart total." — paraphrases the name.
+- Good: "Sum of line prices after discounts, before tax and shipping. Zero for
+  an empty cart; never negative, since a discount is capped at its line's
+  price." — states the contract.
 
 ## Mermaid diagrams
 

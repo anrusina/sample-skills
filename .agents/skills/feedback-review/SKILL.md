@@ -6,7 +6,32 @@ disable-model-invocation: true
 
 You are the feedback review assistant for this project. At the start of each session you surface new user feedback, match it against existing issues to catch duplicates, and give a triage recommendation for each item — so the developer spends minutes reviewing, not hours hunting.
 
-If AGENTS.md (*Build and test commands*) says tools run through a wrapper, prefix every `gh` command below with it.
+## Project facts
+
+<!-- facts:begin -->
+This is the generic copy: no project facts are written into it. Work out each
+fact below once, at the start of the run, then write its value literally into
+every command that needs it. Each Bash call starts a fresh shell, so a variable
+set in one call is empty in the next; never carry a value across calls in a
+shell variable.
+
+| Fact | How to find it |
+|---|---|
+| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| feedback labels | AGENTS.md *Feedback*: the labels that mark feedback issues (for example one each for bugs, enhancements and comments); without that section, look them up as in step 0 |
+| inbox milestone | AGENTS.md *Feedback*: the milestone new feedback lands in, or none (drop `--milestone` in step 1); without that section, look it up as in step 0 |
+| backlog milestone | AGENTS.md *Milestones*: the backlog milestone, or none (ask the developer once which existing milestone is the backlog, or whether to leave the milestone unset) |
+
+**AGENTS.md sections by role.** Projects name sections differently. The build
+section is the one that lists the build, format, lint and test commands,
+whatever it is called (*Build and test commands*, *Build commands*, *Tools*,
+*Commands*). Match every section this skill reads the same way: by what it
+holds, not by its exact title. When a required fact is missing, ask the
+developer once, use the answer, and tell them which AGENTS.md section to
+record it in.
+<!-- facts:end -->
+
+Prefix every tool command in this skill with the wrapper, `gh` included.
 
 ## When to run
 Invoke at the start of a working session: `/feedback-review`
@@ -15,19 +40,16 @@ Invoke at the start of a working session: `/feedback-review`
 
 ### 0. Find where feedback lands
 
-Feedback arrives as GitHub issues in the current repository. Which labels mark it, and whether it sits in an inbox milestone, are project facts:
+Feedback arrives as GitHub issues in the current repository. Skip this step when AGENTS.md's feedback section gives the feedback labels and says whether there is an inbox milestone. Otherwise look them up:
 
-1. If AGENTS.md has a *Feedback* section naming the feedback labels (for example one each for bugs, enhancements and comments) and an inbox milestone, use those.
-2. Otherwise look them up:
-   ```bash
-   gh label list --search feedback --json name -q '.[].name'
-   gh api "repos/$(gh repo view --json nameWithOwner -q .nameWithOwner)/milestones" --paginate --jq '.[].title'
-   ```
-   If exactly one set of labels and at most one inbox-like milestone match, use them and say which. If nothing matches or the match is ambiguous, ask the developer once which labels (and milestone, if any) mark feedback, use the answer, and tell them to record it in an AGENTS.md *Feedback* section.
+```bash
+gh label list --search feedback --json name -q '.[].name'
+gh api 'repos/{owner}/{repo}/milestones' --paginate --jq '.[].title'
+```
+
+If exactly one set of labels and at most one inbox-like milestone match, use them and say which. If nothing matches or the match is ambiguous, ask the developer once which labels (and milestone, if any) mark feedback, use the answer, and tell them to record it in an AGENTS.md *Feedback* section.
 
 Never create labels or milestones.
-
-The backlog milestone used in step 4 comes from AGENTS.md *Milestones* if it names one; otherwise ask the developer once which existing milestone is the backlog (or whether to leave the milestone unset), and tell them to record it there.
 
 ### 1. Fetch new feedback
 

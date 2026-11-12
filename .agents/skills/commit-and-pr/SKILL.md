@@ -1,7 +1,7 @@
 ---
 name: commit-and-pr
 description: "Commit, push, and open a pull request — delegates to /commit then /pr. Trigger: /commit-and-pr, or the developer or a coordinator's brief asks to commit the finished work and open its PR. Generic template: a project's own `commit-and-pr` skill takes precedence."
-model: claude-haiku-4-5-20251001
+model: haiku
 ---
 
 Thin wrapper: run `/commit` then `/pr` in sequence.
@@ -9,6 +9,27 @@ Thin wrapper: run `/commit` then `/pr` in sequence.
 Run it only when the developer asked for it, or a brief this session was
 started with says to run it once the work is done. Finishing a change is not
 by itself a reason to open a PR.
+
+## Project facts
+
+<!-- facts:begin -->
+This is the generic copy: no project facts are written into it. Work out each
+fact below once, at the start of the run, then write its value literally into
+every command that needs it. Each Bash call starts a fresh shell, so a variable
+set in one call is empty in the next; never carry a value across calls in a
+shell variable.
+
+| Fact | How to find it |
+|---|---|
+| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+<!-- facts:end -->
+
+`/commit` and `/pr` below are written in their project-copy form. Run them in
+the form this skill was invoked with: `/sample-skills:commit` and
+`/sample-skills:pr` when this is `/sample-skills:commit-and-pr`, `/commit` and
+`/pr` when it is `/commit-and-pr`. If a sibling skill does not load, read its
+`SKILL.md` from the folder beside this skill's own (`../commit/SKILL.md`,
+`../pr/SKILL.md`, relative to this skill's directory) and follow it.
 
 ## invocation
 

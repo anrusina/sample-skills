@@ -1,6 +1,8 @@
 # Inline comment format
 
-Use this structure for each inline comment body.
+Use this structure for each inline comment body. Apply the *Inline comments* section of each loaded asset: the stack asset names the snippet language, and a field asset may add a closing line for the prompt or blast-radius examples.
+
+`/fix-pr-findings` below is written in the form the *skill names* fact gives.
 
 ---
 
@@ -10,7 +12,7 @@ Use this structure for each inline comment body.
 
 **Unverified:** <Unsure findings only — one line on what could not be confirmed in the source, so the reader knows what to check first. Omit this line for confirmed findings.>
 
-**Suggestion:** <Concrete fix with a code snippet in the project's language if applicable.>
+**Suggestion:** <Concrete fix with a code snippet in the project's language (the loaded stack asset names it), if applicable.>
 
 **Blast radius:** <emoji> <level> — <one sentence on what could break.>
 
@@ -67,9 +69,11 @@ Use this structure instead for a finding from the step 6c check: behaviour the c
 
 ## Blast radius levels
 
+If the *blast-radius map* fact names a section of `AGENTS.md` that maps the project's parts to these levels, classify by it. Otherwise use the generic definitions below, with any examples a loaded field asset adds.
+
 | Blast radius | Emoji | When |
 |---|---|---|
-| Isolated | ✅ | Single component, single test, config constant |
-| Localised | 🔵 | Private method, one state holder or service, one screen |
-| Cross-cutting | ⚠️ | A state-holder or service interface change, shared state, spec update |
-| Systemic | 🔴 | Storage schema, navigation model, a core domain model the HLD names, a parser or service interface many subsystems depend on |
+| Isolated | ✅ | One file, one component used in one place, one test, one config constant, one doc line |
+| Localised | 🔵 | A private method, one module, one state holder or service, one screen or page |
+| Cross-cutting | ⚠️ | An interface several modules call, shared state, a shared component or the design tokens, a spec update |
+| Systemic | 🔴 | Stored data and its schema, the navigation or routing model, a core domain model the HLD names, an interface many subsystems depend on, an identifier or format published outside the project, build or release configuration |

@@ -1,7 +1,7 @@
 # Issues and PRs matching a GitHub search, every page once (gh api --paginate).
 # $q carries the full search string, repository included
-# ("repo:<owner/name> is:issue is:open ..."); the caller finds the repository
-# at run time with `gh repo view --json nameWithOwner -q .nameWithOwner`.
+# ("repo:<owner/name> is:issue is:open ..."); the caller writes the repository
+# in literally (the skill's `<repo>` fact), never through a shell variable.
 query($q: String!, $endCursor: String) {
   search(query: $q, type: ISSUE, first: 100, after: $endCursor) {
     pageInfo { hasNextPage endCursor }

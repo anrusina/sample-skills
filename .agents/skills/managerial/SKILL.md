@@ -24,8 +24,36 @@ The role exists so that a fresh session can take over phase management from
 this skill, the progress doc and the previous manager's handoff alone, with
 nothing re-taught in chat.
 
-If AGENTS.md (*Build and test commands*) says tools run through a wrapper,
-prefix every `gh` command below with it.
+## Project facts
+
+<!-- facts:begin -->
+This is the generic copy: no project facts are written into it. Work out each
+fact below once, at the start of the run, then write its value literally into
+every command that needs it. Each Bash call starts a fresh shell, so a variable
+set in one call is empty in the next; never carry a value across calls in a
+shell variable.
+
+| Fact | How to find it |
+|---|---|
+| `<repo>` | `gh repo view --json nameWithOwner -q .nameWithOwner` |
+| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| skill names | for each skill this one runs or names for a session (`issue`, `coding-master`): `/<name>` when the project has its own copy in `.agents/skills/<name>/` (look in the primary checkout, where sessions load skills from), otherwise the namespaced form the session's skill list shows (e.g. `/sample-skills:issue`) |
+| dependency policy | AGENTS.md dependency-policy section (for example *Security → Dependency policy*): when a new version may be adopted, or none (the default: once it has been published for at least 14 days) |
+| backlog milestone | AGENTS.md *Milestones*: the backlog milestone, or none (ask the owner once which existing milestone it is, and tell them to record it there) |
+| project board | AGENTS.md *Project board*: the board tickets are tracked on, or none (skip the steps that need it) |
+
+**AGENTS.md sections by role.** Projects name sections differently. The build
+section is the one that lists the build, format, lint and test commands,
+whatever it is called (*Build and test commands*, *Build commands*, *Tools*,
+*Commands*). Match every section this skill reads the same way: by what it
+holds, not by its exact title. When a required fact is missing, ask the
+developer once, use the answer, and tell them which AGENTS.md section to
+record it in.
+<!-- facts:end -->
+
+Prefix every tool command in this skill with the wrapper, `gh` included.
+Skills are named below in their short form (`/issue`, `/coding-master`); run
+or name them in the form recorded in the skill names fact.
 
 ## input
 
@@ -45,22 +73,19 @@ handoff and the open milestones, and ask the owner if it is still unclear.
    memory file, its planning ticket and the progress doc, and ask the
    previous manager session while it still runs (its `local_…` id is in the
    memory file or on the planning ticket).
-2. Check the current state. The repository comes from `gh`, never from a
-   literal:
+2. Check the current state. Write `<repo>` in literally, and `<skill-dir>`
+   as this skill's own folder: `.agents/skills/managerial` in a project copy,
+   or the base directory the plugin loaded it from (shown when the skill
+   loads):
 
    ```bash
-   # run from the repository root; every page once, no cap
-   REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-   gh api graphql --paginate -F query=@.agents/skills/managerial/assets/search.graphql -f q="repo:$REPO is:issue is:open milestone:\"<milestone>\"" --jq '.data.search.nodes[] | {number, title, labels: [.labels.nodes[].name]}'
+   # every page once, no cap
+   gh api graphql --paginate -F query=@<skill-dir>/assets/search.graphql -f q='repo:<repo> is:issue is:open milestone:"<milestone>"' --jq '.data.search.nodes[] | {number, title, labels: [.labels.nodes[].name]}'
    # <date>: the memory file's last dated line, or the doc's intro date
-   gh api graphql --paginate -F query=@.agents/skills/managerial/assets/search.graphql -f q="repo:$REPO is:pr is:merged merged:>=<date>" --jq '.data.search.nodes[] | {number, title, mergedAt, closes: [.closingIssuesReferences.nodes[].number]}'
-   gh api graphql --paginate -F query=@.agents/skills/managerial/assets/search.graphql -f q="repo:$REPO is:pr is:open" --jq '.data.search.nodes[] | {number, title, headRefName, closes: [.closingIssuesReferences.nodes[].number]}'
+   gh api graphql --paginate -F query=@<skill-dir>/assets/search.graphql -f q='repo:<repo> is:pr is:merged merged:>=<date>' --jq '.data.search.nodes[] | {number, title, mergedAt, closes: [.closingIssuesReferences.nodes[].number]}'
+   gh api graphql --paginate -F query=@<skill-dir>/assets/search.graphql -f q='repo:<repo> is:pr is:open' --jq '.data.search.nodes[] | {number, title, headRefName, closes: [.closingIssuesReferences.nodes[].number]}'
    git branch -r; git worktree list      # in-flight work the tickets don't show
    ```
-
-   If the skill is installed somewhere other than `.agents/skills/managerial/`
-   (a plugin, say), point `query=@` at this skill's own
-   `assets/search.graphql`.
 
 3. Read the phase's memory file (see *memory* under *standing rules*), if
    there is one, for the decisions so far.
@@ -74,7 +99,7 @@ off*) still happens when its last ticket is done.
 **Agree the framing first.** Before any plan, settle two things with the
 owner: what "done" means for the phase (e.g. Phase 2 = first public
 release), and which milestone carries it (list them with
-`gh api "repos/$REPO/milestones" --paginate --jq '.[].title'`; never create
+`gh api 'repos/{owner}/{repo}/milestones' --paginate --jq '.[].title'`; never create
 one unasked). The phase needs a planning ticket; file one through `/issue` if
 it has none.
 
@@ -105,9 +130,9 @@ it has none.
   pushed to the next phase, each with its reason and date gate.
 
 **One dependency-refresh ticket per phase,** created when the phase is
-planned. Date-gated upgrades come from the dependency policy in `AGENTS.md`
-(*Security → Dependency policy*; without one, the default: a version may be
-adopted once it has been published for at least 14 days). Record the date
+planned. Date-gated upgrades come from the dependency policy fact (without
+one, the default: a version may be adopted once it has been published for at
+least 14 days). Record the date
 each can start (e.g. "#45 not before 2026-11-12") and recheck the dates of
 blocked ones at every sync.
 
@@ -149,7 +174,8 @@ apply it, and tell the owner. If it went into a track, show the track step
 before it and the step after it. The owner says if they want it elsewhere.
 
 - Check it carries `auto` or `curated` and the right milestone, and propose
-  removing stray labels.
+  removing stray labels. With a project board fact, check it is on the board
+  too, and propose adding it if not.
 - Moving a ticket to the next phase also moves it to that phase's milestone.
 - If it changes a stored format (a database schema, a persisted file format)
   and the app is already released with user data to keep (AGENTS.md says
@@ -158,14 +184,12 @@ before it and the step after it. The owner says if they want it elsewhere.
   Before syncing it as done, check its PR has both.
 - Tickets the owner calls "not needed, maybe never" (often to avoid fitting
   the code to a single case) go to the backlog milestone at a lower priority.
-  AGENTS.md *Milestones* names the backlog milestone if the project has one;
-  otherwise ask the owner once which existing milestone it is, and tell them
-  to record it there.
+  The backlog milestone fact names it.
 
 **File tickets when asked.** When the owner has an idea for later, find it the
 right home:
 
-1. Search open **and closed** issues first (`gh search issues --repo "$REPO"
+1. Search open **and closed** issues first (`gh search issues --repo <repo>
    "<words>"`). If one already covers it, propose a comment there instead of
    a new ticket.
 2. Otherwise create it through `/issue --milestone "<title>"`: a later
@@ -279,8 +303,8 @@ Track A: ~~#12 (login form)~~ -> 🔄#15 (session refresh) · [#17 (cart model) 
 
   followed by its placement.
 - **Command form:** write `gh` and `git` commands in the form the
-  pre-approved list above matches (bare `gh …`); a wrapper from AGENTS.md
-  goes in front, and then expect permission prompts.
+  pre-approved list above matches (bare `gh …`); with a wrapper fact, the
+  wrapper goes in front, and then expect permission prompts.
 - **Memory:** keep one file for the phase in your auto-memory directory
   (`project_phase<N>_plan.md`). Record the agreed plan (stage goals, tracks,
   the progress doc's link and ids, this session's `local_…` id), then append

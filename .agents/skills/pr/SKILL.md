@@ -1,7 +1,7 @@
 ---
 name: pr
 description: "Open a pull request from the current branch — synthesises pushed commits into a titled, labelled PR with issue links (Closes #N), Arrow-of-Intent spec coverage, and a testing checklist. Trigger: user or model needs to open a PR after commits are pushed (e.g. \"open a PR\", \"raise a pull request\", \"/pr\", or as the second half of /commit-and-pr). Generic template: a project's own `pr` skill takes precedence."
-model: claude-haiku-4-5-20251001
+model: haiku
 allowed-tools:
   - Bash(git *)
   - Bash(gh pr *)
@@ -9,21 +9,53 @@ allowed-tools:
   - Bash(gh label *)
   - Bash(gh repo *)
   - Bash(cat *)
+  - Bash(mktemp *)
 ---
 
 You are a GitHub PR assistant for this project. You synthesise commits into a clear pull request — without requiring the developer to write boilerplate.
 
 > After the PR is open, use `/review-pr` for code review and `/pre-merge` for thread triage before merging.
 
-**Tool wrapper.** If AGENTS.md *Build and test commands* says the project's tools run through a wrapper (for example a version manager's exec command), prefix every `gh` command in this skill with it.
+## Project facts
+
+<!-- facts:begin -->
+This is the generic copy: no project facts are written into it. Work out each
+fact below once, at the start of the run, then write its value literally into
+every command that needs it. Each Bash call starts a fresh shell, so a variable
+set in one call is empty in the next; never carry a value across calls in a
+shell variable.
+
+| Fact | How to find it |
+|---|---|
+| `<base>` | `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; if that fails, `git symbolic-ref --short refs/remotes/origin/HEAD \| sed 's\|^origin/\|\|'` |
+| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| gates | AGENTS.md build section: the format, lint/analyze and test commands, in order, or the one command that runs them all |
+| build-input docs | AGENTS.md *Project structure*: Markdown that feeds the build (content collections, docs sites), or none |
+| source and test dirs | AGENTS.md *Project structure*: the source and test directories, or none (then any changed file that is not Markdown, not under `docs/`, and not tooling, CI or editor config counts as source) |
+| pre-merge checks | AGENTS.md *Pre-merge checks*: checks that run only at `/pre-merge`, or none |
+| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| assets | the stack and field assets that apply: see *Assets* below |
+
+**AGENTS.md sections by role.** Projects name sections differently. The build
+section is the one that lists the build, format, lint and test commands,
+whatever it is called (*Build and test commands*, *Build commands*, *Tools*,
+*Commands*). Match every section this skill reads the same way: by what it
+holds, not by its exact title. When a required fact is missing, ask the
+developer once, use the answer, and tell them which AGENTS.md section to
+record it in.
+
+**Assets.** This skill keeps stack and field assets under `assets/stack/` and
+`assets/field/`; `assets/index.md` says when each applies. At the start of the
+run, load every asset whose condition holds, and apply each where a step names
+its section. With none loaded, the steps' generic text applies.
+<!-- facts:end -->
+
+Prefix every tool command in this skill with the wrapper, `gh` included. Sibling skills (`/review-pr`, `/pre-merge`, `/commit`) are written here in their project-copy form; name them in the form the `skill names` fact gives.
 
 ## setup
 
 ```bash
-REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
 git branch --show-current
-DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef -q '.defaultBranchRef.name' 2>/dev/null \
-  || git symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')
 ```
 
 Check for an existing open PR first — if one exists, report its URL and stop:
@@ -41,8 +73,8 @@ If the file exists and has content, use it as the PR body template in step 7 ins
 
 1. **Collect commits:**
    ```bash
-   git log origin/${DEFAULT_BRANCH}..HEAD --oneline
-   git log origin/${DEFAULT_BRANCH}..HEAD --format="%s%n%n%b"
+   git log origin/<base>..HEAD --oneline
+   git log origin/<base>..HEAD --format="%s%n%n%b"
    ```
    Extract every `[#N]` issue reference from commit subjects.
 
@@ -56,15 +88,17 @@ If the file exists and has content, use it as the PR body template in step 7 ins
    | ♻️ | Refactor | 🧪 | Tests |
    | 📝 | Docs / specs | 🔧 | Tooling / config |
 
+   Then add what the *What changed* section of each loaded asset asks for.
+
 4. **`## Related issues:`**
    - `Closes #N` — every acceptance criterion is covered, or every excluded item is an agreed handoff (see 4.5)
    - `Ref #N` — related but not closed, including an issue with an unagreed, uncovered criterion (see 4.5)
    - Omit section if none
 
-4.5. **Issue-coverage check** — for each `Closes #N` found in step 4, fetch the issue body and all its comments:
+4.5. **Issue-coverage check** — for each `Closes #N` found in step 4, fetch the issue body and all its comments (`gh` fills `{owner}` and `{repo}` from the checkout; write the issue number in):
    ```bash
-   gh api repos/$REPO/issues/<N> --jq '{title, body}'
-   gh api repos/$REPO/issues/<N>/comments --paginate --jq '.[] | .body + "\n---"'
+   gh api repos/{owner}/{repo}/issues/<N> --jq '{title, body}'
+   gh api repos/{owner}/{repo}/issues/<N>/comments --paginate --jq '.[] | .body + "\n---"'
    ```
    Extract acceptance criteria from both body **and all comments** — `- [ ]` task list items and content under "Acceptance criteria", "Done when", or "Requirements" headers. Comments may contain requirements or edge cases added after the issue was written; treat them equally. Review the commit diff against each criterion. Do not stop to ask — the developer reviews coverage in the PR. List every item that appears unaddressed in a `### Out of scope` section of the PR body:
    - If the session already agreed the exclusion (e.g. work handed to another issue), say so, link where it went, and leave that issue's reference as `Closes #N`.
@@ -72,9 +106,9 @@ If the file exists and has content, use it as the PR body template in step 7 ins
 
    Name any downgraded or not-covered items in the final report next to the PR URL, so the developer can resolve the item or restore the closing reference deliberately. Skip this check if the PR references no issues with `Closes #N`.
 
-5. **`## Arrow of Intent:`** check whether the diff contains source or test files — the source and test directories named in AGENTS.md *Project structure*, or, if it names none, any changed file that is not Markdown, not under `docs/`, and not tooling, CI or editor config:
+5. **`## Arrow of Intent:`** check whether the diff contains source or test files (the `source and test dirs` fact):
    ```bash
-   git diff --name-only origin/${DEFAULT_BRANCH}...HEAD
+   git diff --name-only origin/<base>...HEAD
    ```
    - **No source or test changes** (tooling, docs, config only) → omit this section entirely.
    - **Source or test changes present** → scan commit bodies for `@spec` tags and HLD references:
@@ -83,13 +117,15 @@ If the file exists and has content, use it as the PR body template in step 7 ins
        > "This PR touches source code but no `@spec` tags or HLD references were found in the commits. Please provide: the HLD section this change falls under, and the EARS spec IDs it implements (create them first if they don't exist yet)."
      - Do not create the PR until the developer supplies this information or confirms the omission is intentional.
 
-6. **`## Testing:`** build this section as [conventions/testing-checklist.md](conventions/testing-checklist.md) describes.
+6. **`## Testing:`** build this section as [assets/testing-checklist.md](assets/testing-checklist.md) describes, adding the *Testing checklist* lines of each loaded asset that apply to the diff.
 
-7. **Create** — write the body to `/tmp/pr-body.md`, and fetch the assignee first so assignment is atomic with PR creation:
+7. **Create** — write the body to a fresh scratch file from `mktemp` (never a fixed `/tmp` name, which two sessions can share) and create the PR in the same call, so the file is removed even when `gh` fails. Assignment happens in the same `gh pr create`, so it is atomic with PR creation:
    ```bash
-   ASSIGNEE=$(gh api user -q '.login')
-   gh pr create --title "<title>" --body-file /tmp/pr-body.md --base ${DEFAULT_BRANCH} --assignee "${ASSIGNEE}"
-   rm /tmp/pr-body.md
+   body=$(mktemp) && trap 'rm -f "$body"' EXIT
+   cat > "$body" <<'PR_BODY'
+   <the PR body>
+   PR_BODY
+   gh pr create --title "<title>" --body-file "$body" --base <base> --assignee "$(gh api user -q '.login')"
    ```
 
 8. **Labels** — apply from existing labels only (`gh label list`); never create one:

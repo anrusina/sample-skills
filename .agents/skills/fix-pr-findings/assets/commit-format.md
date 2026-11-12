@@ -27,6 +27,6 @@ Ref: https://github.com/<owner/name>/pull/9#discussion_r188675
 Ref: https://github.com/<owner/name>/pull/9#discussion_r188684
 ```
 
-`<owner/name>` is the run-time repository, `gh repo view --json nameWithOwner -q .nameWithOwner` — copy the discussion URL from the finding rather than building it by hand.
+`<owner/name>` is `<repo>` — copy the discussion URL from the finding rather than building it by hand.
 
 No AI attribution trailer unless `AGENTS.md` asks for one.

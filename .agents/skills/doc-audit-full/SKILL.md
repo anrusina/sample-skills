@@ -9,7 +9,39 @@ You are a documentation quality assistant. You fix doc comments, update design d
 
 Runs the audit from `/doc-audit` first, then applies the requested fixes.
 
-**Tool wrapper.** If `AGENTS.md` *Build and test commands* says tools run through a wrapper (for example a version manager's exec command), prefix every tool command below with it, `gh` included.
+## Project facts
+
+<!-- facts:begin -->
+This is the generic copy: no project facts are written into it. Work out each
+fact below once, at the start of the run, then write its value literally into
+every command that needs it. Each Bash call starts a fresh shell, so a variable
+set in one call is empty in the next; never carry a value across calls in a
+shell variable.
+
+| Fact | How to find it |
+|---|---|
+| `<base>` | `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; if that fails, `git symbolic-ref --short refs/remotes/origin/HEAD \| sed 's\|^origin/\|\|'` |
+| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| gates | AGENTS.md build section: the format, lint/analyze and test commands, in order, or the one command that runs them all |
+| format fix | AGENTS.md build section: the write-mode formatter, if the format gate only checks |
+| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| assets | the stack and field assets that apply: see *Assets* below |
+
+**AGENTS.md sections by role.** Projects name sections differently. The build
+section is the one that lists the build, format, lint and test commands,
+whatever it is called (*Build and test commands*, *Build commands*, *Tools*,
+*Commands*). Match every section this skill reads the same way: by what it
+holds, not by its exact title. When a required fact is missing, ask the
+developer once, use the answer, and tell them which AGENTS.md section to
+record it in.
+
+**Assets.** This skill keeps stack and field assets under `assets/stack/` and
+`assets/field/`; `assets/index.md` says when each applies. At the start of the
+run, load every asset whose condition holds, and apply each where a step names
+its section. With none loaded, the steps' generic text applies.
+<!-- facts:end -->
+
+Prefix every tool command in this skill with the wrapper, `gh` and the gates included. Other skills are named here in their short form (`/doc-audit`, `/arrow-check`, `/design-docs`, `/issue`); write them in the form the skill names fact gives.
 
 ## input
 
@@ -26,17 +58,18 @@ No arguments → run all flags in order.
 
 ## --review
 
-Same as `/doc-audit`. Always run first in every invocation.
+Same as `/doc-audit`: follow its `--review` steps, with its assets. Always run first in every invocation.
 
 ## --fix-comments
 
-1. Load [conventions/code-doc-conventions.md](conventions/code-doc-conventions.md) for doc comment syntax, style and conventions.
+1. Load [references/code-doc-conventions.md](references/code-doc-conventions.md) for doc comment style and conventions, and apply the *Doc comments* section of the loaded stack asset for the syntax.
 2. Add or update doc comments only on public API where the contract is non-obvious, in the language's doc-comment syntax:
    - Imperative summary sentence.
    - Document parameters and return values as short fragments.
-   - No trailing periods on fragments. Mark identifiers the way the conventions file says.
+   - No trailing periods on fragments. Mark identifiers the way the stack asset says.
    - Remove doc comments from trivial getters, test helpers, and generated code.
-3. Run the project's format gate (from `AGENTS.md` *Build and test commands*) after edits. If that section names no formatter, skip this step and say so in the summary.
+   - Apply the *Fix comments* section of each loaded asset.
+3. Format the edited files: run the format fix, or the format gate when it writes in place. If the build section names no formatter, skip this step and say so in the summary.
 
 ## --fix-docs
 
@@ -48,6 +81,8 @@ Same as `/doc-audit`. Always run first in every invocation.
 4. For each LLD with stale flow: update the affected sections only. Do not rewrite prose that is still accurate.
 5. For each LLD that documents log events with product intelligence but has no `## Telemetry signals` section: draft and add the section in the rate-pair format — a table with columns Signal, Level, Emitted when, Product intelligence, Pairs with; the denominator event (the happy-path event confirming normal completion) first, then each failure signal naming that denominator in "Pairs with". If the `/design-docs` skill is available, follow its LLD template's *Telemetry signals* section instead. Populate signal rows from observable log calls in the subsystem code. Mark intent-dependent fields `[NEEDS HUMAN INPUT]`.
 6. For each HLD gap: add the missing subsystem entry or update the stale one. Describe what exists — do not invent architecture.
+7. For each LLD that pins a look-and-feel value (a raw color, a literal size, a font, an icon glyph, an animation value or exact string wording): replace the value with the design-system token it stands for, or remove it when the sentence carries no behaviour without it. If no token exists for the value, do not invent one: list it as a gap for the developer. AGENTS.md's LLD-altitude rule, if it has one, is the canonical rule.
+8. Apply the *Fix docs* section of each loaded asset.
 
 ### Bootstrap path — code exists with no upstream docs
 
@@ -117,7 +152,7 @@ After all edits, print a summary: one bullet per skill file changed, listing wha
 
 ## conventions
 
-Load [conventions/code-doc-conventions.md](conventions/code-doc-conventions.md) for `--fix-comments` and `--diagrams` — it holds the documentation style, doc comment syntax and examples, anti-patterns, and Mermaid diagram conventions. A project tailors these to its language by editing that file.
+Load [references/code-doc-conventions.md](references/code-doc-conventions.md) for `--fix-comments` and `--diagrams` — it holds the documentation style, doc comment rules, anti-patterns, and Mermaid diagram conventions. The doc-comment syntax and an example come from the *Doc comments* section of the loaded stack asset.
 
 ## rules
 

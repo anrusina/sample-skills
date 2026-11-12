@@ -23,8 +23,36 @@ reading, and a session that has to be told the rules in chat forgets some of
 them. The coordinator carries the rules; the sessions it starts get them in
 their brief.
 
-If AGENTS.md (*Build and test commands*) says tools run through a wrapper,
-prefix every `gh` and other tool command below with it.
+## Project facts
+
+<!-- facts:begin -->
+This is the generic copy: no project facts are written into it. Work out each
+fact below once, at the start of the run, then write its value literally into
+every command that needs it. Each Bash call starts a fresh shell, so a variable
+set in one call is empty in the next; never carry a value across calls in a
+shell variable.
+
+| Fact | How to find it |
+|---|---|
+| `<repo>` | `gh repo view --json nameWithOwner -q .nameWithOwner` |
+| `<base>` | `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; if that fails, `git symbolic-ref --short refs/remotes/origin/HEAD \| sed 's\|^origin/\|\|'` |
+| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| skill names | for each skill a session is told to run (`start-task`, `commit-and-pr`, `review-pr`, `fix-pr-findings`, `pre-merge`, `issue`): `/<name>` when the project has its own copy in `.agents/skills/<name>/` (look in the primary checkout, where sessions load skills from), otherwise the namespaced form the session's skill list shows (e.g. `/sample-skills:review-pr`) |
+| releases | AGENTS.md *Releases*: the workflow that deploys on merge, the paths it ignores, and where the deploy lands, or none (skip step 8.1) |
+| manual workflows | AGENTS.md build or release section: workflows run by hand (a branch build, a native build), or none |
+
+**AGENTS.md sections by role.** Projects name sections differently. The build
+section is the one that lists the build, format, lint and test commands,
+whatever it is called (*Build and test commands*, *Build commands*, *Tools*,
+*Commands*). Match every section this skill reads the same way: by what it
+holds, not by its exact title. When a required fact is missing, ask the
+developer once, use the answer, and tell them which AGENTS.md section to
+record it in.
+<!-- facts:end -->
+
+Prefix every tool command in this skill with the wrapper, `gh` included.
+Skills are named below in their short form (`/review-pr`); in commands to
+sessions and in the briefs, use the form recorded in the skill names fact.
 
 ## input
 
@@ -49,21 +77,15 @@ Examples:
 Issues running side by side still merge one at a time (see *owner gate*).
 With no arguments, ask the owner which issues to run.
 
-Find the repository and its default branch once, and use them throughout,
-in commands and in the briefs:
-
-```bash
-REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-BASE=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
-# fallback: BASE=$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's#^origin/##')
-```
+Work out the facts (above) once, and write `<repo>` and `<base>` in
+literally throughout, in commands and in the briefs.
 
 Before starting anything, bring this checkout up to date with the default
 branch with the app's `sync_with_base_branch` tool, so what you read here is
 current. `git merge --ff-only` doesn't work in an app worktree. If the tool
 isn't available, `git fetch origin`, read current files with
-`git show origin/$BASE:<path>`, and leave the checkout as it is. Then read
-`AGENTS.md` as it stands on `origin/$BASE`, then each issue
+`git show origin/<base>:<path>`, and leave the checkout as it is. Then read
+`AGENTS.md` as it stands on `origin/<base>`, then each issue
 (`gh issue view <N> --comments`), and flag to the owner any two issues set to
 run side by side (in separate tracks or in one bracket) that look like they
 touch the same files: those belong one after the other.
@@ -84,31 +106,31 @@ Copy this checklist per issue and keep it current in your task list.
 - [ ] 5. fixes pushed → reviewer re-runs /review-pr → back to 4 until no findings are left
 - [ ] 6. done report relayed to owner
 - [ ] 7. owner's explicit OK relayed → task session runs /pre-merge → merged (verified)
-- [ ] 8. deploy run checked (only with an AGENTS.md *Releases* section); skill change → owner asked to fast-forward the primary checkout; cleanup: sessions archived, worktrees and branches deleted
+- [ ] 8. deploy run checked (only with a releases fact); skill change → owner asked to fast-forward the primary checkout; cleanup: sessions archived, worktrees and branches deleted
 ```
 
 ### 1. start the task session
 
 One session per issue, fresh context, its own worktree cut from a fresh
-`origin/$BASE`. `start_session` cuts worktrees only from a local branch, and
+`origin/<base>`. `start_session` cuts worktrees only from a local branch, and
 the default base can be stale, so refresh one first:
 
 ```bash
 git fetch origin
-git branch -f session-base "origin/$BASE"
+git branch -f session-base origin/<base>
 ```
 
 Then `start_session` with `context: "fresh"`, `use_worktree: true`,
 `source_branch: "session-base"`, `name: "issue-<N>"`, the title
-`#<N> <issue title>`, and `prompt` built from [assets/task-brief.md](assets/task-brief.md) with every `<…>` filled in.
+`#<N> <issue title>`, and `prompt` built from [assets/task-brief.md](assets/task-brief.md) with every `<…>` filled in: `<repo>` and `<base>` from the facts, and each skill slot (`<start-task>`, `<commit-and-pr>`, …) with that skill's form from the skill names fact.
 `background` (required with fresh context) says what the coordinator is
 running and where this issue sits in its track. The brief carries every rule
 the session needs, so nothing has to be told to it later in chat.
 
-An **auto** issue's brief begins with `/start-task <N>`, and the session
-proceeds on its own. A **curated** issue's session starts without it: it sets
-up its worktree and waits for the owner to type `/start-task <N>` there
-themselves. Tell the owner it is waiting, linking to it; never send
+An **auto** issue's brief begins with `/start-task <N>` (in its recorded
+form), and the session proceeds on its own. A **curated** issue's session
+starts without it: it sets up its worktree and waits for the owner to type
+`/start-task <N>` there themselves. Tell the owner it is waiting, linking to it; never send
 `/start-task` to it yourself.
 
 As soon as it has started, turn on Remote Control for it
@@ -127,15 +149,16 @@ verify the PR (see *verify before reporting*) before telling the owner.
 
 When the task session reports `Ready for review` (checked as in *4–5*),
 start a reviewer with **none** of the task's context, in its own
-worktree cut from a fresh `origin/$BASE`, so the project instructions and
+worktree cut from a fresh `origin/<base>`, so the project instructions and
 docs it reads are current (the skill itself loads from the primary checkout;
 see 8.2). Refresh `session-base` as in step 1, then `start_session` with
 `context: "fresh"`, `use_worktree: true`,
 `source_branch: "session-base"`, `name: "review-<P>"`, the title
 `Review PR #<P> (#<N>)` (N is the issue the PR closes, so the owner can match
 the reviewer to its task session), and `prompt` from
-[assets/reviewer-brief.md](assets/reviewer-brief.md). `/review-pr` makes its
-own `review-<P>` worktree inside the reviewer's. The reviewer posts its
+[assets/reviewer-brief.md](assets/reviewer-brief.md), filled in the same way. `/review-pr` makes its
+own `review-<P>-*` worktree under the primary checkout's `.claude/worktrees/`
+and does the review there. The reviewer posts its
 review to GitHub and never fixes anything: a reviewer that fixes stops being
 an independent reader of the next round.
 
@@ -200,8 +223,8 @@ You may **recommend** an order of work or merges, or a freeze on new tasks
 to the owner; never apply one on your own. The owner decides, and you then
 follow the order or freeze they set for as long as they say it applies.
 
-**Manual workflow runs** (any workflow AGENTS.md says is run by hand, such as
-a branch build or a native build) only when the owner asks, on the branch
+**Manual workflow runs** (the manual workflows fact: any workflow AGENTS.md
+says is run by hand, such as a branch build or a native build) only when the owner asks, on the branch
 head, e.g. `gh workflow run <workflow>.yml --ref <branch>`; run it again
 after `/pre-merge`'s final push, which makes an earlier run stale.
 
@@ -210,17 +233,17 @@ after `/pre-merge`'s final push, which makes an earlier run stale.
 Verify the merge first (`gh pr view <P> --json state,mergeCommit` shows
 `MERGED`). Then:
 
-1. Check the deploy, only if AGENTS.md has a *Releases* section describing a
-   deploy on merge; without one, skip this step. If the merge touched only
-   paths that deploy workflow ignores (AGENTS.md or the workflow's
+1. Check the deploy, only if the releases fact names a deploy on merge;
+   without one, skip this step. If the merge touched only
+   paths that deploy workflow ignores (the releases fact or the workflow's
    `paths-ignore` says which), it deploys nothing: tell the owner so and skip
    the app check. Otherwise find the run on the merge commit
    (`gh run list --workflow <deploy workflow> --commit <merge-sha>`) and
    report its result. Once it has succeeded, the owner checks what the
-   deploy targets (AGENTS.md *Releases* says where); relay their word to the
+   deploy targets (the releases fact says where); relay their word to the
    task session.
 2. If the merge changed anything under `.agents/skills/`, ask the owner to
-   fast-forward the primary checkout to `origin/$BASE`. Sessions load skills
+   fast-forward the primary checkout to `origin/<base>`. Sessions load skills
    from the primary checkout (`.claude/skills` there), not from their own
    worktree, so until then they keep running the old copies. It often holds
    the owner's own work, so the owner does it; never touch it yourself.
@@ -234,12 +257,12 @@ Verify the merge first (`gh pr view <P> --json state,mergeCommit` shows
    off first. Never delete a session.
 5. `/pre-merge` has already removed the task worktree and the task branch.
    What's left is yours: every `review-<P>-*` worktree `/review-pr` made
-   inside the reviewer's worktree, the reviewer's own worktree and branch
+   under the primary checkout's `.claude/worktrees/`, the reviewer's own
+   worktree and branch
    (`claude/review-<P>-*`), the app's own branch for
    the task session (`claude/issue-<N>-*`, which `/pre-merge` doesn't know
    about), and anything `/pre-merge` reported it left behind. Delete only
-   what no other session still uses (check `list_sessions` first), the
-   nested `review-<P>-*` worktrees before the worktree that holds them. From
+   what no other session still uses (check `list_sessions` first). From
    this coordinator's checkout:
 
    ```bash

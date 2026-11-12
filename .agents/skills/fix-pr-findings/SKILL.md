@@ -1,19 +1,52 @@
 ---
 name: fix-pr-findings
-description: "Orchestrate fixes for PR review findings via parallel sub-agents. Trigger: /fix-pr-findings <N>, or a request to address a PR's review findings, including one relayed by a coordinator session. Generic template: a project's own `fix-pr-findings` skill takes precedence."
+description: "Orchestrate fixes for PR review findings via sub-agents, run one after another. Trigger: /fix-pr-findings <N>, or a request to address a PR's review findings, including one relayed by a coordinator session. Generic template: a project's own `fix-pr-findings` skill takes precedence."
 ---
 
 Orchestrate fixes for GitHub PR review findings. Fetches review comments, presents findings for selection, and spawns sub-agents to apply each fix in isolation with properly formatted commits.
 
 Findings may come from any reviewer — a second AI model, the developer, or `/review-pr`.
 
-**Tool wrapper.** If `AGENTS.md` *Build and test commands* says tools run through a wrapper (for example a version manager's exec command), prefix every tool command below with it, `gh` included, and pass that on to every sub-agent.
+## Project facts
+
+<!-- facts:begin -->
+This is the generic copy: no project facts are written into it. Work out each
+fact below once, at the start of the run, then write its value literally into
+every command that needs it. Each Bash call starts a fresh shell, so a variable
+set in one call is empty in the next; never carry a value across calls in a
+shell variable.
+
+| Fact | How to find it |
+|---|---|
+| `<repo>` | `gh repo view --json nameWithOwner -q .nameWithOwner` |
+| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| gates | AGENTS.md build section: the format, lint/analyze and test commands, in order, or the one command that runs them all |
+| format fix | AGENTS.md build section: the write-mode formatter, if the format gate only checks |
+| build-input docs | AGENTS.md *Project structure*: Markdown that feeds the build (content collections, docs sites), or none |
+| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| assets | the stack and field assets that apply: see *Assets* below |
+
+**AGENTS.md sections by role.** Projects name sections differently. The build
+section is the one that lists the build, format, lint and test commands,
+whatever it is called (*Build and test commands*, *Build commands*, *Tools*,
+*Commands*). Match every section this skill reads the same way: by what it
+holds, not by its exact title. When a required fact is missing, ask the
+developer once, use the answer, and tell them which AGENTS.md section to
+record it in.
+
+**Assets.** This skill keeps stack and field assets under `assets/stack/` and
+`assets/field/`; `assets/index.md` says when each applies. At the start of the
+run, load every asset whose condition holds, and apply each where a step names
+its section. With none loaded, the steps' generic text applies.
+<!-- facts:end -->
+
+Prefix every tool command in this skill with the wrapper, `gh` and the gates included, and pass the wrapper on to every sub-agent. Sibling skills appear below as `/<name>`; name them in the form *skill names* gives.
+
+A **documentation-only fix** is one whose changed files are all Markdown or under `docs/`, and none of them under a *build-input docs* path: Markdown the build reads is a build input, so a fix to it runs the gates like code.
 
 ## inputs
 
-The repository is whatever `gh repo view --json nameWithOwner -q .nameWithOwner` reports for the current checkout — call it `$REPO` below.
-
-- A PR comment URL (e.g. `https://github.com/$REPO/pull/9#discussion_r188675`)
+- A PR comment URL (e.g. `https://github.com/<repo>/pull/9#discussion_r188675`)
 - A PR number with finding references (e.g. "PR #9, fix criticals" or "PR #9, fix #1 and #3")
 - A PR number with an outside-diff finding reference (e.g. `PR #9, outside-diff finding #2`) — the finding lives in the review summary's *Outside the diff* section, not in a thread.
 - Just "fix PR findings" — uses the open PR for the current branch
@@ -21,26 +54,22 @@ The repository is whatever `gh repo view --json nameWithOwner -q .nameWithOwner`
 ## phase 1 — gather findings
 
 1. **Determine the PR.**
-   ```bash
-   REPO=$(gh repo view --json nameWithOwner -q .nameWithOwner)
-   ```
-   - Extract the repo, PR number, and optional discussion ID from the URL if provided. If the URL's `owner/name` differs from `$REPO`, stop and say so — the fixes would land in the wrong checkout.
-   - If only a number is given, the PR is in `$REPO`.
+   - Extract the repo, PR number, and optional discussion ID from the URL if provided. If the URL's `owner/name` differs from `<repo>`, stop and say so — the fixes would land in the wrong checkout.
+   - If only a number is given, the PR is in `<repo>`.
    - If no number given, find the open PR via `gh pr list --head <branch>`.
 
 2. **Fetch review comments (two calls — both required):**
 
-   Top-level review bodies:
+   Top-level review bodies and conversation comments (`--comments` and `--json` cannot be combined; `--json comments` already includes them):
    ```bash
-   gh pr view <number> --comments --json comments,reviews
+   gh pr view <number> --json comments,reviews
    ```
 
    Unresolved inline review threads — GraphQL, because REST does not report
-   resolution; resolved threads are already handled and are skipped:
+   resolution; resolved threads are already handled and are skipped.
+   `<owner>` and `<name>` are the two halves of `<repo>`, written in:
    ```bash
-   OWNER=${REPO%%/*}
-   NAME=${REPO#*/}
-   gh api graphql --paginate -F owner="$OWNER" -F name="$NAME" -F pr=<number> -f query='
+   gh api graphql --paginate -F owner=<owner> -F name=<name> -F pr=<number> -f query='
    query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) {
      repository(owner: $owner, name: $name) { pullRequest(number: $pr) {
        reviewThreads(first: 100, after: $endCursor) {
@@ -68,6 +97,8 @@ The repository is whatever `gh repo view --json nameWithOwner -q .nameWithOwner`
 
    Give a rationale and a proposed solution per finding (format in step 4). Never default to "fix all". Where a finding conflicts with another finding, the task brief, or an upstream doc (HLD/LLD/EARS), **surface the conflict and let the developer decide** — do not silently resolve it; consult before resolving any contradiction. A finding may also be **partially** fixed (e.g. apply the in-scope half, defer the rest) — say which half and why.
 
+   Apply the *Triage* section of each loaded asset.
+
 4. **Present findings with the recommendation** (table includes Rec column):
 
    ```
@@ -94,19 +125,19 @@ The repository is whatever `gh repo view --json nameWithOwner -q .nameWithOwner`
 
 ## phase 2 — fix via sub-agents
 
-5. For each selected finding, spawn a sub-agent:
-   - Independent findings (different files or layers) → **parallel**
-   - Overlapping findings (same file or dependent changes) → **sequential**
+5. For each selected finding (or tightly coupled group of findings), spawn a sub-agent, **one after another**: start the next only when the previous one has reported back. Every sub-agent commits and pushes from the same checkout, so two at once would collide on git's index lock, commit each other's staged files, and race on the push. Order them so a finding that another depends on goes first.
 
-6. **Sub-agent prompt:** load [assets/subagent-prompt.md](assets/subagent-prompt.md) and substitute all `<...>` placeholders with the finding's specific values before spawning.
+6. **Sub-agent prompt:** load [assets/subagent-prompt.md](assets/subagent-prompt.md) and substitute all `<...>` placeholders with the finding's specific values before spawning, including the *Fix* section of each loaded asset.
+
+   If a sub-agent reports a failure (a gate it cannot make pass, a rejected push), stop the remaining fixes and report: the next fix would build on a branch in an unknown state.
 
 ## phase 3 — report
 
 7. **Reply on each fixed thread — never resolve it.** Resolving is the next `/review-pr`'s call, once it has verified the fix:
    ```bash
-   gh api repos/$REPO/pulls/<number>/comments/<first comment databaseId>/replies -f body='Addressed in <short-sha> — <what changed>.'
+   gh api repos/{owner}/{repo}/pulls/<number>/comments/<first comment databaseId>/replies -f body='Addressed in <short-sha> — <what changed>.'
    ```
-   An outside-diff finding has no thread — post a PR conversation comment instead:
+   `gh` fills `{owner}` and `{repo}` itself from the current checkout. An outside-diff finding has no thread — post a PR conversation comment instead:
    ```bash
    gh pr comment <number> --body 'Addressed in <short-sha> — outside-diff finding #<N>: <what changed>.'
    ```
@@ -116,7 +147,8 @@ The repository is whatever `gh repo view --json nameWithOwner -q .nameWithOwner`
 8. After all agents complete:
    - Table of findings fixed with commit hashes, and deferred findings with their issue numbers
    - Any findings that failed with the reason
-   - Reminder to run the project's quality gates (`AGENTS.md` *Build and test commands*) — unless every fix was documentation-only (Markdown / `docs/` only), in which case state that the gates were skipped because Markdown cannot affect them
+   - Reminder to run the project's quality gates (the *gates* fact) — unless every fix was documentation-only, in which case state that the gates were skipped because those files cannot affect them
+   - Anything the *Report* section of a loaded asset adds
 
 ## commit format
 
@@ -128,6 +160,7 @@ See [assets/commit-format.md](assets/commit-format.md).
 - Recommend **fix / defer / leave-as-is** with a rationale and proposed solution for every finding, and present it, before asking which to apply — never fix on the reviewer's say-so alone.
 - Verify findings against source files before fixing — never fix from the comment alone.
 - One commit per finding (or per tightly coupled group). Every fix is a new commit — never amend or rewrite commits already pushed for review.
+- Fix sub-agents run one after another, never in parallel, and push with a plain `git push`.
 - Never resolve a review thread — reply only.
-- Stage only files relevant to each fix.
-- Every quality gate in `AGENTS.md` *Build and test commands* must pass after every fix that touches code, tests, build configuration or any other build input. If that section lists no gates, ask the developer once for the commands, use them, and tell them to record them there. Skip the gates for a **documentation-only fix** — one whose changed files are all Markdown / under `docs/` — since Markdown cannot affect formatting, analysis or tests.
+- Stage only files relevant to each fix, plus what a loaded asset's *Fix* section says to stage with them.
+- Every *gates* command must pass after every fix that touches code, tests, build configuration or any other build input. If there are no gates, ask the developer once for the commands, use them, and tell them to record them in AGENTS.md's build section. Skip the gates for a documentation-only fix, since those files cannot affect formatting, analysis or tests.

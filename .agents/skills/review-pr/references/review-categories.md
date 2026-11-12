@@ -1,17 +1,18 @@
 # Language and framework review checks
 
 `/review-pr` step 6 loads this file and applies every check below to the
-changed code. These defaults are language-agnostic: they name failure
-classes that recur in any stack. A project tailors the review to its stack by
-replacing or extending this file — the framework's lifecycle hooks, its
-rendering model, its concurrency primitives, the idioms its own reviewers
-keep flagging. Keep each check concrete enough that a reviewer can point at a
-line that breaks it.
+changed code. These checks are language-neutral: they name failure classes
+that recur in any stack. The stack's own checks — the framework's lifecycle
+hooks, its rendering model, its concurrency primitives, the idioms its
+reviewers keep flagging — live in the *Review checks* section of
+`assets/stack/<id>.md`, and the step applies both. Keep each check concrete
+enough that a reviewer can point at a line that breaks it.
 
 The project rules in `AGENTS.md` (layer rules, logging, error handling,
-design tokens) are checked by `/review-pr` itself, not here. Put a check here only
-when it follows from the language or framework rather than from a project
-decision.
+design tokens) are checked by `/review-pr` itself, and product concerns
+(accessibility, localisation, theming) by the field assets, not here. A
+check belongs here only when it follows from programming in general rather
+than from one stack, one field or a project decision.
 
 ## Resource lifecycle
 

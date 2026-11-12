@@ -1,6 +1,6 @@
 # Review summary format
 
-Use the full structure below for a full review, and the *Follow-up round* variant at the end for a follow-up round. Both end with the `review-pr: reviewed` marker — the next round finds the last reviewed commit from it, so never omit it.
+Use the full structure below for a full review, and the *Follow-up round* variant at the end for a follow-up round. Both end with the `review-pr: reviewed` marker — the next round finds the last reviewed commit from it, so never omit it. `/fix-pr-findings` is written in the form the *skill names* fact gives.
 
 ---
 
@@ -24,8 +24,9 @@ Use the full structure below for a full review, and the *Follow-up round* varian
 
 | Gate | Result |
 |---|---|
-| <each gate from `AGENTS.md` *Build and test commands*, in order, as it names it — e.g. format, lint/analyze, test> | <pass / N files would change / N issues / N passed, N failed, N skipped> |
+| <each command in the *gates* fact, in order, as AGENTS.md's build section names it — e.g. format, lint/analyze, test; one row per step when a single command runs several> | <pass / N files would change / N issues / N passed, N failed, N skipped> |
 | <each guard script `AGENTS.md` lists, if any> | <pass / N violations> |
+| <each row the *Verification* section of a loaded asset adds — a manual check, a budget table, a registry check> | <what was done and its result, or "not run" with the reason> |
 
 <Name any tests that skipped (for missing fixtures, for example) and say what that leaves unverified. If a gate could not be run, say so here rather than omitting the row — a missing row reads as a gate that passed.>
 
@@ -50,7 +51,7 @@ Use the full structure below for a full review, and the *Follow-up round* varian
 /fix-pr-findings <url1>
 /fix-pr-findings <url2>
 /fix-pr-findings PR #<number>, outside-diff finding #<N>   ← for a finding with no inline comment
-Run the project's quality gates after all changes.
+Run the project's quality gates after all changes.   ← plus any closing line a loaded asset's *Inline comments* section adds
 
 </details>
 </details>
@@ -59,7 +60,7 @@ Run the project's quality gates after all changes.
 
 ### Outside the diff
 
-<Omit this section when empty. One block per finding whose line falls outside every diff hunk, in the inline comment format, headed by its finding number and permalink (`https://github.com/<OWNER_REPO>/blob/<head-sha>/<path>#L<start>-L<end>`, with the repository from phase 0).>
+<Omit this section when empty. One block per finding whose line falls outside every diff hunk, in the inline comment format, headed by its finding number and permalink (`https://github.com/<repo>/blob/<head-sha>/<path>#L<start>-L<end>`, with `<repo>` written in).>
 
 ---
 
@@ -83,8 +84,9 @@ A follow-up round reports only what changed since the last round. Findings and *
 
 | Gate | Result |
 |---|---|
-| <each gate from `AGENTS.md` *Build and test commands*, in order, as it names it — e.g. format, lint/analyze, test> | <pass / N files would change / N issues / N passed, N failed, N skipped> |
+| <each command in the *gates* fact, in order, as AGENTS.md's build section names it — e.g. format, lint/analyze, test> | <pass / N files would change / N issues / N passed, N failed, N skipped> |
 | <each guard script `AGENTS.md` lists, if any> | <pass / N violations> |
+| <each row the *Verification* section of a loaded asset adds> | <what was done and its result, or "not run" with the reason> |
 
 <Skipped tests and gates that could not run, as in the full template.>
 

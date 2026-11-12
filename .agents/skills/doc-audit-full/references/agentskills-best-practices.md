@@ -79,9 +79,9 @@ Check for these high-value patterns. Missing patterns are not always gaps — on
 
 | `model` | Use for |
 |---|---|
-| `claude-haiku-4-5-20251001` | Routine, well-defined tasks: commit messages, issue creation, label lookup |
+| `haiku` | Routine, well-defined tasks: commit messages, issue creation, label lookup |
 | *(omitted)* | Everything requiring reasoning, synthesis, or cross-file analysis: code review, doc repair, design docs. The skill runs on the session's default model, so it improves as the default does instead of staying pinned to an older one. |
 
-Flag any non-haiku `model` pin as stale — judgment skills omit the field.
-Flag `claude-haiku-4-5-20251001` on skills that require non-obvious judgment or cross-file synthesis as under-powered.
+Flag any dated model ID (`claude-haiku-4-5-20251001`, say) as stale — pin the `haiku` alias. Flag any non-haiku `model` pin as stale — judgment skills omit the field.
+Flag `haiku` on skills that require non-obvious judgment or cross-file synthesis as under-powered.
 Flag a routine mechanical skill with no `model` as over-powered — it should pin haiku.

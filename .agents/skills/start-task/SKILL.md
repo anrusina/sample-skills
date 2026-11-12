@@ -12,6 +12,38 @@ allowed-tools:
 
 You are a pre-coding gate for this project. Before any code is written, the Arrow of Intent chain must be complete: HLD section → LLD → EARS spec → test plan. Report what is ready and what must be created first.
 
+## Project facts
+
+<!-- facts:begin -->
+This is the generic copy: no project facts are written into it. Work out each
+fact below once, at the start of the run, then write its value literally into
+every command that needs it. Each Bash call starts a fresh shell, so a variable
+set in one call is empty in the next; never carry a value across calls in a
+shell variable.
+
+| Fact | How to find it |
+|---|---|
+| `<base>` | `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; if that fails, `git symbolic-ref --short refs/remotes/origin/HEAD \| sed 's\|^origin/\|\|'` |
+| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| setup | AGENTS.md *Worktree setup*: the steps a fresh worktree needs (dependencies, code generation), or none |
+| milestones | AGENTS.md *Milestones*: which milestones are active delivery milestones and which are future/backlog ones, or none (skip the milestone warning) |
+| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| assets | the stack and field assets that apply: see *Assets* below |
+
+**AGENTS.md sections by role.** Projects name sections differently. The build
+section is the one that lists the build, format, lint and test commands,
+whatever it is called (*Build and test commands*, *Build commands*, *Tools*,
+*Commands*). Match every section this skill reads the same way: by what it
+holds, not by its exact title. When a required fact is missing, ask the
+developer once, use the answer, and tell them which AGENTS.md section to
+record it in.
+
+**Assets.** This skill keeps stack and field assets under `assets/stack/` and
+`assets/field/`; `assets/index.md` says when each applies. At the start of the
+run, load every asset whose condition holds, and apply each where a step names
+its section. With none loaded, the steps' generic text applies.
+<!-- facts:end -->
+
 ## input
 
 `$ARGUMENTS`: a GitHub issue number or URL. **Required.** If omitted, stop:
@@ -22,16 +54,15 @@ You are a pre-coding gate for this project. Before any code is written, the Arro
 Read **`AGENTS.md`** before fetching anything or forming any plan — read it,
 don't recall it. Order: `AGENTS.md` → ticket (step 1) → upstream docs.
 
-If `AGENTS.md` *Build and test commands* says tools run through a wrapper (for
-example a version manager's exec command), prefix every tool command in this
-skill with it.
+Prefix every tool command in this skill with the wrapper, `gh` included.
 
 ## step 1 — fetch and read the issue
 
+Write the issue number in for `<N>`; `gh` fills `{owner}` and `{repo}` itself.
+
 ```bash
-OWNER_REPO=$(gh repo view --json nameWithOwner -q '.nameWithOwner')
-gh api repos/${OWNER_REPO}/issues/${NUMBER} --jq '{title, body, labels: [.labels[].name], milestone: .milestone.title}'
-gh api repos/${OWNER_REPO}/issues/${NUMBER}/comments --paginate --jq '.[] | .body + "\n---"'
+gh api 'repos/{owner}/{repo}/issues/<N>' --jq '{title, body, labels: [.labels[].name], milestone: .milestone.title}'
+gh api 'repos/{owner}/{repo}/issues/<N>/comments' --paginate --jq '.[] | .body + "\n---"'
 ```
 
 Extract from both the issue body **and all comments**:
@@ -41,11 +72,11 @@ Extract from both the issue body **and all comments**:
 - Milestone title (if any)
 - Comments may contain additional requirements, edge cases, or clarifications added after the issue was written — treat them as part of the acceptance criteria
 
-**Milestone check:** only when `AGENTS.md` has a *Milestones* section that tells active delivery milestones apart from future/backlog ones. If the issue's milestone is a future/backlog one by that section's rule, emit a non-blocking warning in the report:
+**Milestone check:** only when the milestones fact tells active delivery milestones apart from future/backlog ones. If the issue's milestone is a future/backlog one by that rule, emit a non-blocking warning in the report:
 
 > "⚠ Milestone warning: this issue is tagged `<milestone>`, which is a future/backlog milestone. Confirm you intend to work on it now before branching."
 
-Do not stop — this is a warning only. Without a *Milestones* section, skip the check and give no warning.
+Do not stop — this is a warning only. When the milestones fact is none, skip the check and give no warning.
 
 Read the ticket in full — body and every comment. Then read exactly the
 files it names under **Read first** (its scope boundary), or, if it names
@@ -60,27 +91,27 @@ The HLD/LLD/EARS checks in the steps below read spec files from the working tree
 **Work in a new worktree by default.** The primary checkout routinely holds uncommitted work from another task or session, so leave it untouched:
 
 ```bash
-BASE=$(gh repo view --json defaultBranchRef -q '.defaultBranchRef.name' 2>/dev/null \
-  || git symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')
 git fetch origin
 # The primary checkout, wherever this session runs: started inside another
 # worktree, a relative path would nest the new one under it.
 ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 WT="$ROOT/.claude/worktrees/task-<N>-<suffix>"
-git worktree add --detach "$WT" "origin/$BASE"
+git worktree add --detach "$WT" "origin/<base>" && echo "$WT"
 ```
 
-If the project uses a tool-version manager that must trust a new folder before its tools run there (`AGENTS.md` *Build and test commands*), trust `$WT` now; otherwise every wrapped command in it fails.
+`<suffix>` is 6 random hex characters you pick, so two sessions starting the same issue get separate worktrees. The path the block prints is `<worktree>`: write it in literally from here on.
 
-`<suffix>` is 6 random hex characters you pick, so two sessions starting the same issue get separate worktrees. From here on, `$WT` — always directly under the primary checkout's `.claude/worktrees/`, never inside another worktree — is the working directory for every step and for the coding that follows. Nothing in the primary checkout is touched, so there is no uncommitted-changes check. Continue to step 3.
+If the wrapper is a tool-version manager that must trust a new folder before its tools run there, trust `<worktree>` now; otherwise every wrapped command in it fails.
 
-**Main-worktree mode.** Use the primary checkout instead only when the invocation says so: the developer wants to work in the main worktree (or main checkout), or wants to test the work in an editor that has the primary checkout open. Then run the steps below, with `$BASE` set as above.
+From here on, `<worktree>` — always directly under the primary checkout's `.claude/worktrees/`, never inside another worktree — is the working directory for every step and for the coding that follows. Nothing in the primary checkout is touched, so there is no uncommitted-changes check. Continue to step 3.
+
+**Main-worktree mode.** Use the primary checkout instead only when the invocation says so: the developer wants to work in the main worktree (or main checkout), or wants to test the work in an editor that has the primary checkout open. Then run the steps below in the primary checkout.
 
 1. Check for uncommitted changes:
    ```bash
    git status --short
    ```
-   If anything is uncommitted, stop: "Uncommitted changes present on `<branch>`. Commit, stash, or ask me to skip the sync before continuing."
+   If anything is uncommitted, stop: "Uncommitted changes present on `<branch>`. Commit them, ask me to work in a new worktree instead, or ask me to skip the sync before continuing."
 
 2. Note current branch:
    ```bash
@@ -89,15 +120,15 @@ If the project uses a tool-version manager that must trust a new folder before i
 
 3. If not already on the default branch, switch:
    ```bash
-   git checkout "$BASE"
+   git checkout <base>
    ```
 
 4. Pull latest:
    ```bash
-   git pull --ff-only origin "$BASE"
+   git pull --ff-only origin <base>
    ```
    If `--ff-only` fails (the local default branch has diverged), stop:
-   > "Cannot fast-forward `<default branch>` — local commits exist. Resolve manually before continuing."
+   > "Cannot fast-forward `<base>` — local commits exist. Resolve manually before continuing."
 
 Continue to step 3 with the default branch checked out and current.
 
@@ -201,7 +232,7 @@ following AGENTS.md — every state named in the backing LLD must have an entry,
 including each failure state, wherever AGENTS.md says failure states are also registered.
 
 ### Test tiers
-<only when AGENTS.md *Testing* defines test tiers or file-level test tags — omit the section otherwise>
+<only when AGENTS.md's testing section (*Testing*) defines test tiers or file-level test tags — omit the section otherwise>
 For each test file this issue adds, name its tier, chosen by the rule AGENTS.md
 gives, and any extra tag it requires (e.g. for tests that read local-only fixtures).
 For a test added to an existing file, name the tier only if the test clears a
@@ -218,7 +249,7 @@ End with exactly one of:
 - "Chain complete. Write a failing test tagged `// @spec <ID>` (in a test file that carries its tier, where the project uses tiers), then implement."
 - "Stop — <list what is missing>. Run `/design-docs` to create the missing artifacts first."
 
-If HLD, LLD, or EARS specs are missing: always output "Stop". Never suggest starting to code without HLD, LLD, and EARS specs. On a Stop, leave the step 2 worktree in place and name its path — the `/design-docs` work for the missing artifacts happens there.
+If HLD, LLD, or EARS specs are missing: always output "Stop". Never suggest starting to code without HLD, LLD, and EARS specs. On a Stop, leave the step 2 worktree in place and name its path (`<worktree>`) — the `/design-docs` work for the missing artifacts happens there.
 
 ## step 9 — branch setup (chain complete only)
 
@@ -228,15 +259,15 @@ Ask: "Create branch `<branch-name>` from the latest default branch and switch to
 
 If the developer says **yes** (or provides an alternative name):
 
-1. Create and switch to the feature branch (step 2 already put you on the latest default branch — in the worktree, or in the primary checkout in main-worktree mode):
+1. Create and switch to the feature branch (step 2 already put you on the latest default branch — in `<worktree>`, or in the primary checkout in main-worktree mode). `<dir>` is `<worktree>`, or the primary checkout's path in main-worktree mode:
    ```bash
-   git checkout -b <branch-name>
+   git -C <dir> checkout -b <branch-name>
    ```
 
-2. In a worktree, git-ignored files are absent: installed dependencies and any generated code. Run the setup `AGENTS.md` describes (dependency install, a *Code generation* section, or similar) there before the first quality gate. If `AGENTS.md` describes none, there is nothing to run.
+2. In a worktree, git-ignored files are absent: installed dependencies and any generated code. Before the first quality gate, run the setup fact's steps in `<worktree>`. When the setup fact is none because AGENTS.md says nothing needs setting up, there is nothing to run. When AGENTS.md has no *Worktree setup* at all, apply the *Setup* section of each loaded stack asset: show the developer the steps it suggests for this repository, ask whether to run them, and suggest recording the agreed steps in AGENTS.md *Worktree setup*. Never run them unasked on a guess. If a setup step fails, stop and report it; do not work around it.
 
 3. Confirm:
    > "On `<branch-name>` at `<short-sha>` in `<worktree path, or 'the primary checkout'>`. Ready to code."
 
 If the developer says **no**, output:
-> "When ready: `git checkout -b <branch-name>` in `<worktree path>`" — or, in main-worktree mode, "`git checkout <default branch> && git pull --ff-only origin <default branch> && git checkout -b <branch-name>`".
+> "When ready: `git -C <worktree> checkout -b <branch-name>`" — or, in main-worktree mode, "`git checkout <base> && git pull --ff-only origin <base> && git checkout -b <branch-name>`".
