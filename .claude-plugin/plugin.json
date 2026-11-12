@@ -1,0 +1,12 @@
+{
+  "name": "sample-skills",
+  "displayName": "Sample Skills: Arrow of Intent workflow",
+  "description": "Generic Agent Skills for an Arrow of Intent workflow (HLD → LLD → EARS → tests → code): start a task, commit, open and review PRs, fix findings, pre-merge, issues, design docs and doc audits, plus coordinator and phase-manager roles for the Claude desktop app.",
+  "author": {
+    "name": "Nastya"
+  },
+  "repository": "https://github.com/anrusina/sample-skills",
+  "license": "MIT",
+  "keywords": ["agent-skills", "arrow-of-intent", "ears", "workflow", "github"],
+  "skills": "./.agents/skills"
+}
