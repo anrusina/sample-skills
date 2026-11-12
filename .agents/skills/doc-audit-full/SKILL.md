@@ -1,14 +1,15 @@
 ---
 name: doc-audit-full
-description: "Full documentation pass: audit, fix doc comments, update guides, repair Mermaid diagrams"
-model: claude-sonnet-4-6
+description: "Full documentation pass: audit, fix doc comments, update guides, repair Mermaid diagrams. Generic template: a project's own `doc-audit-full` skill takes precedence."
 ---
 
-You are a documentation quality assistant for this project. You fix doc comments, update design docs, repair Mermaid diagrams, and keep the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) accurate — without the developer having to track drift manually.
+You are a documentation quality assistant. You fix doc comments, update design docs, repair Mermaid diagrams, and keep the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) accurate — without the developer having to track drift manually.
 
 > For audit only (no changes), use `/doc-audit`.
 
 Runs the audit from `/doc-audit` first, then applies the requested fixes.
+
+**Tool wrapper.** If `AGENTS.md` *Build and test commands* says tools run through a wrapper (for example a version manager's exec command), prefix every tool command below with it, `gh` included.
 
 ## input
 
@@ -17,9 +18,9 @@ Runs the audit from `/doc-audit` first, then applies the requested fixes.
 | `--review` | Audit only — report broken, stale, and missing. No changes |
 | `--fix-comments` | Add or update doc comments on non-obvious public API |
 | `--fix-docs` | Repair stale spec tags, update LLDs and HLD sections |
-| `--fix-readme` | Update `README.md`, `Tooling.md`, and module guides |
+| `--fix-readme` | Update `README.md`, setup/tooling guides, and module guides |
 | `--diagrams` | Update Mermaid diagrams to match current code |
-| `--fix-skills` | Optimise `.agents/skills/` files against Agent Skills best practices |
+| `--fix-skills` | Optimize `.agents/skills/` files against Agent Skills best practices |
 
 No arguments → run all flags in order.
 
@@ -29,13 +30,13 @@ Same as `/doc-audit`. Always run first in every invocation.
 
 ## --fix-comments
 
-1. See [flutter/dart-conventions.md](flutter/dart-conventions.md) for doc comment style and conventions. <!-- TODO: replace `flutter/` with your language or framework conventions file -->
-2. Add or update doc comments only on public API where the contract is non-obvious:
+1. Load [conventions/code-doc-conventions.md](conventions/code-doc-conventions.md) for doc comment syntax, style and conventions.
+2. Add or update doc comments only on public API where the contract is non-obvious, in the language's doc-comment syntax:
    - Imperative summary sentence.
    - Document parameters and return values as short fragments.
-   - No trailing periods on fragments. Backtick identifiers.
+   - No trailing periods on fragments. Mark identifiers the way the conventions file says.
    - Remove doc comments from trivial getters, test helpers, and generated code.
-3. Run your formatter after edits (Flutter: `dart format .`). <!-- TODO: replace with your formatter command -->
+3. Run the project's format gate (from `AGENTS.md` *Build and test commands*) after edits. If that section names no formatter, skip this step and say so in the summary.
 
 ## --fix-docs
 
@@ -45,7 +46,8 @@ Same as `/doc-audit`. Always run first in every invocation.
 2. For each test covering spec behaviour but missing a `@spec` tag: add the correct spec ID.
 3. For each deprecated spec still referenced in code: **do not auto-fix** — list as a gap requiring human decision (un-deprecate, remap to a replacement spec, or remove the reference).
 4. For each LLD with stale flow: update the affected sections only. Do not rewrite prose that is still accurate.
-5. For each HLD gap: add the missing subsystem entry or update the stale one. Describe what exists — do not invent architecture.
+5. For each LLD that documents log events with product intelligence but has no `## Telemetry signals` section: draft and add the section in the rate-pair format — a table with columns Signal, Level, Emitted when, Product intelligence, Pairs with; the denominator event (the happy-path event confirming normal completion) first, then each failure signal naming that denominator in "Pairs with". If the `/design-docs` skill is available, follow its LLD template's *Telemetry signals* section instead. Populate signal rows from observable log calls in the subsystem code. Mark intent-dependent fields `[NEEDS HUMAN INPUT]`.
+6. For each HLD gap: add the missing subsystem entry or update the stale one. Describe what exists — do not invent architecture.
 
 ### Bootstrap path — code exists with no upstream docs
 
@@ -53,7 +55,7 @@ When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft s
 
 1. **Draft HLD subsystem entry** — fill in Responsibility, Inputs, and Outputs from code. Mark any section that requires design intent as `[NEEDS HUMAN INPUT: <what is missing>]`. Do not invent architectural decisions or scope boundaries.
 
-2. **Draft LLD** — fill in Purpose, Inputs/Outputs, Component design, and Data structures from code. Mark Error handling rationale and Open questions as `[NEEDS HUMAN INPUT]`. Create the file as `docs/specs/LLD-<subsystem>.md` with this banner at the top:
+2. **Draft LLD** — fill in Purpose, Inputs/Outputs, Component design, Data structures, and Telemetry signals from code. Mark Error handling rationale, telemetry signal intent, and Open questions as `[NEEDS HUMAN INPUT]`. Create the file as `docs/specs/LLD-<subsystem>.md` with this banner at the top:
    ```
    > ⚠️ DRAFT — generated from code, verify intent before treating as authoritative.
    ```
@@ -78,8 +80,8 @@ When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft s
 1. Update `README.md`:
    - Add new commands or scripts; remove references to deleted ones.
    - Verify Quick Start commands still work.
-2. Update `Tooling.md` if any setup steps have changed.
-3. For any new subsystem in `lib/` that lacks a module-level README, create one with:
+2. Update any setup or tooling guide beside `README.md` if any setup steps have changed.
+3. For any new subsystem in the source tree that lacks a module-level README, create one with:
    - **Purpose** — one paragraph: what this module does and where it sits in the Arrow of Intent chain.
    - **Data flow** — Mermaid `sequenceDiagram` or `flowchart LR`.
    - **Key files** — annotated directory tree in a `text` block.
@@ -87,7 +89,7 @@ When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft s
 ## --diagrams
 
 1. Find all Mermaid diagrams in `docs/` and `README.md`.
-2. Cross-check node and edge labels against current class and function names.
+2. Cross-check node and edge labels against current class, function and module names in the code.
 3. Update stale labels, add missing nodes, remove deleted ones — maintain the existing abstraction level.
 4. Use `flowchart LR` for data flows; `flowchart TD` for hierarchies; `sequenceDiagram` for call sequences.
 
@@ -103,7 +105,7 @@ For each `SKILL.md` in `.agents/skills/`:
 
 3. **Calibration** — if instructions present 3+ equivalent options without a clear default: pick the best default and relegate alternatives to a one-line note. Replace declaration-style output specs with a reusable procedural approach where the task class generalises.
 
-4. **Frontmatter** — add missing required fields. Set `disable-model-invocation: true` on any skill that creates PRs, opens issues, pushes commits, or modifies shared state. Add or complete `allowed-tools` with specific `Bash(pattern *)` entries. Flag model mismatches (see calibration table in the reference).
+4. **Frontmatter** — add missing required fields. Check `disable-model-invocation` against the project's invocation-gating table, if it records one: look in `AGENTS.md`, then `docs/dev/skills.md`, for a table listing which skills are gated, and report any skill whose flag differs from it. If neither file has such a table, skip this check and say so in the summary. Never add or remove the flag yourself, since opening a skill to model invocation is a recorded decision, not a style fix. Add or complete `allowed-tools` with specific `Bash(pattern *)` entries. Flag model mismatches (see calibration table in the reference).
 
 5. **Structure gaps** — add a `## gotchas` section when domain-specific traps exist but aren't documented. Convert prose output format descriptions to a template stored in `assets/`.
 
@@ -115,9 +117,7 @@ After all edits, print a summary: one bullet per skill file changed, listing wha
 
 ## conventions
 
-See [flutter/dart-conventions.md](flutter/dart-conventions.md) for Flutter/Dart documentation style, doc comment examples, anti-patterns, and Mermaid diagram conventions.
-
-<!-- TODO: replace `flutter/` with your language or framework conventions file -->
+Load [conventions/code-doc-conventions.md](conventions/code-doc-conventions.md) for `--fix-comments` and `--diagrams` — it holds the documentation style, doc comment syntax and examples, anti-patterns, and Mermaid diagram conventions. A project tailors these to its language by editing that file.
 
 ## rules
 
