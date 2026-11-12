@@ -4,10 +4,13 @@
 
 <!--
 This file is the template a project copies to its root and fills in. The
-skills in .agents/skills/ read the sections below by name to find the
-project's own facts (quality gates, pre-merge checks, project board…), so keep
-the section headings as they are. A section marked "optional" can be deleted;
-the skills then skip the steps that need it. Delete this comment once filled.
+generic skills (the sample-skills plugin) read the sections below to find the
+project's own facts (quality gates, worktree setup, pre-merge checks, project
+board…). They match a section by what it holds, so a heading can be renamed,
+but keeping these names makes the match certain. A section marked "optional"
+can be deleted; the skills then skip the steps that need it. /setup-skills
+reads the same sections when it writes these facts into a project's own copy
+of the skills. Delete this comment once filled.
 -->
 
 ---
@@ -107,6 +110,9 @@ src/         ← source code   {adjust to your layout}
 test/        ← tests, tagged with @spec IDs
 ```
 
+{If any Markdown feeds the build (a content collection, a docs site), name its
+paths here: the skills then never treat a change to it as documentation-only.}
+
 ---
 
 ## Agent Skills
@@ -127,6 +133,10 @@ The quality gates `/commit` and `/pre-merge` run, in order. Any failure blocks a
 {test command}          # the full test suite
 ```
 
+{If the format gate only checks, also give the write-mode command (e.g. the
+same formatter without its check flag); `/commit` uses it to fix formatting
+and re-run the gate.}
+
 {If tools must run through a wrapper — a version manager's exec command, a
 container — say so here; the skills then prefix every tool command with it.}
 
@@ -134,7 +144,8 @@ container — say so here; the skills then prefix every tool command with it.}
 
 Commands a fresh git worktree needs before the gates pass (dependency install,
 code generation, trusting the tool-version config). `/start-task` and
-`/coding-master` run them in each new worktree.
+`/coding-master` run them in each new worktree, `/review-pr` in its review
+worktree, and `/pre-merge` again after rebasing.
 
 ---
 
@@ -210,9 +221,11 @@ test('description', () { ... });
 | Audit documentation | `/doc-audit` |
 | Full documentation pass | `/doc-audit-full` |
 | Triage feedback issues | `/feedback-review` |
-| End a CLI session | `/close-cli` |
 | Coordinate task and reviewer sessions | `/coding-master` |
 | Plan and manage a delivery phase | `/managerial` |
+
+`/setup-skills` (from the sample-skills plugin) brings these skills into the
+project and keeps the copy current; it is never copied in itself.
 
 Commits carry no AI attribution trailer unless this file asks for one.
 

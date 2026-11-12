@@ -1,7 +1,7 @@
 {
   "name": "sample-skills",
   "displayName": "Sample Skills: Arrow of Intent workflow",
-  "description": "Generic Agent Skills for an Arrow of Intent workflow (HLD → LLD → EARS → tests → code): start a task, commit, open and review PRs, fix findings, pre-merge, issues, design docs and doc audits, plus coordinator and phase-manager roles for the Claude desktop app.",
+  "description": "Generic Agent Skills for an Arrow of Intent workflow (HLD → LLD → EARS → tests → code): start a task, commit, open and review PRs, fix findings, pre-merge, issues, design docs and doc audits, plus coordinator and phase-manager roles for the Claude desktop app, and /setup-skills to bring them into a project as its own tailored copy.",
   "author": {
     "name": "Nastya"
   },
