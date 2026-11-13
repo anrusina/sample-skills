@@ -273,8 +273,9 @@ rm -f "$docs" "$impl"
 
 It resets onto `origin/<base>`, commits each non-empty bucket (only files
 the branch changed, never untracked ones), and checks the content is
-byte-for-byte what it was. It prints `pre-rebuild=<sha>`; if it reports a
-difference, stop: nothing was pushed, and its message says how to restore.
+byte-for-byte what it was. It prints `pre-rebuild=<sha>`; if it then exits
+non-zero for any reason, stop and run the restore command it printed before
+anything else: nothing was pushed.
 
 Then push:
 

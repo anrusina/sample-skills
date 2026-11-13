@@ -11,8 +11,9 @@
 #   with mktemp; it is passed to git commit -F, so backticks stay literal).
 #   Only files the branch changed are committed, so untracked files such as
 #   linked fixtures never are.
-#   Prints pre-rebuild=<sha>, "content identical" and the new commits. If the
-#   content differs, it prints how to restore and exits 1.
+#   Prints pre-rebuild=<sha>, "content identical" and the new commits. If it
+#   stops for any reason after pre-rebuild= (a failed commit, content that
+#   differs), it prints how to restore and exits non-zero.
 set -euo pipefail
 
 usage() { sed -n '2,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//' >&2; exit 2; }
@@ -46,7 +47,7 @@ run git merge-base --is-ancestor "origin/$base" HEAD \
   || { echo "rebuild.sh: HEAD is not on top of origin/$base; rebase first" >&2; exit 1; }
 
 pre=$(run git rev-parse HEAD)
-changed=$(run git diff --name-only "origin/$base" "$pre")
+changed=$(run git -c core.quotePath=false diff --no-renames --name-only "origin/$base" "$pre")
 [ -n "$changed" ] || { echo "rebuild.sh: no changes against origin/$base" >&2; exit 1; }
 
 in_list() { local x=$1; shift; for p in "$@"; do case "$x" in "$p"|"$p"/*) return 0 ;; esac; done; return 1; }
@@ -64,6 +65,8 @@ done <<<"$changed"
 [ ${#impl[@]} -eq 0 ] || [ -n "$impl_msg" ] || { echo "rebuild.sh: implementation changes need --impl-msg" >&2; exit 2; }
 
 echo "pre-rebuild=$pre"
+done=
+trap '[ -n "$done" ] || echo "rebuild.sh: stopped mid-rebuild; nothing pushed. Restore with: git reset --hard $pre" >&2' EXIT
 run git reset -q --soft "origin/$base"
 run git reset -q
 if [ ${#docs[@]} -gt 0 ]; then
@@ -76,9 +79,10 @@ if [ ${#impl[@]} -gt 0 ]; then
 fi
 
 if run git diff --quiet "$pre" HEAD; then
+  done=1
   echo "content identical"
   run git log --oneline "origin/$base..HEAD"
 else
-  echo "rebuild.sh: content differs from $pre; nothing pushed. Restore with: git reset --hard $pre" >&2
+  echo "rebuild.sh: content differs from $pre" >&2
   exit 1
 fi
