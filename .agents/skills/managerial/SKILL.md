@@ -59,6 +59,13 @@ handoff and the open milestones, and ask the owner if it is still unclear.
 
 ## start of every session
 
+This role relays to the coordinator through the Claude desktop app's
+session tools (`SendMessage`) and sends pages with `SendUserFile`. Where
+those aren't available, say so once, then keep going: write the relayed
+rule into the progress doc for the owner to pass on, and give a page's path
+instead of sending it.
+
+
 1. Read the previous manager's handoff, `phase-<N>-handoff.md` in the
    primary checkout's `docs/local-planning/` (see *close the phase and hand
    off*; ask the owner if it isn't there), and, if the phase already
@@ -69,17 +76,15 @@ handoff and the open milestones, and ask the owner if it is still unclear.
    memory file, its planning ticket and the progress doc, and ask the
    previous manager session while it still runs (its `local_…` id is in the
    memory file or on the planning ticket).
-2. Check the current state. Write `<repo>` in literally, and `<skill-dir>`
-   as this skill's own folder: `.agents/skills/managerial` in a project copy,
-   or the base directory the plugin loaded it from (shown when the skill
-   loads):
+2. Check the current state. Write `<repo>` in literally, and `<milestone>`
+   as the phase's milestone (from the handoff, or the planning ticket):
 
    ```bash
    # every page once, no cap
-   gh api graphql --paginate -F query=@<skill-dir>/assets/search.graphql -f q='repo:<repo> is:issue is:open milestone:"<milestone>"' --jq '.data.search.nodes[] | {number, title, labels: [.labels.nodes[].name]}'
+   gh api graphql --paginate -F query=@${CLAUDE_SKILL_DIR}/assets/search.graphql -f q='repo:<repo> is:issue is:open milestone:"<milestone>"' --jq '.data.search.nodes[] | {number, title, labels: [.labels.nodes[].name]}'
    # <date>: the memory file's last dated line, or the doc's intro date
-   gh api graphql --paginate -F query=@<skill-dir>/assets/search.graphql -f q='repo:<repo> is:pr is:merged merged:>=<date>' --jq '.data.search.nodes[] | {number, title, mergedAt, closes: [.closingIssuesReferences.nodes[].number]}'
-   gh api graphql --paginate -F query=@<skill-dir>/assets/search.graphql -f q='repo:<repo> is:pr is:open' --jq '.data.search.nodes[] | {number, title, headRefName, closes: [.closingIssuesReferences.nodes[].number]}'
+   gh api graphql --paginate -F query=@${CLAUDE_SKILL_DIR}/assets/search.graphql -f q='repo:<repo> is:pr is:merged merged:>=<date>' --jq '.data.search.nodes[] | {number, title, mergedAt, closes: [.closingIssuesReferences.nodes[].number]}'
+   gh api graphql --paginate -F query=@${CLAUDE_SKILL_DIR}/assets/search.graphql -f q='repo:<repo> is:pr is:open' --jq '.data.search.nodes[] | {number, title, headRefName, closes: [.closingIssuesReferences.nodes[].number]}'
    git branch -r; git worktree list      # in-flight work the tickets don't show
    ```
 
@@ -111,13 +116,11 @@ it has none.
     with no other coding session mid-branch. Place them so they get one.
   - Before splitting a ticket into steps, check the in-flight branches and
     worktrees: a running branch may already have done part of it.
-- **Two app tracks** for the coding sessions: **Track A** (core logic and
-  data) and **Track B** (app surface and release, including the owner's
-  tasks). Only two, because the owner's own tasks share their attention with
-  the agent work. Separate tracks (a website, a design asset) stay outside
-  these two. If the project's subsystems split differently, agree the two
-  tracks' scopes with the owner when framing the first phase and keep them
-  across phases.
+- **Tracks** for the coding sessions: how many, and what each covers, come
+  from AGENTS.md's delivery or tracks section; without one, use the default
+  in [assets/tracks.md](assets/tracks.md) and agree the scopes with the owner
+  when framing the first phase, then keep them across phases. Few tracks,
+  because the owner's own tasks share their attention with the agent work.
 - **Steps that need the owner** (👤): the owner's own tasks (accounts, DNS,
   store records) and `curated` tickets. They are real steps in the tracks.
 - **Waits** between tickets, as steps of their own.
@@ -233,29 +236,14 @@ the bundle only when the owner says so.
 
 **Relay new rules.** When the owner sets a rule that coding sessions must
 follow, pass it to the coordinator session as well (`SendMessage` to its
-`local_…` id; find it with `ListAgents` or ask the owner), so the briefs it
+`local_…` id; find it in the app's session list or ask the owner), so the briefs it
 writes carry it.
 
 ## track format
 
-The owner copies tracks into a notebook, so the format is fixed:
-
-```
-Track A: ~~#12 (login form)~~ -> 🔄#15 (session refresh) · [#17 (cart model) -> #18 (cart sync)] -> ⏸ Wait for #20 (API merged) -> 👤#22 (pricing rules)
-```
-
-- Steps are joined with `->`, parallel items with ` · `. A parallel item
-  may be a chain in brackets: `[#a -> #b] · #c`.
-- A wait is its own step: `-> ⏸ Wait for #N (what) ->`.
-- Each ticket gets a 2–3 word label. A 👤 prefix marks a step that needs the
-  owner's active involvement: their own task or a `curated` ticket. Agent
-  work the owner only checks by hand is `auto` and gets none.
-- 🔄 is a prefix on in-progress items, in the tracks and the Outside table
-  alike (`🔄#15`). Keep it in sync with the In progress chips, and drop it
-  when the item is struck.
-- Done items are struck through (`~~…~~`); the arrows aren't.
-- Stage contents are bare numbers.
-- Only the two app tracks. Website and other side work run outside them.
+Write tracks in the format AGENTS.md gives, or else the default in
+[assets/tracks.md](assets/tracks.md). Keep to one format: the owner copies
+tracks out of the progress doc, and a format that drifts breaks that.
 
 ## close the phase and hand off
 

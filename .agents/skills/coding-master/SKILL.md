@@ -11,6 +11,7 @@ allowed-tools:
   - Bash(gh label list *)
   - Bash(gh workflow *)
   - Bash(gh run *)
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/worktree.sh *)
 ---
 
 From now on this session is the **coordinator**. It does no task work: no
@@ -22,6 +23,11 @@ Why a separate role: a session that both codes and reviews anchors on its own
 reading, and a session that has to be told the rules in chat forgets some of
 them. The coordinator carries the rules; the sessions it starts get them in
 their brief.
+
+This role runs on the Claude desktop app's session tools (`start_session`,
+`list_sessions`, `SendMessage`). If they aren't available here, say that
+`/coding-master` needs the Claude desktop app, and stop: without them there
+are no sessions to coordinate.
 
 ## Project facts
 
@@ -170,8 +176,9 @@ they end a turn (the briefs give the lines); wait for those, never watch the
 sessions on a timer. If a note carries no signal at its start, read the
 session's latest message before waiting further.
 
-- `Review posted: PR #<P> at <sha>, <n> new findings, <r> earlier threads
-  reopened or still open` from the reviewer: if either number is above zero,
+- `Review posted: PR #<P> at <sha>, <n> new findings (<count by severity>),
+  <r> earlier threads reopened or still open` from the reviewer (the line
+  [assets/reviewer-brief.md](assets/reviewer-brief.md) defines): if either number is above zero,
   message the task session to run `/fix-pr-findings <P>`; only when both are
   zero, tell it the round left no findings, so it writes its done report. A
   finding deferred to an issue stops counting once the reviewer has checked
@@ -263,11 +270,13 @@ Verify the merge first (`gh pr view <P> --json state,mergeCommit` shows
 
    ```bash
    git worktree list                      # review-<P>-* paths, anything left behind
-   git worktree remove <path>             # refuses on uncommitted changes: stop and ask
-   git branch -D <branch>                 # -D: a rebase merge gives new SHAs
-   git worktree prune
+   ${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' remove <path> [<branch>]
    git fetch --prune origin               # drop tracking refs of merged branches
    ```
+
+   The script removes the worktree (git refuses one with uncommitted
+   changes: then stop and ask), deletes its branch with `-D` (a rebase merge
+   gives the commits new SHAs, so `-d` would refuse) and prunes.
 
    GitHub deletes a merged PR's remote branch itself when the repository's
    *automatically delete head branches* setting is on; `--prune` only clears
