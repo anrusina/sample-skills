@@ -1,6 +1,8 @@
 ---
 name: fix-pr-findings
 description: "Orchestrate fixes for PR review findings via sub-agents, run one after another. Trigger: /fix-pr-findings <N>, or a request to address a PR's review findings, including one relayed by a coordinator session. Generic template: a project's own `fix-pr-findings` skill takes precedence."
+allowed-tools:
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/review-threads.sh *)
 ---
 
 Orchestrate fixes for GitHub PR review findings. Fetches review comments, presents findings for selection, and spawns sub-agents to apply each fix in isolation with properly formatted commits.
@@ -54,7 +56,7 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
 ## phase 1 — gather findings
 
 1. **Determine the PR.**
-   - Extract the repo, PR number, and optional discussion ID from the URL if provided. If the URL's `owner/name` differs from `<repo>`, stop and say so — the fixes would land in the wrong checkout.
+   - Extract the repo, PR number, and optional discussion ID from the URL if provided. If the URL's `owner/name` differs from `<repo>`, stop and say so — the fixes would land in the wrong checkout. A URL with a discussion ID (`#discussion_r<id>`) asks for that one finding: in step 2, keep only the thread whose comment URL carries that ID, and triage it alone.
    - If only a number is given, the PR is in `<repo>`.
    - If no number given, find the open PR via `gh pr list --head <branch>`.
 
@@ -65,18 +67,9 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
    gh pr view <number> --json comments,reviews
    ```
 
-   Unresolved inline review threads — GraphQL, because REST does not report
-   resolution; resolved threads are already handled and are skipped.
-   `<owner>` and `<name>` are the two halves of `<repo>`, written in:
+   Unresolved inline review threads, one JSON object each (resolved threads are already handled and are skipped):
    ```bash
-   gh api graphql --paginate -F owner=<owner> -F name=<name> -F pr=<number> -f query='
-   query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) {
-     repository(owner: $owner, name: $name) { pullRequest(number: $pr) {
-       reviewThreads(first: 100, after: $endCursor) {
-         pageInfo { hasNextPage endCursor }
-         nodes { id isResolved path line
-           comments(first: 50) { nodes { databaseId body url author { login } } } } } } } }' \
-     --jq '.data.repository.pullRequest.reviewThreads.nodes[] | select(.isResolved | not)'
+   ${CLAUDE_SKILL_DIR}/scripts/review-threads.sh --wrap '<wrapper>' <number>
    ```
 
    Merge both sources. Deduplicate by discussion URL — inline comments that are also summarised in a review body should appear once.
@@ -125,15 +118,24 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
 
 ## phase 2 — fix via sub-agents
 
-5. For each selected finding (or tightly coupled group of findings), spawn a sub-agent, **one after another**: start the next only when the previous one has reported back. Every sub-agent commits and pushes from the same checkout, so two at once would collide on git's index lock, commit each other's staged files, and race on the push. Order them so a finding that another depends on goes first.
+5. **Check out the PR's branch, up to date.** Every sub-agent commits and pushes from this checkout, so it has to be the PR's head branch at the remote's tip, with nothing uncommitted:
+   ```bash
+   gh pr view <number> --json headRefName -q .headRefName
+   git branch --show-current
+   git fetch origin
+   git status --short --branch
+   ```
+   If the current branch is not the PR's head branch, or the tree has uncommitted changes, stop and say so: fixes committed here would land on the wrong branch, or carry someone else's work. If the branch is only behind `origin/<head>`, `git pull --ff-only`; if it has diverged, stop and report.
 
-6. **Sub-agent prompt:** load [assets/subagent-prompt.md](assets/subagent-prompt.md) and substitute all `<...>` placeholders with the finding's specific values before spawning, including the *Fix* section of each loaded asset.
+6. For each selected finding (or tightly coupled group of findings), spawn a sub-agent, **one after another**: start the next only when the previous one has reported back. Every sub-agent commits and pushes from the same checkout, so two at once would collide on git's index lock, commit each other's staged files, and race on the push. Order them so a finding that another depends on goes first.
+
+7. **Sub-agent prompt:** load [assets/subagent-prompt.md](assets/subagent-prompt.md) and substitute all `<...>` placeholders with the finding's specific values before spawning, including the *Fix* section of each loaded asset.
 
    If a sub-agent reports a failure (a gate it cannot make pass, a rejected push), stop the remaining fixes and report: the next fix would build on a branch in an unknown state.
 
 ## phase 3 — report
 
-7. **Reply on each fixed thread — never resolve it.** Resolving is the next `/review-pr`'s call, once it has verified the fix:
+8. **Reply on each fixed thread — never resolve it.** Resolving is the next `/review-pr`'s call, once it has verified the fix:
    ```bash
    gh api repos/{owner}/{repo}/pulls/<number>/comments/<first comment databaseId>/replies -f body='Addressed in <short-sha> — <what changed>.'
    ```
@@ -142,9 +144,9 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
    gh pr comment <number> --body 'Addressed in <short-sha> — outside-diff finding #<N>: <what changed>.'
    ```
 
-7b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — <reason it can't be fixed here>.`; otherwise create the proposed issue (as `/pre-merge` does for its follow-up items — labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — <reason it can't be fixed here>.` — on the thread, or in a PR comment for an outside-diff finding. Never resolve the thread: the next `/review-pr` resolves it once it has checked that the issue covers whatever this PR leaves unfixed. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
+8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — <reason it can't be fixed here>.`; otherwise create the proposed issue (as `/pre-merge` does for its follow-up items — labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — <reason it can't be fixed here>.` — on the thread, or in a PR comment for an outside-diff finding. Never resolve the thread: the next `/review-pr` resolves it once it has checked that the issue covers whatever this PR leaves unfixed. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
 
-8. After all agents complete:
+9. After all agents complete:
    - Table of findings fixed with commit hashes, and deferred findings with their issue numbers
    - Any findings that failed with the reason
    - Reminder to run the project's quality gates (the *gates* fact) — unless every fix was documentation-only, in which case state that the gates were skipped because those files cannot affect them
@@ -152,15 +154,10 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
 
 ## commit format
 
-See [assets/commit-format.md](assets/commit-format.md).
+[assets/commit-format.md](assets/commit-format.md); the sub-agent prompt carries it pasted in.
 
 ## rules
 
-- Read `AGENTS.md` first.
-- Recommend **fix / defer / leave-as-is** with a rationale and proposed solution for every finding, and present it, before asking which to apply — never fix on the reviewer's say-so alone.
-- Verify findings against source files before fixing — never fix from the comment alone.
-- One commit per finding (or per tightly coupled group). Every fix is a new commit — never amend or rewrite commits already pushed for review.
-- Fix sub-agents run one after another, never in parallel, and push with a plain `git push`.
-- Never resolve a review thread — reply only.
-- Stage only files relevant to each fix, plus what a loaded asset's *Fix* section says to stage with them.
-- Every *gates* command must pass after every fix that touches code, tests, build configuration or any other build input. If there are no gates, ask the developer once for the commands, use them, and tell them to record them in AGENTS.md's build section. Skip the gates for a documentation-only fix, since those files cannot affect formatting, analysis or tests.
+- Never fix on the reviewer's say-so alone: verify every finding against the source and present the triage first. A reviewer can be wrong, out of scope, or contradicted by an upstream doc.
+- Every fix is a new commit on top of the branch, never an amend: reviewers re-check each fix by its commit, and a rewritten history breaks their citations.
+- If there are no gates, ask the developer once for the commands, use them, and tell them to record them in AGENTS.md's build section.
