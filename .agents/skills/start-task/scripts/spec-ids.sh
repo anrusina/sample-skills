@@ -59,15 +59,19 @@ pathspec() {
 tags() {
   local ps=()
   while IFS= read -r p; do ps+=("$p"); done < <(pathspec "$@")
-  run git grep -nIE "@spec[[:space:]]+$ID" -- "${ps[@]}" 2>/dev/null \
-    | awk -v id="$ID" '{
+  local out rc=0
+  # git grep exits 1 for "no match"; anything higher is a real failure.
+  out=$(run git grep -nIE "@spec[[:space:]]+$ID" -- "${ps[@]}") || rc=$?
+  [ $rc -le 1 ] || exit $rc
+  [ -n "$out" ] || return 0
+  printf '%s\n' "$out" | awk -v id="$ID" '{
         n = index($0, ":"); m = index(substr($0, n + 1), ":")
         loc = substr($0, 1, n + m - 1); rest = substr($0, n + m + 1)
         while (match(rest, "@spec[[:space:]]+" id)) {
           tag = substr(rest, RSTART, RLENGTH); sub(/^@spec[[:space:]]+/, "", tag)
           print loc "\t" tag; rest = substr(rest, RSTART + RLENGTH)
         }
-      }' || true
+      }'
 }
 
 cmd=${1:-}; [ $# -gt 0 ] && shift
@@ -83,17 +87,22 @@ case "$cmd" in
     ;;
   tags) tags "$@" ;;
   orphans)
+    t=$(tags "$@")
+    [ -n "$t" ] || exit 0
     awk -F'\t' '
       FNR == NR { if (st[$1] != "active") st[$1] = $2; next }
       { s = st[$2]; if (s == "") print $1 "\t" $2 "\tundefined"; else if (s == "deprecated") print $1 "\t" $2 "\tdeprecated" }
-    ' <(defined) <(tags "$@")
+    ' <(defined) <(printf '%s\n' "$t")
     ;;
   added)
     [ $# -ge 1 ] || usage
     ref=$1; shift
     ps=()
     while IFS= read -r p; do ps+=("$p"); done < <(pathspec "$@")
-    run git diff -U0 "$ref...HEAD" -- "${ps[@]}" \
+    run git rev-parse -q --verify "$ref^{commit}" >/dev/null \
+      || { echo "spec-ids.sh: unknown ref $ref" >&2; exit 1; }
+    diff=$(run git diff -U0 "$ref...HEAD" -- "${ps[@]}")
+    printf '%s\n' "$diff" \
       | grep -E "^\+[^+].*@spec[[:space:]]+$ID|^\+@spec" \
       | grep -oE "@spec[[:space:]]+$ID" | sed -E 's/^@spec[[:space:]]+//' | sort -u || true
     ;;

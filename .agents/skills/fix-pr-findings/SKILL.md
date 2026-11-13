@@ -21,7 +21,7 @@ shell variable.
 | Fact | How to find it |
 |---|---|
 | `<repo>` | `gh repo view --json nameWithOwner -q .nameWithOwner` |
-| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'` (leave `--wrap` out when it is none); run every other command bare, so it matches `allowed-tools` |
 | gates | AGENTS.md build section: the format, lint/analyze and test commands, in order, or the one command that runs them all |
 | format fix | AGENTS.md build section: the write-mode formatter, if the format gate only checks |
 | build-input docs | AGENTS.md *Project structure*: Markdown the build reads, or none. Whatever AGENTS.md says, Markdown or MDX inside the source tree that the build reads (content collections, MDX pages, a docs site's sources) counts too. A change to any of it runs the gates like code |

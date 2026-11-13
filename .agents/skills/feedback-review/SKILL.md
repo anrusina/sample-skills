@@ -19,7 +19,7 @@ shell variable.
 
 | Fact | How to find it |
 |---|---|
-| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'` (leave `--wrap` out when it is none); run every other command bare, so it matches `allowed-tools` |
 | feedback labels | AGENTS.md *Feedback*: the labels that mark feedback issues (for example one each for bugs, enhancements and comments); without that section, look them up as in step 0 |
 | inbox milestone | AGENTS.md *Feedback*: the milestone new feedback lands in, or none (drop `--milestone` in step 1); without that section, look it up as in step 0 |
 | backlog milestone | AGENTS.md *Milestones*: the backlog milestone, or none (ask the developer once which existing milestone is the backlog, or whether to leave the milestone unset) |

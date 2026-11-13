@@ -17,7 +17,7 @@ shell variable.
 
 | Fact | How to find it |
 |---|---|
-| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'` (leave `--wrap` out when it is none); run every other command bare, so it matches `allowed-tools` |
 | labels | `gh label list --limit 200`, read at run time: the type, priority and mode labels the repository defines |
 | milestones | AGENTS.md *Milestones*: which milestones are active and which are backlog, and the rule for choosing one, or none (judge by the open milestones' titles, descriptions and due dates) |
 | project board | AGENTS.md *Project board*: the board's owner and number, and whether it adds new issues by itself, or none (skip step 9) |

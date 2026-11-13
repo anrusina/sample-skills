@@ -52,7 +52,7 @@ case "$cmd" in
     [ $# -eq 1 ] || usage
     printf '%s\n' "$1" > "$file"
     if ! run git -C "$root" check-ignore -q .feedback-last-reviewed; then
-      echo ".feedback-last-reviewed" >> "$(run git -C "$root" rev-parse --git-common-dir)/info/exclude"
+      echo ".feedback-last-reviewed" >> "$(run git -C "$root" rev-parse --path-format=absolute --git-common-dir)/info/exclude"
     fi
     echo "recorded $1 in $file"
     ;;
