@@ -128,11 +128,9 @@ Infer type if no flag:
 
 ## rules
 
-- Primary label is always required — never omit it.
-- Priority label is always required when the repository defines priority labels — ask the user if unclear.
 - Every `feature` issue has at least one EARS spec line in **Done when**. A spec that doesn't exist yet is written there with a provisional ID (the next free one in its namespace, marked *provisional*), and created in `docs/specs/` when the work starts (`/start-task`, `/design-docs`), not now. Filing an issue writes no file: the design docs change with the work that needs them, and a provisional ID may be renumbered by then.
 - Every `bug` issue names the EARS spec it violates in **Upstream**. When no spec covers the behaviour, say so there, as the Arrow of Intent's missing-intent case, and make writing that spec part of **Done when**.
-- Acceptance criteria must be testable, not re-statements of the task.
+- Acceptance criteria are testable, not re-statements of the task: `/start-task` turns them into specs and tests.
 - Annotate problematic lines with `← comment` in code snippets.
 - No AI-attribution footers.
 - Use `#N` for all GitHub issue references.

@@ -290,7 +290,9 @@ Verify the merge first (`gh pr view <P> --json state,mergeCommit` shows
 ## standing rules
 
 - **No go-ahead prompts.** Sessions proceed without asking unless a real
-  question is open. Branch names are always auto-approved.
+  question is open, and create their branches without asking for a name: a
+  question that only confirms the obvious stalls the pipeline until the
+  owner looks.
 - **Verify before reporting.** Check a session's claim with `gh pr view <P>`
   and git before telling the owner something is done, pushed, posted or
   merged. A session's note is its report, not proof.

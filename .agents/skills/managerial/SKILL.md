@@ -286,11 +286,11 @@ tracks out of the progress doc, and a format that drifts breaks that.
   ```
 
   followed by its placement.
-- **Command form:** write `gh` and `git` commands in the form the
-  pre-approved list above matches (bare `gh …`); with a wrapper fact, the
-  wrapper goes in front, and then expect permission prompts.
+- **Command form:** run `gh` and `git` bare, as the wrapper row says, so
+  they match the pre-approved list above.
 - **Memory:** keep one file for the phase in your auto-memory directory
-  (`project_phase<N>_plan.md`). Record the agreed plan (stage goals, tracks,
+  (`project_phase<N>_plan.md`), or, without auto-memory,
+  `docs/local-planning/phase-<N>-log.md` in the primary checkout. Record the agreed plan (stage goals, tracks,
   the progress doc's link and ids, this session's `local_…` id), then append
   a dated line for every status change, placement, rename and decision, so a
   successor can pick up the thread.

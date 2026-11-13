@@ -152,6 +152,5 @@ If the file exists and has content, use it as the PR body template in step 7 ins
 
 ## rules
 
-- Resolve the default branch dynamically — never hardcode `main`.
-- Do not close or resolve PR threads.
+- Do not close or resolve PR threads: resolving is the next review's call, once it has verified the fix.
 - No AI-attribution footers unless AGENTS.md asks for one.
