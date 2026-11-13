@@ -1,6 +1,6 @@
 ---
 name: design-docs
-description: "Write and validate HLD, LLD, and EARS specs following the Arrow of Intent. Generic template: a project's own `design-docs` skill takes precedence."
+description: "Write or update the design documents along the Arrow of Intent: the HLD, one LLD per subsystem and its EARS specs, in the project's formats and altitude rules (behaviour, contracts and data, never look-and-feel). Use when intent must be written before code: a new subsystem, an LLD section, EARS requirements, or a gap /start-task reported (no HLD section, LLD or spec). Not for checking that the docs agree (/arrow-check) or auditing them against the code (/doc-audit). Generic copy: if a project skill named `design-docs` is also listed, use that one instead."
 ---
 
 You are a design document assistant for this project. You write and validate HLD, LLD, and EARS spec documents following the Arrow of Intent methodology.

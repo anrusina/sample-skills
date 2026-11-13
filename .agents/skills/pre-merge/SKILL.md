@@ -1,6 +1,6 @@
 ---
 name: pre-merge
-description: "Pre-merge PR cleanup: classify every review item, block on anything fixable here, rebase onto the latest default branch, check EARS spec IDs are unique, run the project's pre-merge checks, track follow-ups as issues, reply to addressed threads. Trigger: /pre-merge <N>, only on the developer's explicit OK for that PR — never because a PR looks ready. Generic template: a project's own `pre-merge` skill takes precedence."
+description: "The last step before merging a pull request: classifies every review item, blocks on anything still fixable or unanswered, rebases onto the latest default branch, keeps EARS IDs unique, runs the gates and the project's pre-merge checks, rebuilds the history as docs then code, files follow-up issues, replies to threads, and merges after asking. Runs only on the developer's explicit OK for that PR, given here or relayed quoting their words ('/pre-merge [PR]', 'merge PR 12'), never because a PR looks ready. Not for fixing findings (/fix-pr-findings) or reviewing (/review-pr). Generic copy: if a project skill named `pre-merge` is also listed, use that one instead."
 allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/review-threads.sh *)
   - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)

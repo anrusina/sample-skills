@@ -1,6 +1,6 @@
 ---
 name: fix-pr-findings
-description: "Orchestrate fixes for PR review findings via sub-agents, run one after another. Trigger: /fix-pr-findings <N>, or a request to address a PR's review findings, including one relayed by a coordinator session. Generic template: a project's own `fix-pr-findings` skill takes precedence."
+description: "Triage a pull request's review findings, then fix the ones the developer picks: verifies each against the source, recommends fix, defer or leave-as-is with a rationale, and stops for the selection; then sub-agents commit and push one fix at a time, each thread gets an 'Addressed in' reply (never a resolve), and deferrals become issues. Use for '/fix-pr-findings [PR]', 'address the review comments', 'fix the findings on PR 12', or a coordinator relaying that request. Not for reviewing a PR (/review-pr) or the final merge cleanup (/pre-merge). Generic copy: if a project skill named `fix-pr-findings` is also listed, use that one instead."
 allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/review-threads.sh *)
 ---

@@ -1,6 +1,6 @@
 ---
 name: pr
-description: "Open a pull request from the current branch — synthesises pushed commits into a titled, labelled PR with issue links (Closes #N), Arrow-of-Intent spec coverage, and a testing checklist. Trigger: user or model needs to open a PR after commits are pushed (e.g. \"open a PR\", \"raise a pull request\", \"/pr\", or as the second half of /commit-and-pr). Generic template: a project's own `pr` skill takes precedence."
+description: "Open a pull request from the current branch's pushed commits: writes the title and a body with what changed, the issue links (Closes, or Ref when an acceptance criterion is unmet), the specs it implements and a testing checklist, then adds existing labels and assigns it. Use when commits are pushed and need a PR: 'open a PR', 'raise a pull request', or the second half of /commit-and-pr. Not for committing (/commit) or reviewing a PR (/review-pr). Generic copy: if a project skill named `pr` is also listed, use that one instead."
 model: haiku
 allowed-tools:
   - Bash(git *)

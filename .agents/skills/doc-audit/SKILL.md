@@ -1,6 +1,6 @@
 ---
 name: doc-audit
-description: "Quick documentation audit for current branch changes — report only, no edits. Generic template: a project's own `doc-audit` skill takes precedence."
+description: "Audit the current branch's documentation against its changes, report only: orphaned or deprecated @spec tags, specs with no tests, LLDs, HLD and Mermaid diagrams that no longer match the code, stale READMEs, and the skill files it changed. Edits nothing. Use before opening or merging a PR that touches code or docs, or when asked whether the docs are still accurate. Not for fixing what it finds (/doc-audit-full) or checking the design docs against each other (/arrow-check). Generic copy: if a project skill named `doc-audit` is also listed, use that one instead."
 allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
 ---

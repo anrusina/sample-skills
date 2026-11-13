@@ -108,7 +108,7 @@ or, in one step inside a session (Claude Code 2.1.275 or later):
 /plugin install sample-skills --marketplace anrusina/sample-skills
 ```
 
-Every skill is then available in every project as `/sample-skills:<skill>`, for example `/sample-skills:commit`. Plugin skills are namespaced, so they never shadow a project's own skills: in a project with its own `commit` skill, `/commit` runs the project's version and the generic one stays reachable as `/sample-skills:commit`. Each generic description also says a project's own skill takes precedence, so Claude picks the project's version when it chooses a skill by itself.
+Every skill is then available in every project as `/sample-skills:<skill>`, for example `/sample-skills:commit`. Plugin skills are namespaced, so they never shadow a project's own skills: in a project with its own `commit` skill, `/commit` runs the project's version and the generic one stays reachable as `/sample-skills:commit`. Each generic description also ends by telling Claude to use a project skill of the same name when one is listed, so it picks the project's version when it chooses a skill by itself.
 
 Why a plugin and not `~/.claude/skills/`: Claude Code runs a personal skill over a project skill of the same name, so a generic `commit` there would shadow every project's tailored `/commit`.
 

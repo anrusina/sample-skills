@@ -1,6 +1,6 @@
 ---
 name: commit
-description: "Commit the current task's changes: stages them, runs quality gates, handles branch creation if on the default branch, writes a focused commit message, commits, and pushes — no confirmation prompts, since review happens in the PR. Leaves existing commits alone unless --squash is passed. Trigger: user or model needs to commit changes. Generic template: a project's own `commit` skill takes precedence."
+description: "Commit the current task's changes and push them, with no confirmation prompts: stages the task's files, runs the quality gates and /arrow-check, checks new dependencies against the dependency policy, creates a branch when on the default branch, writes a focused message and commits it as a new commit (never amending reviewed history), then pushes. --squash folds the unpushed commits into one. Use whenever changes need committing: 'commit this', 'save this to git', the end of a task, a fix ready to push. To also open a PR, use /commit-and-pr. Generic copy: if a project skill named `commit` is also listed, use that one instead."
 model: haiku
 allowed-tools:
   - Bash(git *)

@@ -1,6 +1,6 @@
 ---
 name: doc-audit-full
-description: "Full documentation pass: audit, fix doc comments, update guides, repair Mermaid diagrams. Generic template: a project's own `doc-audit-full` skill takes precedence."
+description: "Bring the documentation back in line with the code: doc comments on public API, stale spec tags and LLD or HLD sections, READMEs and guides, Mermaid diagrams, and, only with --fix-skills, the skill files. Edits files across the repository but never commits. Use when the docs have drifted, after an audit, or when part of the codebase needs its docs written. Not for a report only (/doc-audit) or new design work (/design-docs). Generic copy: if a project skill named `doc-audit-full` is also listed, use that one instead."
 allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
 ---

@@ -1,6 +1,6 @@
 ---
 name: feedback-review
-description: "Review new feedback submissions, deduplicate against existing issues, and summarise for triage. Trigger: /feedback-review at the start of a working session. Generic template: a project's own `feedback-review` skill takes precedence."
+description: "Review the user feedback filed as GitHub issues since the last review: summarises each item, finds duplicates and related issues, recommends a triage action for each, and runs only the batch actions the developer confirms. Run by the developer as /feedback-review, typically at the start of a working session. Generic copy: if a project skill named `feedback-review` is also listed, use that one instead."
 disable-model-invocation: true
 allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/feedback.sh *)

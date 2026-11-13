@@ -253,15 +253,36 @@ across all skills at once.
 `assets/index.md` in each skill repeats the rows for the ids that skill has, with
 one line on what each provides there.
 
-## Description suffix
+## Descriptions
 
-Every generic description ends with *"Generic template: a project's own
-`<name>` skill takes precedence."* With the plugin installed, a project's own
-skill of the same name loads beside it, and the sentence steers Claude to the
-project's version. `/setup-skills` removes the sentence from project copies.
+The description is what decides whether a skill is used at all, so it says,
+in this order:
+
+1. **What it does**, including every side effect a user would want to know
+   before it runs: it commits, pushes, posts to a PR, resolves threads,
+   creates a worktree or an issue, edits files across the repository.
+2. **When to use it**: the request in the words people use ("commit this",
+   "review PR 12", "log this for later"), and the coordinator's request where
+   one relays it. Models tend to under-use skills, so name the triggers
+   plainly.
+3. **What it isn't for**, naming the sibling to use instead, where a
+   neighbour is easy to confuse with it (commit and commit-and-pr, review-pr
+   and fix-pr-findings and pre-merge, the three doc skills).
+4. **The generic-copy sentence**: *"Generic copy: if a project skill named
+   `<name>` is also listed, use that one instead."* With the plugin
+   installed, a project's own skill of the same name is listed beside the
+   generic one, and this tells Claude which to pick. `/setup-skills` removes
+   the sentence from project copies.
+
+A skill a person runs by hand (`disable-model-invocation: true`) is never
+picked by its description, so its description is a listing: what it does and
+how to run it, no triggers. Keep a description well under the 1,536
+characters Claude Code shows of it, and write no angle brackets (they show
+as entities): `[PR]`, not `<N>`.
 
 `setup-skills` is the exception to this page: it is the installer, never
-copied into a project, so it has no facts block, no assets and no suffix.
+copied into a project, so it has no facts block, no assets and no
+generic-copy sentence.
 
 ## Model pins
 

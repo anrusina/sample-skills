@@ -1,6 +1,6 @@
 ---
 name: issue
-description: "Use when creating a GitHub issue — follows the Arrow of Intent workflow with proper upstream tracing. Trigger: user or model needs to open a bug, feature, spike, or design issue. Generic template: a project's own `issue` skill takes precedence."
+description: "File a GitHub issue that traces back through the Arrow of Intent: reads the HLD, LLDs, EARS specs and, for a bug, the source; checks for duplicates; writes the body from a bug, feature, spike or design template with testable Done-when criteria (new specs as provisional IDs); and picks existing labels and a milestone. Writes no files. Use whenever a bug, feature, follow-up or investigation should be tracked: 'open an issue', 'file a bug', 'log this for later', 'make a ticket'. Not for triaging user feedback (/feedback-review) or planning a phase (/managerial). Generic copy: if a project skill named `issue` is also listed, use that one instead."
 model: haiku
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: commit-and-pr
-description: "Commit, push, and open a pull request — delegates to /commit then /pr. Trigger: /commit-and-pr, or the developer or a coordinator's brief asks to commit the finished work and open its PR. Generic template: a project's own `commit-and-pr` skill takes precedence."
+description: "Commit the finished work, push it and open its pull request, by running /commit and then /pr. Use when the work should go up for review in one go: 'commit and open a PR', 'ship this for review', or a coordinator's brief that says to commit the work and open its PR. Not for a commit alone (/commit) or a PR from commits already pushed (/pr). Generic copy: if a project skill named `commit-and-pr` is also listed, use that one instead."
 model: haiku
 ---
 

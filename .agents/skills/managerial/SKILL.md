@@ -1,6 +1,6 @@
 ---
 name: managerial
-description: "Phase-manager role: plans a delivery phase (stages, two app tracks, owner tasks, the Outside table, auto/curated labels, a dependency-refresh ticket), then keeps its tickets, tracks and progress doc current and hands off to the next manager. Starts no sessions and does no task work. Trigger: the owner runs /managerial, optionally with a phase number, to plan, manage or close a phase. Generic template: a project's own `managerial` skill takes precedence."
+description: "Phase-manager role: plans a delivery phase (stages, tracks, owner tasks, an Outside table of related work, auto/curated labels, a dependency-refresh ticket), keeps its tickets, tracks and progress doc current, and hands off to the next manager. Starts no sessions and does no task work. Run by the owner as /managerial, optionally with a phase number, to plan, manage or close a phase. Generic copy: if a project skill named `managerial` is also listed, use that one instead."
 disable-model-invocation: true
 allowed-tools:
   - Bash(git *)

@@ -1,6 +1,6 @@
 ---
 name: start-task
-description: "Pre-coding checklist — fetch the issue, verify HLD → LLD → EARS spec chain, identify what must be written before any code is touched. Trigger: /start-task <N>, or a request (from the developer or a coordinator's brief) to start work on a GitHub issue. Generic template: a project's own `start-task` skill takes precedence."
+description: "Start work on a GitHub issue: reads it with every comment, makes a worktree at the latest default branch, checks the HLD → LLD → EARS spec chain for its subsystem, reports what is ready and what must be written before any code, and creates the branch when the chain is complete. Use for '/start-task [issue]', 'start on issue 42', 'pick up #42', or a coordinator's brief that starts an issue. Not for filing an issue (/issue) or writing the missing docs (/design-docs). Generic copy: if a project skill named `start-task` is also listed, use that one instead."
 allowed-tools:
   - Bash(git *)
   - Bash(gh api *)

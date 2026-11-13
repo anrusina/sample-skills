@@ -1,6 +1,6 @@
 ---
 name: arrow-check
-description: "Validate consistency across HLD, LLDs, and EARS specs — surface drift before it reaches code. Generic template: a project's own `arrow-check` skill takes precedence."
+description: "Check that the HLD, LLDs and EARS specs agree with each other, and that every @spec tag in code cites a live spec: reports contradictions, orphans, broken rows and missing docs, and edits nothing. Use before writing code against the design docs, after changing an HLD, LLD or EARS file, or when /commit runs it as a gate. Not for writing or fixing the docs (/design-docs, /doc-audit-full) or auditing a branch's docs against its code (/doc-audit). Generic copy: if a project skill named `arrow-check` is also listed, use that one instead."
 allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
 ---

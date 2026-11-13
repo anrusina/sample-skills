@@ -1,6 +1,6 @@
 ---
 name: review-pr
-description: "Comprehensive code review with severity-ranked findings and AI-ready fix prompts. Trigger: /review-pr <N>, or a request to review a pull request, including one relayed by a coordinator session. Generic template: a project's own `review-pr` skill takes precedence."
+description: "Review a pull request as a skeptical senior engineer: checks the diff against its linked issues, the Arrow of Intent and the project's rules in an isolated worktree, runs the gates, re-checks earlier review threads (resolving or reopening them), and posts a severity-ranked review with inline comments and fix prompts once approved. Use for '/review-pr [PR]', 'review PR 12', 'look over this pull request', or a coordinator's request. Not for fixing findings (/fix-pr-findings) or merging (/pre-merge). Generic copy: if a project skill named `review-pr` is also listed, use that one instead."
 allowed-tools:
   - Bash(git *)
   - Bash(gh *)
