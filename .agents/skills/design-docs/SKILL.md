@@ -13,7 +13,7 @@ Read the project's `AGENTS.md` first: where it states its own rules for these do
 HLD → LLDs → EARS Specs → Tests → Code
 ```
 
-Each layer is more specific than the one above. Changes always propagate downstream — never upstream. A subsystem cannot exist in an LLD without appearing in the HLD first. A spec cannot exist without a backing LLD section.
+Each layer is more specific than the one above. Intent flows downstream: a change starts at the highest layer it affects, then reaches each layer below it. Never change a lower layer first and backfill the one above it. A subsystem cannot exist in an LLD without appearing in the HLD first. A spec cannot exist without a backing LLD section.
 
 ## When writing or updating an HLD
 

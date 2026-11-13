@@ -34,7 +34,7 @@ Each known failure is split between two LLDs, and each states only its own side:
 
 Where the project's `AGENTS.md` lists the existing surfaces a known failure may show on (for example an inline banner, a notice, a modal, or the screen's own failure view), the presenting LLD names which one shows the failure. A new surface is designed only when none of these fits, and the LLD states why. Where `AGENTS.md` names a component catalog, the presenting LLD's failure states also go in the list of states the catalog must show.
 
-### 7. EARS spec IDs covered
+### 7. EARS file and namespace
 
 Link to the corresponding EARS file and name the subsystem's general namespace(s), such as `AUTH-NNN`. This is a navigation aid, not a mapping from design sections to individual requirements. Do not cite numbered EARS IDs, EARS section anchors, or maintain a per-ID inventory in the LLD.
 

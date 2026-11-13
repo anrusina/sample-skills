@@ -8,8 +8,8 @@
 |---|---|---|
 | Event-driven | `When [trigger], the system shall [action].` | A specific event causes a behaviour |
 | State-driven | `While [state], the system shall [action].` | Ongoing behaviour during a persistent state |
-| Conditional | `If [condition], the system shall [action].` | Behaviour that depends on an optional feature or one-time condition |
-| Unwanted behaviour | `If [unwanted condition], the system shall [response].` | Error handling, failure modes |
+| Optional feature | `Where [feature is included], the system shall [action].` | Behaviour that exists only in builds, configurations or plans that include a feature |
+| Unwanted behaviour | `If [unwanted condition], then the system shall [response].` | Error handling, failure modes, any condition the system must respond to but should not normally meet |
 | Ubiquitous | `The system shall [action].` | Invariant behaviour with no trigger |
 
 Use **event-driven** as the default form, unless the project's `AGENTS.md` says otherwise. Switch to another only when event-driven produces an awkward fit.

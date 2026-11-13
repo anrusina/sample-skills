@@ -2,6 +2,8 @@
 name: feedback-review
 description: "Review new feedback submissions, deduplicate against existing issues, and summarise for triage. Trigger: /feedback-review at the start of a working session. Generic template: a project's own `feedback-review` skill takes precedence."
 disable-model-invocation: true
+allowed-tools:
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/feedback.sh *)
 ---
 
 You are the feedback review assistant for this project. At the start of each session you surface new user feedback, match it against existing issues to catch duplicates, and give a triage recommendation for each item — so the developer spends minutes reviewing, not hours hunting.
@@ -31,9 +33,6 @@ developer once, use the answer, and tell them which AGENTS.md section to
 record it in.
 <!-- facts:end -->
 
-## When to run
-Invoke at the start of a working session: `/feedback-review`
-
 ## Steps
 
 ### 0. Find where feedback lands
@@ -47,21 +46,22 @@ gh api 'repos/{owner}/{repo}/milestones' --paginate --jq '.[].title'
 
 If exactly one set of labels and at most one inbox-like milestone match, use them and say which. If nothing matches or the match is ambiguous, ask the developer once which labels (and milestone, if any) mark feedback, use the answer, and tell them to record it in an AGENTS.md *Feedback* section.
 
-Never create labels or milestones.
+Never create labels or milestones: they are the project's own taxonomy, and a new one splits it.
 
 ### 1. Fetch new feedback
 
-Run once per feedback label (`--label` given several times, or with a comma list, matches issues carrying *all* of them, not any), add `--milestone "<inbox milestone>"` only if the project has one, and merge the results by issue number:
-
 ```bash
-gh issue list \
-  --label "<feedback label>" \
-  --milestone "<inbox milestone>" \
-  --state open \
-  --json number,title,body,labels,createdAt \
-  --limit 50
+${CLAUDE_SKILL_DIR}/scripts/feedback.sh --wrap '<wrapper>' fetch --milestone "<inbox milestone>" <feedback label>...
 ```
-Filter to items created since the last review. Store the last-reviewed timestamp in a local file `.feedback-last-reviewed` (ISO 8601) at the root of the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`), so it outlives any worktree. Keep it out of git: if `.gitignore` doesn't cover it, add it to `.git/info/exclude` there (local, never committed). Update it at the end of this run. If the file doesn't exist, this is the first run: review every open feedback item.
+
+Drop `--milestone` when the project has no inbox milestone. The script asks
+for each label on its own (several `--label` flags would match only issues
+carrying all of them), filters by date on the server so no item is cut off
+by a page limit, and merges the results by number. It prints
+`since=<last review, or none>` (none: a first run, so every open item),
+`started=<now>` (note it: step 5 records it), then one JSON object per item.
+The timestamp lives in `.feedback-last-reviewed` at the primary checkout's
+root, kept out of git.
 
 If no new items: report "No new feedback since <last reviewed date>." and stop.
 
@@ -85,7 +85,7 @@ Try 2–3 keyword extractions per item. Report the top 1–2 sibling matches wit
 |---|---|
 | Exact or near-exact duplicate of open issue | `DEDUPE` — link to existing issue, close this one |
 | Similar to closed issue (already fixed) | `VERIFY` — check if fix is in current version |
-| No similar issue found, bug report | `NEW BUG` — move to the backlog or the next version's milestone |
+| No similar issue found, bug report | `NEW BUG` — move to the backlog milestone (or another the developer names) |
 | No similar issue found, enhancement | `NEW ENHANCEMENT` — move to the backlog |
 | Comment / general feedback | `ACKNOWLEDGE` — respond and close |
 | Needs more information from user | `NEEDS INFO` — reply asking for clarification |
@@ -130,14 +130,18 @@ gh issue comment <number> --body "<acknowledgement>"
 
 Ask the developer to confirm before running any of these. Run only the commands they confirm, exactly as confirmed, and report what was run.
 
-### 5. Update last-reviewed timestamp
+### 5. Record the review
+
+Record the `started=` time step 1 printed, not the time now, so feedback
+filed while this review ran is picked up next time. Record it once the
+review was presented, whether or not any batch action ran: the items were
+reviewed either way.
+
 ```bash
-echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > "$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")/.feedback-last-reviewed"
+${CLAUDE_SKILL_DIR}/scripts/feedback.sh --wrap '<wrapper>' stamp <started>
 ```
 
 ## Rules
-- Never close issues or post comments without explicit developer confirmation.
-- Never create labels or milestones; ask which existing one to use.
-- Summarise user language as written — do not paraphrase bugs into feature requests.
+- Summarise user language as written: do not paraphrase a bug into a feature request, since the reporter's own words are the evidence.
 - If a sibling is ambiguous, flag it as "possible duplicate — review manually."
-- Never expose user email addresses in the output.
+- Never expose personal data from a submission (email addresses, names, account details) in the output.
