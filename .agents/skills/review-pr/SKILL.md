@@ -5,6 +5,9 @@ allowed-tools:
   - Bash(git *)
   - Bash(gh *)
   - Agent
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/review-round.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/review-threads.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/worktree.sh *)
 ---
 
 Perform a comprehensive code review on a GitHub PR. Produces a structured review with a summary comment, inline comments on specific lines, severity-ranked findings, and "Prompt for AI" sections for each finding.
@@ -66,91 +69,68 @@ name or nothing at all, find the number first with
 `gh pr list --head <branch> --json number --jq '.[0].number'`. Then:
 
 ```bash
-gh api repos/{owner}/{repo}/pulls/<number> \
-  --jq '{title, body, state, draft, merged, base: .base.ref, head: .head.ref, head_sha: .head.sha, user: .user.login, additions, deletions, commits}'
+${CLAUDE_SKILL_DIR}/scripts/review-round.sh --wrap '<wrapper>' <number>   # add --full when it was passed
+gh pr view <number> --json body -q .body
 gh pr diff <number> --name-only
 ```
 
-`gh` fills `{owner}` and `{repo}` itself from the current checkout. Every
-command below that names the default branch uses `origin/<base>`.
+The script prints `key=value` lines; write each value in literally from here
+on: `head` is `<head-branch>`, `head_sha` is `<head-sha>` (the exact commit
+this review covers: every finding, the review's `commit_id` and the step 13
+check depend on it), `base` is `<base>`, and `last_sha` is `<last-sha>`.
 
-**Eligibility.** If `state` is `closed` (merged or not), stop and report
-that — there is nothing to review. If `draft` is true, say so and ask
-whether to review anyway before going further.
+**Eligibility.** If `state` is `CLOSED` or `MERGED`, stop and report that:
+there is nothing to review. If `draft` is `true`, say so and ask whether to
+review anyway.
 
-The head ref is `<head-branch>` below; `head_sha` is `<head-sha>` — the exact
-commit this review covers. Record it: every finding, the review's
-`commit_id`, and the pre-post check in step 13 depend on it.
+**Follow-up round.** Every posted summary ends with a
+`review-pr: reviewed <sha>` marker. When the script prints
+`round=follow-up`, the gates and step 9 still cover the whole PR, but new
+findings are sought only in `git diff <last-sha>..<head-sha>` (step 6b).
+Code the last round already passed is not re-reviewed for fresh nits; that
+is what keeps a reviewer and a fixer from trading Low findings indefinitely.
+A Critical defect anywhere is still reported. On `round=full`, say why in
+the summary: the script's `reason=` line gives it.
 
-**Follow-up round.** Every posted summary ends with a marker recording the
-commit it reviewed. Find the latest one:
-
-```bash
-gh api "repos/{owner}/{repo}/pulls/<number>/reviews?per_page=100" \
-  --jq '[.[].body | select(test("review-pr: reviewed [0-9a-f]{40}")) | capture("review-pr: reviewed (?<sha>[0-9a-f]{40})").sha] | last // empty'
-```
-
-If a marker gives `<last-sha>`, `git merge-base --is-ancestor <last-sha> <head-sha>`
-succeeds, `git rev-list --merges <last-sha>..<head-sha>` is empty, and `--full`
-was not passed, this run is a **follow-up round**:
-the gates and step 9 still cover the whole PR, but new findings are sought
-only in `git diff <last-sha>..<head-sha>` — the commits since the last round
-(step 6b). Code the last round already passed is not re-reviewed for fresh
-nits; that is what keeps a reviewer and a fixer from trading Low findings
-indefinitely. A Critical defect anywhere is still reported. If there is no
-marker, `<last-sha>` is no longer an ancestor (the branch was rebased or
-force-pushed), or a merge commit exists in `<last-sha>..<head-sha>` (the
-default branch was merged in), run a full review and say why in the summary.
-
-**Never review in the primary checkout** — it routinely holds uncommitted
-work. The review worktree is `<wt>` below: an absolute path directly under the
-primary checkout's `.claude/worktrees/`, never inside another worktree.
+**Never review in the primary checkout**: it routinely holds uncommitted
+work. The review worktree, `<wt>` below, sits directly under the primary
+checkout's `.claude/worktrees/`, never inside another worktree.
 
 **Reuse this session's worktree on a re-run:** if this session already
-created `<wt>` for this PR, move it to the new head instead of creating
-another —
+created `<wt>` for this PR, move it to the new head:
 
 ```bash
-git fetch origin
-git -C <wt> rev-parse HEAD
-git -C <wt> checkout --detach <head-sha>
+${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' move <wt> <head-sha>
 ```
 
-— note the commit the second command prints as `<prev-sha>`, and keep the
-worktree's `<suffix>`. The worktree setup below (installed dependencies,
-generated code, linked fixtures, local tool trust) survives the checkout;
-re-run a setup step only if `git diff --name-only <prev-sha>..<head-sha>`
-touches that step's inputs — a dependency manifest or lockfile for a
-dependency install, a code-generation source for code generation. The
-*Worktree setup* section of each loaded asset names its stack's inputs. Never
-reuse a worktree this session did not create — another agent may be reviewing
-in it.
+It prints `previous=<sha>`, the commit the worktree was on (`<prev-sha>`).
+The worktree setup below (installed dependencies, generated code, linked
+fixtures, local tool trust) survives the move; re-run a setup step only if
+`git diff --name-only <prev-sha>..<head-sha>` touches its inputs (a
+dependency manifest or lockfile for an install, a code-generation source for
+code generation; each loaded asset's *Worktree setup* section names its
+stack's). Never reuse a worktree this session did not create: another agent
+may be reviewing in it.
 
-Otherwise, use a new worktree pinned to `<head-sha>`, not the moving branch,
-under the primary checkout:
+Otherwise make a new one, pinned to `<head-sha>` rather than the moving
+branch:
 
 ```bash
-git fetch origin
-# The primary checkout, wherever this session runs: started inside another
-# worktree, a relative path would nest the new one under it.
-ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
-git worktree add "$ROOT/.claude/worktrees/review-<number>-<suffix>" <head-sha>
-echo "$ROOT/.claude/worktrees/review-<number>-<suffix>"
+${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' add review-<number> <head-sha> --pr <number>
 ```
 
-The path it prints is `<wt>`: write it in literally from here on.
-`<suffix>` is 6 random hex characters you pick (e.g. `review-42-a3f9c1`), so
-concurrent reviews of the same PR by different agents get separate
-worktrees. If git reports the path already exists, pick another suffix.
-Every temp file this review writes (the saved diff, the review JSON) is made
-with `mktemp "${TMPDIR:-/tmp}/review-<number>-<suffix>-XXXXXX"`, never a fixed
-name, so concurrent reviews never overwrite each other's files; note the path
-it prints and write it in literally later.
+It prints `primary=<path>` (`<primary-checkout>`, used for the fixture link
+below) and `worktree=<path>` (`<wt>`), and prints neither if git fails, so a
+failed add never leaves you with a path that doesn't exist. Every temp file
+this review writes (the saved diff, the review JSON) is made with
+`mktemp "${TMPDIR:-/tmp}/review-<number>-XXXXXX"`, never a fixed name, so
+concurrent reviews never overwrite each other's files.
 
-`<wt>` is the working directory for everything below — run the commands there
+`<wt>` is the working directory for everything below: run commands there
 (`git -C <wt> …`, or the tool's own directory flag) rather than issuing a
-`cd`, which nothing in the allowlist covers. Leave it in place when the review
-ends; the developer cleans up worktrees in bulk.
+`cd`, which nothing in the allowlist covers. Leave it in place when the
+review ends; whoever coordinates the PR removes review worktrees after the
+merge.
 
 **Set the worktree up before any gate.** A fresh worktree has none of the
 git-ignored files the build needs — installed dependencies, generated code,
@@ -181,28 +161,21 @@ Errors from unresolved generated files or missing dependencies are a setup
 gap, not findings.
 
 If *fixtures* names any, link them into `<wt>` the way AGENTS.md describes
-(typically `ln -sfn <primary-checkout>/<fixture-dir> <wt>/<fixture-dir>`) so
+(typically `ln -sfn <primary-checkout>/<fixture-dir> <wt>/<fixture-dir>`, with `<primary-checkout>` from the worktree script's `primary=` line) so
 those tests run rather than skip. Without it they skip silently — record
 skips in Verification.
 
 ## phase 1 — gather context
 
-1. **Repo, PR number and metadata** are already resolved in phase 0 — reuse them rather than re-fetching.
+1. **Repo, PR number, metadata and body** are already resolved in phase 0: reuse them rather than re-fetching.
 
 2. **Fetch the full diff** via `gh pr diff <number>`. If >50KB, save it to a file made with `mktemp` as phase 0 describes. Phase 0 fetched only the file *names*, for the fast-path decision; this is the diff content itself.
 
 3. **Read `AGENTS.md`** — project constraints and Arrow of Intent requirements override any default review guidance.
 
-4. **Fetch existing feedback** — conversation comments via `gh pr view <number> --comments`, and **every** review thread, resolved or not, via GraphQL. Used to avoid duplicating prior feedback and to re-check previous findings in step 9. `<owner>` and `<name>` are the two halves of `<repo>`, written in:
+4. **Fetch existing feedback** — conversation comments via `gh pr view <number> --comments`, and **every** review thread, resolved or not, with the script below (one JSON object per thread). Used to avoid duplicating prior feedback and to re-check previous findings in step 9:
    ```bash
-   gh api graphql --paginate -F owner=<owner> -F name=<name> -F pr=<number> -f query='
-   query($owner: String!, $name: String!, $pr: Int!, $endCursor: String) {
-     repository(owner: $owner, name: $name) { pullRequest(number: $pr) {
-       reviewThreads(first: 100, after: $endCursor) {
-         pageInfo { hasNextPage endCursor }
-         nodes { id isResolved path line
-           comments(first: 50) { nodes { databaseId body url author { login } } } } } } } }' \
-     --jq '.data.repository.pullRequest.reviewThreads.nodes[]'
+   ${CLAUDE_SKILL_DIR}/scripts/review-threads.sh --wrap '<wrapper>' <number> --all
    ```
 
 5. **Fetch linked issues for conformance checking.** Extract every `Closes #N` / `Fixes #N` / `Resolves #N` (and `Ref #N`) reference from the PR body. For each, fetch the issue body and all its comments:
@@ -232,18 +205,12 @@ skips in Verification.
    - **Field checks** — the *Review checks* section of each loaded field asset, with the severity floors it sets. A field asset points at the project's own rule lists (an AGENTS.md section, a checklist file it names); apply every rule there.
    - **Code quality** — dead code, magic numbers, duplicated logic
    - **Architecture** — every layer rule in `AGENTS.md` (read in step 3), and `docs/dev/architecture.md` if the project has one
-   - **Project rules no tool checks** — the `AGENTS.md` rules the gates cannot catch, checked explicitly on every changed file. Each item applies when `AGENTS.md` (or a `docs/dev/` guide it links) states the rule:
-     - Logging — each event `AGENTS.md` requires is logged at its level; every caught exception that is logged carries both the error and its stack trace; no ad-hoc console output in place of the project's logger, no static or global logger where injection is required, no PII
-     - Telemetry signals — an LLD that documents log events with product intelligence has a `## Telemetry signals` section, denominator first, failures as rate pairs
-     - Dependency policy — any added or bumped dependency has the policy check recorded next to it (AGENTS.md's dependency-policy section, for example *Security → Dependency policy*; when there is none, the default is a version published at least 14 days ago, with the check recorded beside the dependency)
-     - Component catalog actions — if `AGENTS.md` names a component catalog, no interactive control in it is wired to an empty handler; every one reports its action
-     - Failure presentation — no exception's message, type or stack reaches user-visible text (string-interpolating the error, calling its to-string in a view); work that can throw runs in the state layer, not in a render function; a known failure is caught by its named type, not by a bare catch-all that would also hide defects from the app-wide error boundary (the only exceptions are catch-alls their LLD records, which still log at the level `AGENTS.md` sets for them); a new failure presentation reuses one of the surfaces `AGENTS.md`'s error-handling rules name rather than a hand-made box or dialog, and a new surface carries its LLD's reason; every failure state is registered in the component catalog where `AGENTS.md` requires it
-     - Non-null assertions — where `AGENTS.md` restricts them (e.g. requires a comment saying why the value cannot be absent there), every new one complies
+   - **Project rules no tool checks** — every rule `AGENTS.md` (or a `docs/dev/` guide it links) states that the gates cannot catch, checked explicitly on every changed file: its logging and telemetry rules, its dependency policy (when it has one: the check recorded next to each added or bumped dependency), its component-catalog rules, its error-handling rules (no exception text in user-visible output, known failures caught by type), its limits on non-null assertions, and any other rule of that kind. Apply the rule as `AGENTS.md` words it; a rule the project doesn't state is not a finding here.
    - **Configuration** — hardcoded values that belong in constants, unsafe defaults
    - **Component catalog coverage** — only if `AGENTS.md` names a component catalog: screens and reusable components have entries covering their named states. State names come from the LLD that documents UI states (`AGENTS.md` or the HLD says which). LLDs that are pure business logic define no UI states — coverage is not required from their specs.
    - **Test coverage** — missing edge cases, state transitions not covered, assertions that verify nothing
    - **Test tiers** — only if AGENTS.md's testing section defines tiers: each new test file's tier fits the project's guide for choosing one; a test raised above its file clears the higher bar; a file carries any extra tag `AGENTS.md` requires (e.g. on tests that read git-ignored fixtures). An existing file whose tier was lowered with no reason in the PR description is a **Medium** finding; a tier that looks wrong for the guide is **Low**. A tier guard only checks that a tier exists, not that it is the right one.
-   - **Documentation** — for any changed `docs/specs/` or `docs/design/` file, and the whole review on the documentation-only fast path, apply the `/doc-audit` checks (its steps 3–5: LLD, HLD and diagrams) and the `AGENTS.md` Arrow of Intent rules: an LLD or HLD citing individual EARS IDs; look-and-feel values pinned in an LLD, including a token that restates its literal value; a `> Note:` that narrates another subsystem's internals; a renumbered stable ID (OQ-N, spec IDs); an LLD with log events but no `## Telemetry signals` section. For a changed `.agents/skills/` file, apply `/doc-audit` step 7.
+   - **Documentation** — for any changed `docs/specs/` or `docs/design/` file, and the whole review on the documentation-only fast path, apply `/doc-audit`'s LLD, HLD and Mermaid-diagram checks and the `AGENTS.md` Arrow of Intent rules: an LLD or HLD citing individual EARS IDs; look-and-feel values pinned in an LLD, including a token that restates its literal value; a `> Note:` that narrates another subsystem's internals; a renumbered stable ID (OQ-N, spec IDs); an LLD with log events but no `## Telemetry signals` section. For a changed `.agents/skills/` file, apply `/doc-audit`'s skill-file audit.
 
    **6a. Deep lenses (`--deep` only).** Run these three as parallel sub-agents, each given the PR number, `<head-sha>`, the changed-file list and `<wt>`, and each returning candidate findings with file, line and the evidence behind them:
    - **History** — `git log` and `git blame` of the changed lines: does the change undo an earlier fix, reintroduce a reverted approach, or break an invariant a past commit message explains?
@@ -355,18 +322,6 @@ skips in Verification.
 
 ## rules
 
-- Read `AGENTS.md` before reviewing.
-- Review against the default branch only. Never read other open PRs or branches — not for spec IDs, not for conflicts. Those are settled by `/pre-merge` against the default branch as it stands when the PR merges.
-- Fetch every linked issue and check the diff against its acceptance criteria — a `Closes #N` PR with unmet criteria is a finding.
-- Verify every finding against source files — not just the diff. A finding you could not confirm is posted tagged **Unsure** with what was not verified — never dropped silently, never presented as confirmed.
-- No praise and no "what's done well" — findings, fixes and gate results only.
-- Check every round that changes production source for behaviour no spec states (step 6c), and raise each as a finding with the suggested spec and the reason it helps.
-- On a follow-up round, seek new findings only in the commits since the last round, and judge previous threads from the code at `<head-sha>` — never from a fixer's reply or an earlier round's conclusion.
-- The Verification section is mandatory — report every gate's real result, including gates that could not run and tests that skipped.
-- Do not duplicate existing feedback — match by file and symptom, not line.
-- Every finding row must link to its inline comment, or, for a finding outside the diff, to its permalink.
-- Every severity section must have a batch "Prompt for AI" toggle.
-- New findings go in one review, one API call; step 9 thread replies and state changes follow it.
-- Never resolve or reopen a thread without replying first.
-- Always present findings in the conversation and wait for explicit approval before posting to GitHub, unless the invocation explicitly says to post directly (e.g. "review and post" or "--post").
-- After posting, remind the developer they can use `/fix-pr-findings` to address findings.
+- Review against the default branch only. Never read other open PRs or branches, not for spec IDs and not for conflicts: `/pre-merge` settles those against the default branch as it stands when the PR merges, and a review that chases moving targets can't be reproduced.
+- A finding you could not confirm is posted tagged **Unsure** with what was not verified: never dropped silently, never presented as confirmed.
+- After posting, remind the developer they can use `/fix-pr-findings` to address the findings.
