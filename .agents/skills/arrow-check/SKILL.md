@@ -1,9 +1,11 @@
 ---
 name: arrow-check
 description: "Validate consistency across HLD, LLDs, and EARS specs — surface drift before it reaches code. Generic template: a project's own `arrow-check` skill takes precedence."
+allowed-tools:
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
 ---
 
-You are a design consistency validator for this project. You check that HLD, LLDs, and EARS specs are aligned — no contradictions, no orphans, no missing links. Report only — never suggest fixes or edit files.
+You are a design consistency validator for this project. You check that HLD, LLDs, and EARS specs are aligned — no contradictions, no orphans, no missing links. Report only: never edit files or suggest fixes. How intent changes is the developer's decision, and a suggested fix tends to get applied without that decision being made.
 
 Read the project's `AGENTS.md` first. Where it states its own Arrow of Intent rules (LLD altitude, error handling, telemetry signals, spec format), those rules decide the checks below; the checks here are the default where it says nothing. Projects name these sections differently (*LLD altitude*, *Error handling*, *LLD telemetry signals*, *EARS spec format*, for example): find each by what it holds, not by its exact title.
 
@@ -18,7 +20,7 @@ Read `docs/specs/HLD.md`. Extract:
 
 ### 2. Check LLD coverage
 For each subsystem named in the HLD:
-- Does `docs/specs/LLD-<subsystem>.md` exist?
+- Does its LLD exist? It is the file `AGENTS.md`'s keyword → LLD table names for the subsystem, or else `docs/specs/LLD-<subsystem>.md` with the HLD name in lower case and spaces as dashes.
 - Are the LLD's inputs/outputs consistent with the HLD data flow?
 - Does the LLD introduce any entities or decisions not present in the HLD?
 - Does the LLD reference the subsystem by the exact name used in the HLD?
@@ -37,31 +39,38 @@ For each `docs/specs/EARS-<subsystem>.md` file:
 - Does every spec ID prefix match a real subsystem name from the HLD?
 - Does every spec map to an identifiable section in the corresponding LLD?
 - Does any spec contradict an HLD architectural decision?
-- Search the code and tests for deprecated spec IDs still referenced: `git grep -n "@spec" -- ':!docs'`
+- Find code and tests that still cite a deprecated or undefined ID. The script reads both EARS forms (a `| ID |` table row and an `ID: When …` line) and looks only outside `docs/`, `.agents/`, `.claude/` and Markdown, so a doc's or a skill's own `@spec` examples never count:
+  ```bash
+  ${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh orphans
+  ```
+  Pass the source and test folders `AGENTS.md`'s project-structure section names as arguments, when it names them. Each line is `file:line`, the ID, and `deprecated` or `undefined`.
 
 ### 4. Check for orphans
 - LLD files with no matching HLD subsystem entry
 - Spec IDs with no corresponding LLD section
-- `@spec` tags in code referencing non-existent spec IDs
+- `@spec` tags citing an `undefined` or `deprecated` ID (step 3's script output)
 
 ### 5. Report findings
 
-Use exactly this format:
+Use exactly this format, with a heading for every category (write "None" under an empty one):
 
 ```
 ## Arrow Check Report — <date>
 
-### Contradictions (must fix before writing code)
+### Contradictions (block the commit)
 - [ ] <description of conflict, citing document and section>
 
-### Orphans (must fix)
-- [ ] <orphaned document or spec ID>
+### Orphans (block the commit)
+- [ ] <orphaned document, spec ID, or `file:line` tag with its ID and why>
 
-### Missing LLDs (expected during planning — reminder only)
-- [ ] LLD-<subsystem>.md not yet written
+### Broken (block the commit)
+- [ ] <incomplete telemetry row, error-handling row without a typed outcome or presentation, …>
 
-### All clear
-<if nothing found in a category, write "None">
+### Missing (reminders: expected during planning)
+- [ ] <LLD not yet written, Telemetry signals section not yet added>
+
+### Notes (do not block)
+- <altitude drift in Open Questions, content marked `<!-- UI concern -->`>
 ```
 
-**Contradictions and Orphans block the commit. Missing LLDs during planning phase do not.**
+Contradictions, Orphans and Broken items block a commit: each is a defect in documents code is about to be written against. Missing items are reminders during planning, and Notes are for the developer's judgement.

@@ -6,6 +6,8 @@ allowed-tools:
   - Bash(gh api *)
   - Bash(gh issue *)
   - Bash(gh repo *)
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/worktree.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
   - Bash(find *)
   - Bash(grep *)
 ---
@@ -76,9 +78,8 @@ Extract from both the issue body **and all comments**:
 
 Do not stop — this is a warning only. When the milestones fact is none, skip the check and give no warning.
 
-Read the ticket in full — body and every comment. Then read exactly the
-files it names under **Read first** (its scope boundary), or, if it names
-none, those from the step 3 mapping — before proposing any plan.
+Read the ticket in full: body and every comment. Its **Read first** files are
+read in step 3, once step 2 has brought the checkout up to date.
 
 ## step 2 — sync to the latest default branch, in a new worktree
 
@@ -89,15 +90,14 @@ The HLD/LLD/EARS checks in the steps below read spec files from the working tree
 **Work in a new worktree by default.** The primary checkout routinely holds uncommitted work from another task or session, so leave it untouched:
 
 ```bash
-git fetch origin
-# The primary checkout, wherever this session runs: started inside another
-# worktree, a relative path would nest the new one under it.
-ROOT=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
-WT="$ROOT/.claude/worktrees/task-<N>-<suffix>"
-git worktree add --detach "$WT" "origin/<base>" && echo "$WT"
+${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' add task-<N> origin/<base>
 ```
 
-`<suffix>` is 6 random hex characters you pick, so two sessions starting the same issue get separate worktrees. The path the block prints is `<worktree>`: write it in literally from here on.
+It fetches, adds a detached worktree at the latest default branch directly
+under the primary checkout's `.claude/worktrees/` (with a random suffix, so
+two sessions starting the same issue get separate ones), and prints
+`worktree=<path>`, which is `<worktree>` from here on. It prints nothing if
+git fails.
 
 If the wrapper is a tool-version manager that must trust a new folder before its tools run there, trust `<worktree>` now; otherwise every wrapped command in it fails.
 
@@ -132,6 +132,10 @@ Continue to step 3 with the default branch checked out and current.
 
 ## step 3 — identify subsystem
 
+First read exactly the files the ticket names under **Read first** (its
+scope boundary), from the up-to-date checkout; if it names none, read those
+this step's mapping finds. Read them before proposing any plan.
+
 Map the issue scope to one or more HLD subsystems by reading `docs/specs/HLD.md`. Find the LLD for each at run time:
 
 1. If `AGENTS.md` has a keyword → LLD table, match its keywords against the issue title and body and use it.
@@ -148,7 +152,7 @@ Match specific phrases (for example, "checkout payment") before broad words (for
 Verify `docs/specs/HLD.md` contains a section for the identified subsystem.
 
 - **Present** → continue
-- **Missing** → stop: "`<subsystem>` has no HLD section. Run `/design-docs` to add it before starting."
+- **Missing** → record "`<subsystem>` has no HLD section" and go to step 8, which ends with Stop.
 
 ## step 5 — check LLD existence
 
@@ -159,7 +163,7 @@ find docs/specs -iname "<exact-LLD-filename>"
 ```
 
 - **Found** → continue
-- **Missing** → stop: "`docs/specs/<exact-LLD-filename>` does not exist. Run `/design-docs` to write it first. Do not write code without an LLD."
+- **Missing** → record "`docs/specs/<exact-LLD-filename>` does not exist" and go to step 8, which ends with Stop.
 
 ## step 6 — check EARS specs
 
@@ -172,7 +176,7 @@ If the spec file exists, search for keywords from the issue title:
 grep -i "<keyword>" docs/specs/EARS-<subsystem>.md
 ```
 
-If the issue names spec IDs, look each one up directly across all `docs/specs/EARS-*.md` files, and also check which already have tagged tests (`git grep -n '@spec <ID>' -- ':!docs'`).
+If the issue names spec IDs, look each one up directly across all `docs/specs/EARS-*.md` files, and also check which already have tagged tests: `${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh --wrap '<wrapper>' tags` lists every `@spec` tag outside `docs/`, `.agents/`, `.claude/` and Markdown as `file:line` and ID (pass the source and test folders AGENTS.md names, when it names them).
 
 **Presenting the specs.** Show the matching specs under a `### Specs to confirm` heading as one table, one row per ID, in the order the EARS files list them:
 
@@ -189,9 +193,11 @@ Report:
 - **Matching spec IDs found** → present them as above, then ask:
   > "Do these specs cover the intended behaviour for this task? (yes / no — refine or add specs first)"
   - **yes** → continue to step 7
-  - **no** → stop: "Refine or add EARS specs in `docs/specs/EARS-<subsystem>.md`, then re-run `/start-task`."
-- **Spec file exists, no match** → stop: "No EARS spec for this behaviour. Add one to `docs/specs/EARS-<subsystem>.md` before writing the test."
-- **Spec file missing** → stop: "Create `docs/specs/EARS-<subsystem>.md` and write the EARS spec first."
+  - **no** → record "the specs need refining or adding in `docs/specs/EARS-<subsystem>.md`" and go to step 8.
+- **Spec file exists, no match** → record "no EARS spec for this behaviour in `docs/specs/EARS-<subsystem>.md`" and go to step 8.
+- **Spec file missing** → record "`docs/specs/EARS-<subsystem>.md` does not exist" and go to step 8.
+
+Steps 4–6 never stop on their own: a gap is recorded and the run goes to step 8, so the developer always gets the full report with every gap at once, and the worktree's path.
 
 ## step 7 — suggest branch name
 
@@ -205,7 +211,7 @@ docs-<N>/<3-5-word-slug>       # documentation only
 ## step 8 — output the readiness report
 
 ```
-## Ready to start: #<N> — <issue title>
+## <Ready to start | Not ready>: #<N> — <issue title>
 
 ### Subsystem: <name>
 
@@ -253,9 +259,7 @@ If HLD, LLD, or EARS specs are missing: always output "Stop". Never suggest star
 
 Only run this step if step 8 ended with "Chain complete."
 
-Ask: "Create branch `<branch-name>` from the latest default branch and switch to it? (yes / no, or provide a different name)"
-
-If the developer says **yes** (or provides an alternative name):
+Create the branch without asking, unless the invocation names another branch or says not to create one: the name follows the project's convention, and a coordinator's brief would otherwise stall on the question.
 
 1. Create and switch to the feature branch (step 2 already put you on the latest default branch — in `<worktree>`, or in the primary checkout in main-worktree mode). `<dir>` is `<worktree>`, or the primary checkout's path in main-worktree mode:
    ```bash
@@ -267,5 +271,5 @@ If the developer says **yes** (or provides an alternative name):
 3. Confirm:
    > "On `<branch-name>` at `<short-sha>` in `<worktree path, or 'the primary checkout'>`. Ready to code."
 
-If the developer says **no**, output:
+If the invocation said not to create it, output:
 > "When ready: `git -C <worktree> checkout -b <branch-name>`" — or, in main-worktree mode, "`git checkout <base> && git pull --ff-only origin <base> && git checkout -b <branch-name>`".

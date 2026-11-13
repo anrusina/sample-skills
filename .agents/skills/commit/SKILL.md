@@ -172,7 +172,7 @@ Otherwise, apply the *Before the gates* section of each loaded asset, then run t
 
 Only when changed files include paths matching `docs/design/*` or `docs/specs/*`:
 
-Run `/arrow-check`. If it reports any **Contradictions** or **Orphans** — stop and surface them. Missing LLDs flagged as reminders do not block.
+Run `/arrow-check`. If it reports any **Contradictions**, **Orphans** or **Broken** items, stop and surface them. Missing items and Notes do not block.
 
 ## step 7 — @spec tag check
 
