@@ -20,9 +20,12 @@
 #       rewrite only the facts block, description and allowed-tools of each
 #       installed SKILL.md (all installed skills when none is named), keeping
 #       every other line, so profile edits and add/remove reach them
-#   lock <profile> <commit>
+#   lock <profile> <skills> <commit>
 #       write .agents/skills-lock.json: source, ref and commit from the
-#       profile and <commit>, and the git hash of every installed file
+#       profile and <commit>, and for every file render would write from
+#       <skills> (the upstream tree at <commit>) the git hash of that render,
+#       never of the file on disk, so an edit stays an edit and a file the
+#       project added stays unrecorded
 #   plan <profile> <clone> <old> <new>
 #       print one "<action> <path>" line per file an update touches, where
 #       action is new, write, rerender, keep, merge, delete, ask-delete,
@@ -42,7 +45,8 @@
 # detached), source, ref, skills, kept, assets, wrapped-tools; facts nested
 # under facts: by row name (lower case, spaces as dashes, <repo> as repo).
 # A value is one line, an inline list [a, b], a block list of "- item"
-# lines, or a "|" block of indented lines.
+# lines, or a "|" block of indented lines; a one-line value or list item may
+# be in single or double quotes.
 set -euo pipefail
 
 usage() { sed -n '2,/^set -euo/p' "$0" | sed '$d; s/^# \{0,1\}//' >&2; exit 2; }
@@ -64,6 +68,7 @@ pget() {
   awk -v want="$2" -v nested="${3:-}" '
     function emit(v) { sub(/[ \t]+$/, "", v); if (v != "") print v }
     function trim(v) { sub(/^[ \t]+/, "", v); sub(/[ \t]+$/, "", v); return v }
+    function unquote(v) { if (v ~ /^".*"$/ || v ~ /^\047.*\047$/) v = substr(v, 2, length(v) - 2); return v }
     NR == 1 && $0 == "---" { inside = 1; next }
     inside && $0 == "---" { exit }
     !inside { next }
@@ -75,7 +80,7 @@ pget() {
         exit
       }
       if (mode == "list") {
-        if (ind > keyind && trim(line) ~ /^- /) { v = trim(line); emit(substr(v, 3)); next }
+        if (ind > keyind && trim(line) ~ /^- /) { v = trim(line); emit(unquote(trim(substr(v, 3)))); next }
         exit
       }
       if (ind == 0) section = (line ~ /^facts:[ \t]*$/) ? "facts" : ""
@@ -90,10 +95,10 @@ pget() {
       if (val == "") { mode = "list"; next }
       if (val ~ /^\[.*\]$/) {
         val = substr(val, 2, length(val) - 2)
-        n = split(val, a, ","); for (j = 1; j <= n; j++) emit(trim(a[j]))
+        n = split(val, a, ","); for (j = 1; j <= n; j++) emit(unquote(trim(a[j])))
         exit
       }
-      gsub(/^"|"$/, "", val); emit(val); exit
+      emit(unquote(val)); exit
     }' "$1"
 }
 
@@ -107,7 +112,7 @@ facts_block() {
   local profile=$1 skill=$2 generic=$3
   local kind installed assets wrapper
   kind=$(pget "$profile" kind); kind=${kind:-managed}
-  installed=$(pget "$profile" skills)
+  installed=$(pget "$profile" skills; pget "$profile" kept)
   assets=$(present_assets "$profile" "$(dirname "$generic")")
   wrapper=$(pget "$profile" wrapper facts)
 
@@ -274,7 +279,7 @@ rerender_one() {
   local profile=$1 skill=$2 generic=$3 out
   out=$(mktemp)
   render_skill_md "$profile" "$skill" "$generic" "$DEST/$skill/SKILL.md" > "$out"
-  mv "$out" "$DEST/$skill/SKILL.md"
+  cat "$out" > "$DEST/$skill/SKILL.md"; rm -f "$out"
 }
 
 # --- lock ----------------------------------------------------------------------
@@ -283,19 +288,25 @@ lock_files() { [ -f "$LOCK" ] && sed -n 's/^    "\(.*\)": "\([0-9a-f]*\)",\{0,1\
 lock_hash() { lock_files | awk -v p="$1" '$1 == p { print $2 }'; }
 
 write_lock() {
-  local profile=$1 commit=$2 source ref files first=1 f
-  source=$(pget "$profile" source); ref=$(pget "$profile" ref)
-  files=$(for s in $(pget "$profile" skills); do [ -d "$DEST/$s" ] && find "$DEST/$s" -type f; done | sort)
+  local profile=$1 skills=$2 commit=$3 source ref kept first=1 s rel h
+  source=$(pget "$profile" source); ref=$(pget "$profile" ref); kept=$(pget "$profile" kept)
+  [ -d "$skills" ] || die "no upstream skills folder $skills"
   {
     echo "{"
     echo "  \"source\": \"${source:-anrusina/sample-skills}\","
     echo "  \"ref\": \"${ref}\","
     echo "  \"commit\": \"$commit\","
     echo "  \"files\": {"
-    printf '%s\n' "$files" | while IFS= read -r f; do
-      [ -n "$f" ] || continue
+    for s in $(pget "$profile" skills); do
+      has_line "$kept" "$s" && continue
+      [ -d "$skills/$s" ] || continue
+      wanted "$profile" "$skills/$s" | while IFS= read -r rel; do
+        h=$(render_file "$profile" "$s" "$skills/$s/$rel" "$rel" "$skills/$s" | run git hash-object --stdin)
+        printf '%s\t%s\n' "$DEST/$s/$rel" "$h"
+      done
+    done | sort | while IFS="$(printf '\t')" read -r rel h; do
       [ $first -eq 1 ] || printf ',\n'
-      printf '    "%s": "%s"' "$f" "$(run git hash-object "$f")"
+      printf '    "%s": "%s"' "$rel" "$h"
       first=0
     done
     printf '\n  }\n}\n'
@@ -370,7 +381,7 @@ update() {
         render_file "$profile" "$s" "$tmp/new/$p" "$rel" "$tmp/new/.agents/skills/$s" > "$theirs"
         out=$(mktemp)
         if run git merge-file -p "$p" "$base" "$theirs" > "$out"; then
-          mv "$out" "$p"
+          cat "$out" > "$p"; rm -f "$out"
           [ "$rel" != SKILL.md ] || rerender_one "$profile" "$s" "$tmp/new/$p"
           rm -f "$base" "$theirs"
           echo "merged $p"
@@ -384,12 +395,12 @@ update() {
     esac
   done < "$tmp/plan"
   if [ $left -eq 0 ]; then
-    write_lock "$profile" "$new"
+    write_lock "$profile" "$tmp/new/.agents/skills" "$new"
     run git -C "$clone" worktree remove --force "$tmp/old"
     run git -C "$clone" worktree remove --force "$tmp/new"
     rm -rf "$tmp" "$conflicts"
   else
-    echo "decisions left: write each chosen file, then run: setup.sh lock $profile $new"
+    echo "decisions left: write each chosen file, then run: setup.sh lock $profile $tmp/new/.agents/skills $new"
     echo "upstream trees kept for comparing: old=$tmp/old new=$tmp/new"
   fi
 }
@@ -436,7 +447,7 @@ case "$cmd" in
       [ -d "$DEST/$s" ] || continue
       rerender_one "$profile" "$s" "$skills/$s/SKILL.md"; echo "rerender $DEST/$s/SKILL.md"
     done ;;
-  lock) [ $# -eq 2 ] || usage; write_lock "$@" ;;
+  lock) [ $# -eq 3 ] || usage; write_lock "$@" ;;
   plan) [ $# -eq 4 ] || usage; plan "$@" ;;
   update) [ $# -eq 4 ] || usage; update "$@" ;;
   assets) [ $# -eq 2 ] || usage; assets "$@" ;;

@@ -142,7 +142,7 @@ In the project, run:
 
 It works out the project's facts and assets, shows them in one proposal for you to correct, and asks which kind of copy you want:
 
-- **Managed**: the facts live in `.agents/skills-profile.md`, and `.agents/skills-lock.json` records the upstream source, ref and commit and a hash of every file written. Skills the project kept over upstream's are listed in the profile and left alone. `/sample-skills:setup-skills update` later brings in upstream changes and merges them with the project's own edits; editing the profile and running `update` changes a fact in every skill.
+- **Managed**: the facts live in `.agents/skills-profile.md`, and `.agents/skills-lock.json` records the upstream source, ref and commit and a hash of each file as rendered from that commit, so a project edit stays an edit and a file the project added is never touched. Skills the project kept over upstream's are listed in the profile and left alone. `/sample-skills:setup-skills update` later brings in upstream changes and merges them with the project's own edits; editing the profile and running `update` changes a fact in every skill.
 - **Detached**: the facts are written into each skill and the copy is the project's from then on, to reshape freely. `update` can still compare it with upstream and propose changes skill by skill.
 
 Either way it writes `.agents/skills/`, links `.claude/skills` to it for Claude Code, and commits nothing: review the diff, then commit it. Later:

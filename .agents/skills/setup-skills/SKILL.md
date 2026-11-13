@@ -48,7 +48,7 @@ Nothing here commits, and nothing is written outside `.agents/skills/`,
 | `update` | bring the copy up to the latest upstream; also writes every profile edit into the skills |
 | `connect <id>` / `disconnect <id>` | add or remove one stack or field asset across all installed skills |
 | `add <skill>` / `remove <skill>` | add or remove one skill |
-| `--dry-run` (with any of the above) | do everything up to writing, show what would change, write nothing |
+| `--dry-run` (with `install` or `update`) | do everything up to writing, show what would change, write nothing |
 | `--source <owner/repo>[@<ref>]` | at install, take upstream from a fork or a ref instead of `anrusina/sample-skills` at its default branch; it is recorded, so later runs use it too |
 
 Anything else: print this table and stop.
@@ -60,7 +60,8 @@ into each skill; they differ in what stays the source of truth.
 
 - **Managed.** The facts live in `.agents/skills-profile.md`, and
   `.agents/skills-lock.json` records the upstream source, ref and commit and
-  the hash of every file written. `update` then brings in upstream changes,
+  the hash of each file as `setup.sh` rendered it from that commit (never as
+  it is on disk, so a project edit stays an edit). `update` then brings in upstream changes,
   merging them with the project's own edits, and a profile edit reaches
   every skill. Choose this to keep receiving upstream improvements.
 - **Detached.** No profile and no lock: the copy is the project's from then
@@ -201,14 +202,15 @@ remove the clone, and stop.
    name the skills it holds that are now shadowed or duplicated.
 4. **Managed only:** write the lock:
    ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <new>
+   ${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <tmp>/.agents/skills <new>
    ```
 
 ### the profile
 
 `.agents/skills-profile.md` is Markdown with the values in YAML frontmatter,
 in the small subset `setup.sh` reads (a one-line value, `[a, b]`, a block of
-`- item` lines, or a `|` block):
+`- item` lines indented under the key, or a `|` block; single or double quotes
+around a value or list item are fine):
 
 ```markdown
 ---
@@ -287,9 +289,9 @@ project added itself, is never touched. Per file:
 ones, so a profile edit never passes for an upstream change. A conflict is
 left untouched: the script prints the rendered base and upstream versions
 and its conflict-marked attempt. Show the developer each conflict and each
-`ask-*` file, write what they choose, then write the lock:
-`setup.sh lock .agents/skills-profile.md <new>`. The script writes the lock
-itself only when nothing is left to decide.
+`ask-*` file, write what they choose, then write the lock with the `lock`
+command the script printed last. The script writes the lock itself only when
+nothing is left to decide.
 
 A new upstream skill is offered (`add <skill>`), not added; a new upstream
 asset id is listed, not connected. With no upstream change (`<new>` equals
@@ -310,7 +312,7 @@ from) the profile's `assets`, then, with the clone at the lock's commit:
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/setup.sh assets .agents/skills-profile.md <tmp>/.agents/skills
-${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <old>
+${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <tmp>/.agents/skills <old>
 ```
 
 It copies in the connected files that are missing, removes unconnected ones
@@ -329,7 +331,7 @@ write the lock:
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/setup.sh render .agents/skills-profile.md <tmp>/.agents/skills <skill>
 ${CLAUDE_SKILL_DIR}/scripts/setup.sh rerender .agents/skills-profile.md <tmp>/.agents/skills
-${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <old>
+${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <tmp>/.agents/skills <old>
 ```
 
 `remove <skill>`: show the edits the project made to it (files whose hash
