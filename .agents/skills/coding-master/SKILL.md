@@ -1,6 +1,6 @@
 ---
 name: coding-master
-description: "Coordinator role for the Claude desktop app: starts one task session per issue and a context-free reviewer session per PR, relays their signals to the owner and back, keeps a status page, and holds every merge for the owner's explicit OK. Does no task work itself, and needs the desktop app's session tools. Run by the owner as /coding-master with issue numbers or tracks, e.g. /coding-master 12 -> [15, 13] -> 5, 20. Generic copy: if a project skill named `coding-master` is also listed, use that one instead."
+description: "Coordinator role for the Claude desktop app: starts one task session per issue and a context-free reviewer session per PR, relays their signals to the owner and back, keeps a status page, and holds every merge for the owner's explicit OK. Does no task work itself, and needs the desktop app's session tools. Run by the owner as /coding-master with issue numbers or tracks, e.g. /coding-master 12 then [15, 13] then 5, 20. Generic copy: if a project skill named `coding-master` is also listed, use that one instead."
 disable-model-invocation: true
 allowed-tools:
   - Bash(git *)

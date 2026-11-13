@@ -285,7 +285,14 @@ git push --force-with-lease
 
 If that fails, the remote has commits this checkout lacks: stop and report;
 never force past it without the developer's say. Then start phase 1b's
-CI-equivalent run, if the fact lists one.
+CI-equivalent run, if the fact lists one and the reference doesn't skip it,
+in the background where the shell limits long commands:
+
+```bash
+${CLAUDE_SKILL_DIR}/scripts/ci-run.sh --wrap '<wrapper>' <workflow file>
+```
+
+and judge its conclusion as the reference says.
 
 Example pair:
 ```

@@ -16,7 +16,7 @@ An asset without a section adds nothing at that step.
 | stack | `flutter` | `pubspec.yaml` at the repo root | code-generation re-run triggers, `dart analyze` over `flutter analyze`, widget lifecycle and `build()` checks, Dart snippets |
 | stack | `node` | `package.json` at the repo root | frozen-lockfile install, TypeScript, React and Astro checks, `eslint-disable` syntax, TS/TSX snippets |
 | stack | `python` | `pyproject.toml`, `requirements*.txt` or `setup.py` at the repo root | virtual-environment setup, deterministic output and Python checks, `# noqa` syntax, Python snippets |
-| field | `accessibility` | AGENTS.md has accessibility rules (a section, or WCAG named) | the project's accessibility rules and checklist, WCAG severity floors, a manual-check row |
+| field | `accessibility` | AGENTS.md has accessibility rules (a section, or WCAG named) | the project's accessibility rules and checklist, severity floors, a manual-check row |
 | field | `i18n` | the project ships more than one locale, or AGENTS.md has localisation rules (translation files, no hard-coded strings) | copy in translation files, source-locale keys, severity floor for hard-coded copy |
 | field | `frontend-ui` | the project has a user interface with a theme or design tokens, or AGENTS.md has layout or theming rules | values outside the theme layer, every theme, the listed widths |
 | field | `web-site` | the project is a public web site with rules for search, links, product claims or a performance budget (a web *app* without them doesn't qualify) | indexing, search fields, links, third-party requests, the performance budget |

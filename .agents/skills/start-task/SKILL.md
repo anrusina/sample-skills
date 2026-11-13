@@ -152,7 +152,7 @@ Match specific phrases (for example, "checkout payment") before broad words (for
 Verify `docs/specs/HLD.md` contains a section for the identified subsystem.
 
 - **Present** → continue
-- **Missing** → record "`<subsystem>` has no HLD section" and go to step 8, which ends with Stop.
+- **Missing** → record "`<subsystem>` has no HLD section" and continue; the report ends with Stop.
 
 ## step 5 — check LLD existence
 
@@ -163,7 +163,7 @@ find docs/specs -iname "<exact-LLD-filename>"
 ```
 
 - **Found** → continue
-- **Missing** → record "`docs/specs/<exact-LLD-filename>` does not exist" and go to step 8, which ends with Stop.
+- **Missing** → record "`docs/specs/<exact-LLD-filename>` does not exist" and continue; the report ends with Stop.
 
 ## step 6 — check EARS specs
 
@@ -193,11 +193,11 @@ Report:
 - **Matching spec IDs found** → present them as above, then ask:
   > "Do these specs cover the intended behaviour for this task? (yes / no — refine or add specs first)"
   - **yes** → continue to step 7
-  - **no** → record "the specs need refining or adding in `docs/specs/EARS-<subsystem>.md`" and go to step 8.
-- **Spec file exists, no match** → record "no EARS spec for this behaviour in `docs/specs/EARS-<subsystem>.md`" and go to step 8.
-- **Spec file missing** → record "`docs/specs/EARS-<subsystem>.md` does not exist" and go to step 8.
+  - **no** → record "the specs need refining or adding in `docs/specs/EARS-<subsystem>.md`" and continue.
+- **Spec file exists, no match** → record "no EARS spec for this behaviour in `docs/specs/EARS-<subsystem>.md`" and continue.
+- **Spec file missing** → record "`docs/specs/EARS-<subsystem>.md` does not exist" and continue.
 
-Steps 4–6 never stop on their own: a gap is recorded and the run goes to step 8, so the developer always gets the full report with every gap at once, and the worktree's path.
+Steps 4–6 never stop on their own: a gap is recorded and the run goes on, skipping only a check that needs a missing file, so step 8 reports every gap at once, the suggested branch and the worktree's path.
 
 ## step 7 — suggest branch name
 

@@ -92,11 +92,8 @@ phase 2 pushes, so phase 2 starts it after its push, not now:
 1. If every changed path is Markdown, or under `docs/`, `.agents/` or
    `.claude/`, and none is a build input by the *build-input docs* fact,
    skip it and say so in one line.
-2. Otherwise run, in the background where the shell limits long commands:
-   ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/ci-run.sh --wrap '<wrapper>' <workflow file>
-   ```
-   It uses the run already on the head commit, or starts one, waits, and
+2. Otherwise phase 2 runs `ci-run.sh` (the command is in SKILL.md). It
+   uses the run already on the head commit, or starts one, waits, and
    prints `run=` and `conclusion=` (with the failing steps' log on any
    conclusion but `success`).
 3. Only `success` lets the merge go on.

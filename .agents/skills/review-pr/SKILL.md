@@ -60,7 +60,7 @@ its section. With none loaded, the steps' generic text applies.
 - Just "review the PR" — finds the open PR for the current branch
 - Optional `--deep` — adds the three history-and-context lenses in step 6a. Without it the review is a single pass.
 - Optional `--full` — forces a full review even when an earlier `/review-pr` round exists (see *Follow-up round* in phase 0).
-- Optional `--post` — post without the approval stop in step 12 (see *rules*).
+- Optional `--post` — post without the approval stop in step 12.
 
 ## phase 0 — resolve the PR, then review in an isolated worktree
 
@@ -130,7 +130,7 @@ concurrent reviews never overwrite each other's files.
 (`git -C <wt> …`, or the tool's own directory flag) rather than issuing a
 `cd`, which nothing in the allowlist covers. Leave it in place when the
 review ends; whoever coordinates the PR removes review worktrees after the
-merge.
+merge, and without a coordinator the developer does.
 
 **Set the worktree up before any gate.** A fresh worktree has none of the
 git-ignored files the build needs — installed dependencies, generated code,
@@ -294,9 +294,9 @@ skips in Verification.
 
 11. **Review summary body:** load [assets/summary-template.md](assets/summary-template.md) for the full structure — the full template for a full review, its *Follow-up round* variant for a follow-up round — and add the rows the *Verification* section of each loaded asset names. Both end with the `review-pr: reviewed <head-sha>` marker the next round looks for. The **Verification** section is mandatory and is filled from the phase 0 gate run — a review that reports findings without saying what was actually run leaves the reader unable to weigh them.
 
-12. **Show findings to the user before posting.** Output the full findings list (severity-ranked, one entry per finding), then the unsure findings as their own section — each with its severity and the one line on what could not be verified — marking any finding that will post outside the diff (step 10) and each finding's fix-in decision (step 8), followed by the step 9 thread actions (resolve / reopen / reply-only, each with its reply), in the conversation and ask: "Ready to post this review to GitHub? (yes / edit first / cancel)". Do NOT submit to GitHub yet.
+12. **Show findings to the user before posting.** Output the full findings list (severity-ranked, one entry per finding), then the unsure findings as their own section — each with its severity and the one line on what could not be verified — marking any finding that will post outside the diff (step 10) and each finding's fix-in decision (step 8), followed by the step 9 thread actions (resolve / reopen / reply-only, each with its reply), in the conversation and ask: "Ready to post this review to GitHub? (yes / edit first / cancel)". Do NOT submit to GitHub yet. With `--post`, show the list but don't ask: go straight to step 13.
 
-13. **On user approval**, first re-check the PR is unchanged since phase 0:
+13. **On approval, or with `--post`**, first re-check the PR is unchanged since phase 0:
     ```bash
     gh api repos/{owner}/{repo}/pulls/<number> --jq '{state, head_sha: .head.sha}'
     ```
