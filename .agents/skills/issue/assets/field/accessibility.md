@@ -5,12 +5,12 @@
 For work that changes anything a person sees or operates:
 
 - Every control and flow it adds or changes works with the keyboard alone
-- It meets WCAG 2.2 AA in both the light and the dark theme, and every rule in AGENTS.md's accessibility section
+- It meets the accessibility standard AGENTS.md names, at the level it names, in every theme the project has, and every rule in AGENTS.md's accessibility section
 
 ## Upstream
 
-A bug that is a barrier to people with disabilities also names the WCAG
-criterion it breaks (for example "1.4.3 Contrast (Minimum)"), beside the spec
+A bug that is a barrier to people with disabilities also names the criterion of that
+standard it breaks (for example "1.4.3 Contrast (Minimum)"), beside the spec
 it violates.
 
 ## Labels

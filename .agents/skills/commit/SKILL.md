@@ -213,7 +213,17 @@ Work done:
 
 ## step 9 — commit
 
-Commit without asking for approval: `git commit -m "<message>"`. No AI attribution trailer (`Co-Authored-By:` or similar) unless AGENTS.md asks for one. Report the short SHA and show the message in a fenced code block, so the developer can see it; they reword it in the PR if needed.
+Commit without asking for approval. Write the message into a `mktemp` file with a quoted heredoc and commit from it, in one call: inside `git commit -m "…"` the shell would run every backticked identifier in the message.
+
+```bash
+msg=$(mktemp)
+cat > "$msg" <<'MSG_EOF'
+<message>
+MSG_EOF
+git commit -q -F "$msg"; rc=$?; rm -f "$msg"; exit $rc
+```
+
+No AI attribution trailer (`Co-Authored-By:` or similar) unless AGENTS.md asks for one. Report the short SHA and show the message in a fenced code block, so the developer can see it; they reword it in the PR if needed.
 
 ## step 10 — push (squash only when asked)
 
@@ -233,10 +243,9 @@ more than one unpushed commit:
 - Branch has remote tracking: `git reset --soft origin/<branch>`
 - No remote yet: `git reset --soft "$(git merge-base HEAD origin/<base>)"`
 
-Compose a combined message: subject from the most recent commit, `Work done:` synthesised across all squashed commits (group by concern, include `@spec` IDs). Commit it, then show the message as in step 9.
+Compose a combined message: subject from the most recent commit, `Work done:` synthesised across all squashed commits (group by concern, include `@spec` IDs). Commit it the same way as step 9, then show the message.
 
 **Push** — push automatically, with no prompt, unless `--no-push` is in `$ARGUMENTS`.
 - New branch (no remote tracking): `git push -u origin <branch>`
-- Existing remote branch, this run did **not** squash: `git push origin <branch>` — a normal, non-forced push. A new commit never needs to rewrite what's already on the remote; a rejected push here means the remote moved and must be investigated, not forced past.
-- Existing remote branch, this run **did** squash (`--squash`): `git push --force-with-lease origin <branch>` — the squash already rewrote local history, so the push must follow it; passing `--squash` is the developer's explicit authorization for that rewrite.
-- If the normal push is rejected, or `--force-with-lease` fails (remote has unfetched commits): stop and ask whether to `git push --force`. Never force-push without explicit confirmation — this is the one push-time question the skill still asks, since force-push is a destructive, hard-to-reverse action.
+- Existing remote branch: `git push origin <branch>`, a normal, non-forced push. A new commit sits on top of the remote tip, and so does a squash: it reset onto `origin/<branch>` before committing, so it folded only unpushed commits. A rejected push means the remote moved, or this run amended a commit that was already pushed; investigate, never force past it.
+- If the push is rejected: stop and ask whether to `git push --force-with-lease`. Never force-push without explicit confirmation — this is the one push-time question the skill still asks, since force-push is a destructive, hard-to-reverse action.

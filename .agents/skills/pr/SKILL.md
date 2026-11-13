@@ -10,6 +10,7 @@ allowed-tools:
   - Bash(gh repo *)
   - Bash(cat *)
   - Bash(mktemp *)
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
 ---
 
 You are a GitHub PR assistant for this project. You synthesise commits into a clear pull request — without requiring the developer to write boilerplate.
@@ -109,10 +110,14 @@ If the file exists and has content, use it as the PR body template in step 7 ins
    git diff --name-only origin/<base>...HEAD
    ```
    - **No source or test changes** (tooling, docs, config only) → omit this section entirely.
-   - **Source or test changes present** → scan commit bodies for `@spec` tags and HLD references:
-     - If at least one `@spec SUBSYSTEM-NNN` tag is found, list all spec IDs covered and the HLD section.
-     - If **no `@spec` tags and no HLD reference** are found — **stop and ask the developer:**
-       > "This PR touches source code but no `@spec` tags or HLD references were found in the commits. Please provide: the HLD section this change falls under, and the EARS spec IDs it implements (create them first if they don't exist yet)."
+   - **Source or test changes present** → find the spec IDs the branch tags, from the diff itself (the tags live in code and tests, not necessarily in commit messages), and HLD references in the commit bodies:
+     ```bash
+     ${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh --wrap '<wrapper>' added origin/<base>
+     ```
+     It prints each ID tagged on a line the branch adds, outside docs, skills and Markdown (pass the source and test dirs as arguments to narrow it).
+     - If it prints at least one ID, list all spec IDs covered and the HLD section.
+     - If **no ID and no HLD reference** are found — **stop and ask the developer:**
+       > "This PR touches source code but no `@spec` tags or HLD references were found in its changes. Please provide: the HLD section this change falls under, and the EARS spec IDs it implements (create them first if they don't exist yet)."
      - Do not create the PR until the developer supplies this information or confirms the omission is intentional.
 
 6. **`## Testing:`** build this section as [assets/testing-checklist.md](assets/testing-checklist.md) describes, adding the *Testing checklist* lines of each loaded asset that apply to the diff.

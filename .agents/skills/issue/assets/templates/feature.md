@@ -26,10 +26,10 @@ to read. Only documents that already exist. See /issue step 2.>
 ## Done when
 
 - SUBSYSTEM-NNN: When [condition], the system shall [action].
-- <One EARS spec line per acceptance condition. Assign new spec IDs if they don't exist yet — create them in `docs/specs/EARS-<subsystem>.md` before closing this issue.>
+- <One EARS spec line per acceptance condition. A spec that doesn't exist yet gets a provisional ID (the next free one), marked *provisional*; it is written into `docs/specs/EARS-<subsystem>.md` when the work starts.>
 
 ## Upstream
 
 - **HLD:** <section name> (`docs/specs/HLD.md`)
-- **LLD:** `docs/specs/LLD-<subsystem>.md` — create if missing
-- **Spec IDs:** <SUBSYSTEM-NNN, ...> — create in `docs/specs/EARS-<subsystem>.md` if missing
+- **LLD:** `docs/specs/LLD-<subsystem>.md`, or "to be written" when missing
+- **Spec IDs:** <SUBSYSTEM-NNN, ...>, provisional ones marked as such
