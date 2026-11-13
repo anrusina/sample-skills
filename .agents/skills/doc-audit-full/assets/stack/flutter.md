@@ -4,7 +4,7 @@
 
 - Dartdoc: `///` line comments, never `/** … */` or a plain `//` where a doc
   comment is meant.
-- Link identifiers in square brackets (`[CellState.done]`, `[stateAt]`), so
+- Link identifiers in square brackets (`[CartState.empty]`, `[cartStateFor]`), so
   `dart doc` flags a renamed symbol.
 - `// @spec AUTH-001` tags are plain `//` comments on the line before the
   `test(...)` call, never `///`.
@@ -13,11 +13,11 @@
 
 ```dart
 // Bad — paraphrases the method name
-/// Returns the cell state.
-CellState stateAt(int row, int col) {}
+/// Returns the cart state.
+CartState cartStateFor(String userId) {}
 
 // Good — explains the contract
-/// Returns [CellState.done] once the user confirms the selection,
-/// [CellState.highlighted] while the symbol is active in the legend.
-CellState stateAt(int row, int col) {}
+/// Returns [CartState.empty] until the first item is added, and
+/// [CartState.locked] while a checkout for [userId] is in progress.
+CartState cartStateFor(String userId) {}
 ```

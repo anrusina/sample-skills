@@ -1,6 +1,8 @@
 ---
 name: doc-audit-full
 description: "Full documentation pass: audit, fix doc comments, update guides, repair Mermaid diagrams. Generic template: a project's own `doc-audit-full` skill takes precedence."
+allowed-tools:
+  - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
 ---
 
 You are a documentation quality assistant. You fix doc comments, update design docs, repair Mermaid diagrams, and keep the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) accurate — without the developer having to track drift manually.
@@ -50,13 +52,13 @@ its section. With none loaded, the steps' generic text applies.
 | `--fix-docs` | Repair stale spec tags, update LLDs and HLD sections |
 | `--fix-readme` | Update `README.md`, setup/tooling guides, and module guides |
 | `--diagrams` | Update Mermaid diagrams to match current code |
-| `--fix-skills` | Optimize `.agents/skills/` files against Agent Skills best practices |
+| `--fix-skills` | Optimize `.agents/skills/` files against Agent Skills best practices (only when named) |
 
-No arguments → run all flags in order.
+No arguments → run every flag in order except `--fix-skills`, which runs only when named: it rewrites skill files, and in a project copy `/setup-skills` manages those (an edit there conflicts with the next update), so it is never a side effect of a documentation pass.
 
 ## --review
 
-Same as `/doc-audit`: follow its `--review` steps, with its assets. Always run first in every invocation.
+Same as `/doc-audit`: follow its `--review` steps, with its assets (its `SKILL.md` sits beside this skill's folder, at `${CLAUDE_SKILL_DIR}/../doc-audit/SKILL.md`, or `sample-skills-doc-audit` in a Codex install). Always run first in every invocation.
 
 ## --fix-comments
 
@@ -73,11 +75,11 @@ Same as `/doc-audit`: follow its `--review` steps, with its assets. Always run f
 
 ### Repair path — upstream docs exist but drifted
 
-1. For each orphaned `@spec` tag: update to the correct spec ID.
+1. For each orphaned `@spec` tag: update it only when the right ID is certain (the spec was renamed, and the EARS file or its history says to what). Otherwise list it as a gap; a guessed ID is worse than an orphan, because it looks covered.
 2. For each test covering spec behaviour but missing a `@spec` tag: add the correct spec ID.
 3. For each deprecated spec still referenced in code: **do not auto-fix** — list as a gap requiring human decision (un-deprecate, remap to a replacement spec, or remove the reference).
 4. For each LLD with stale flow: update the affected sections only. Do not rewrite prose that is still accurate.
-5. For each LLD that documents log events with product intelligence but has no `## Telemetry signals` section: draft and add the section in the rate-pair format — a table with columns Signal, Level, Emitted when, Product intelligence, Pairs with; the denominator event (the happy-path event confirming normal completion) first, then each failure signal naming that denominator in "Pairs with". If the `/design-docs` skill is available, follow its LLD template's *Telemetry signals* section instead. Populate signal rows from observable log calls in the subsystem code. Mark intent-dependent fields `[NEEDS HUMAN INPUT]`.
+5. Only when AGENTS.md defines telemetry signals for LLDs: for each LLD that documents log events with product intelligence but has no `## Telemetry signals` section: draft and add the section in the rate-pair format — a table with columns Signal, Level, Emitted when, Product intelligence, Pairs with; the denominator event (the happy-path event confirming normal completion) first, then each failure signal naming that denominator in "Pairs with". If the `/design-docs` skill is available, follow its LLD template's *Telemetry signals* section instead. Populate signal rows from observable log calls in the subsystem code. Mark intent-dependent fields `[NEEDS HUMAN INPUT]`.
 6. For each HLD gap: add the missing subsystem entry or update the stale one. Describe what exists — do not invent architecture.
 7. For each LLD that pins a look-and-feel value (a raw color, a literal size, a font, an icon glyph, an animation value or exact string wording): replace the value with the design-system token it stands for, or remove it when the sentence carries no behaviour without it. If no token exists for the value, do not invent one: list it as a gap for the developer. AGENTS.md's LLD-altitude rule, if it has one, is the canonical rule.
 8. Apply the *Fix docs* section of each loaded asset.
@@ -130,7 +132,7 @@ When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft s
 
 Load [references/agentskills-best-practices.md](references/agentskills-best-practices.md) before starting.
 
-For each `SKILL.md` in `.agents/skills/`:
+For each `SKILL.md` in `.agents/skills/`, leaving every facts block (`<!-- facts:begin -->` … `<!-- facts:end -->`) untouched, since `/setup-skills` writes it:
 
 1. **Bloat** — remove prose that explains things the agent already knows from training (general concepts, standard library behaviour). Cut any instruction where "would the agent get this wrong without it?" is no.
 
@@ -154,7 +156,5 @@ Load [references/code-doc-conventions.md](references/code-doc-conventions.md) fo
 
 ## rules
 
-- Read `AGENTS.md` before making any changes.
-- Do not commit changes — print a summary and let the developer review first.
-- Do not document generated code.
-- Every change must trace back to a gap identified in `--review`.
+- Do not commit: print a summary and let the developer review the diff first.
+- Do not document generated code: the next generation run overwrites it.

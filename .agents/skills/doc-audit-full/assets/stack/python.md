@@ -9,20 +9,20 @@
 - Arguments, return values and raised exceptions in the section style the
   codebase already uses (Google `Args:` / `Returns:` / `Raises:`, or NumPy);
   never mix the two in one project.
-- Identifiers in backticks (`` `build_font` ``).
+- Identifiers in backticks (`` `order_total` ``).
 - `# @spec AUTH-001` tags are plain `#` comments on the line before the test
   function, never inside its docstring.
 
 ```python
 # Bad — paraphrases the name
-def ink_box(glyph):
-    """Return the ink box."""
+def order_total(cart):
+    """Return the order total."""
 
 # Good — explains the contract
-def ink_box(glyph):
-    """Smallest box holding every drawn point of `glyph`, in font units.
+def order_total(cart):
+    """Sum of `cart`'s line prices after discounts, in minor currency units.
 
-    Empty glyphs return `None`, not a zero box, so callers can tell a
-    blank glyph from one drawn at the origin.
+    An empty cart returns `None`, not `0`, so callers can tell "nothing to
+    pay for" from a fully discounted order.
     """
 ```
