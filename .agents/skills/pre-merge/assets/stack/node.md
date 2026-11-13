@@ -19,5 +19,5 @@ A dependency record that lives under `docs/` (a table of dependencies with
 the date each version was checked, kept there because JSON manifests cannot
 hold comments) rides with its manifest: when `package.json` changed, the
 record's file goes in the implementation bucket with the manifest and
-lockfile, not in the docs commit. Unstage it from the docs commit with the
-`git reset -q -- <file>` line phase 2 gives.
+lockfile, not in the docs commit: pass it to `rebuild.sh` as
+`--to-impl <file>`.

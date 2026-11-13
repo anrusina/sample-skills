@@ -5,9 +5,9 @@ H2 sections are named after the steps that apply them:
 
 | Section | Applied in |
 |---|---|
-| *After rebase* | phase 1a steps 2–3: conflict rules while rebasing, re-run triggers and checks once it finishes |
+| *After rebase* | phase 1a steps 2–3: conflict rules while rebasing; re-run triggers (which may only skip a setup step the rebase left untouched) and checks once it finishes |
 | *Unique identifiers* | phase 1a step 4, beside the EARS spec ID check |
-| *Rebuild* | phase 2: which bucket a file goes in, commit message rules |
+| *Rebuild* | phase 2: which bucket a file goes in (passed to `rebuild.sh` as `--to-docs` or `--to-impl`), commit message rules |
 | *Follow-up issues* | phase 4: labels and body details |
 | *Summary* | phase 5: extra summary rows |
 | *Worktree cleanup* | phase 5: notes on removing the worktree |
