@@ -114,28 +114,38 @@ every per-skill variant: skills never restate it in their own words.
 
 ### Project form
 
-`/setup-skills` writes the same table with values instead of rules, and the
-assets line names what was copied in:
+`/setup-skills` (its `scripts/setup.sh`) writes the same rows as a list of
+values, so a value may span lines (a whole policy section, several gates):
 
 ```markdown
 ## Project facts
 
 <!-- facts:begin -->
-Written by /setup-skills from `.agents/skills-profile.md` (managed copy: edit
-the profile and run `/setup-skills update`, not this block).
+Written by /setup-skills from `.agents/skills-profile.md` (managed copy:
+edit the profile and run `/setup-skills update`, not this block).
 
-| Fact | Value |
-|---|---|
-| `<repo>` | `acme/widgets` |
-| `<base>` | `main` |
-| wrapper | `mise exec --` |
-| gates | `make check` |
-| …
-
-Assets: every file under `assets/stack/` and `assets/field/` applies (python,
-generated-artifacts).
+- **`<repo>`**: `acme/widgets`
+- **wrapper**: `mise exec --`. Run the gates, and each tool the wrapper provides …
+- **gates**:
+  1. `make check`
+- **dependency policy**:
+  > Check the registry's publish date: 14 days minimum.
+- **skill names**: `/commit`, `/pr` run from this project's copy; any other skill as `/sample-skills:<name>` from the plugin. …
+- **assets**: every file under `assets/stack/` and `assets/field/` applies (python, generated-artifacts)
 <!-- facts:end -->
 ```
+
+How a rule becomes a value, so that rendering has one right answer:
+
+- A rule's text after "or none." says how to apply the value (the wrapper
+  and build-input docs rows); it stays beside the value.
+- An empty value is `none`, followed by the rule's own parenthesis after
+  "or none" (`none (skip step 8.1)`), or by its "without that section, …"
+  fallback.
+- A row whose rule says "read at run time" keeps its rule.
+- An optional fact holds the **whole** AGENTS.md section it names; a skill
+  that needs only part of it (which milestones are active, say) takes that
+  part at run time.
 
 A **detached** copy has the same block with a first line that says it is the
 project's own copy, edited by hand.
@@ -151,7 +161,47 @@ project's own copy, edited by hand.
 - Never `VAR=$(…)` in one fenced block and `$VAR` in another. A single block
   that sets and uses a variable in one call is fine.
 - Body text files go through `mktemp`, never a fixed `/tmp/<name>` that two
-  sessions can share.
+  sessions can share. Commit messages too: write the message with a quoted
+  heredoc into a `mktemp` file and `git commit -F` it, in one call. Inside
+  `-m "…"` the shell runs every backticked identifier in the message.
+
+## Scripts
+
+A fixed sequence of `git` and `gh` calls, one the model would otherwise work
+out again on every run, is a script in the skill's `scripts/` folder. The
+skill keeps the judgement (which fact, which bucket, whether to stop); the
+script does what has one right answer.
+
+- **Language:** bash 3.2 or later, git and gh, plus POSIX tools (`awk`,
+  `sed`, `grep`, `sort`). No `jq` (gh's `--jq` covers JSON), no Python, so
+  a script runs on a stock macOS or Linux.
+- **Calling it:** `${CLAUDE_SKILL_DIR}/scripts/<name>.sh`. Claude Code
+  replaces the variable with the skill's own folder, in the body and in
+  `allowed-tools`, so one `Bash(${CLAUDE_SKILL_DIR}/scripts/<name>.sh *)`
+  entry runs it without a prompt. The Codex installer writes the installed
+  path in its place.
+- **Wrapper:** every script takes `--wrap '<wrapper>'` as its first argument
+  and runs its own `git` and `gh` through it. The skill passes the wrapper
+  fact; the command still starts with the script's path, so it still
+  matches `allowed-tools`.
+- **Shape:** the header comment is the usage text, printed on a wrong
+  argument with exit 2. Output is `key=value` lines or one record per line,
+  so the skill reads values straight off it. A script never asks a question
+  and never decides one: it stops with a message and a non-zero exit, and
+  the skill takes it from there.
+- **Shared scripts** are copied, byte for byte, into every skill that uses
+  them, because each skill must stand alone. `scripts/check-shared-scripts.sh`
+  at the repository root fails when two copies differ.
+
+| Script | In | Does |
+|---|---|---|
+| `review-threads.sh` | review-pr, fix-pr-findings, pre-merge | a PR's review threads, unresolved or all, one JSON object each |
+| `worktree.sh` | start-task, review-pr, pre-merge, coding-master | add, move and remove worktrees under the primary checkout's `.claude/worktrees/` |
+| `spec-ids.sh` | arrow-check, start-task, pre-merge, pr, doc-audit, doc-audit-full | defined EARS IDs (table or line form), duplicates, `@spec` tags, orphans, tags added on a branch |
+| `review-round.sh` | review-pr | resolve the PR and decide between a full and a follow-up round |
+| `rebuild.sh`, `ci-run.sh` | pre-merge | the docs-first rebuild with its content check; the CI-equivalent run |
+| `feedback.sh` | feedback-review | new feedback since the last review, and the review timestamp |
+| `setup.sh` | setup-skills | render, lock, plan and apply an update |
 
 ## Assets
 
