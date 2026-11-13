@@ -36,8 +36,8 @@ shell variable.
 | Fact | How to find it |
 |---|---|
 | `<repo>` | `gh repo view --json nameWithOwner -q .nameWithOwner` |
-| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
-| skill names | for each skill this one runs or names for a session (`issue`, `coding-master`): `/<name>` when the project has its own copy in `.agents/skills/<name>/` (look in the primary checkout, where sessions load skills from), otherwise the namespaced form the session's skill list shows (e.g. `/sample-skills:issue`) |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
+| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
 | dependency policy | AGENTS.md dependency-policy section (for example *Security → Dependency policy*): when a new version may be adopted, or none (the default: once it has been published for at least 14 days) |
 | backlog milestone | AGENTS.md *Milestones*: the backlog milestone, or none (ask the owner once which existing milestone it is, and tell them to record it there) |
 | project board | AGENTS.md *Project board*: the board tickets are tracked on, or none (skip the steps that need it) |
@@ -50,10 +50,6 @@ holds, not by its exact title. When a required fact is missing, ask the
 developer once, use the answer, and tell them which AGENTS.md section to
 record it in.
 <!-- facts:end -->
-
-Prefix every tool command in this skill with the wrapper, `gh` included.
-Skills are named below in their short form (`/issue`, `/coding-master`); run
-or name them in the form recorded in the skill names fact.
 
 ## input
 

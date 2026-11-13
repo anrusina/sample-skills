@@ -17,11 +17,11 @@ shell variable.
 
 | Fact | How to find it |
 |---|---|
-| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
 | labels | `gh label list --limit 200`, read at run time: the type, priority and mode labels the repository defines |
 | milestones | AGENTS.md *Milestones*: which milestones are active and which are backlog, and the rule for choosing one, or none (judge by the open milestones' titles, descriptions and due dates) |
 | project board | AGENTS.md *Project board*: the board's owner and number, and whether it adds new issues by itself, or none (skip step 9) |
-| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
 | assets | the stack and field assets that apply: see *Assets* below |
 
 **AGENTS.md sections by role.** Projects name sections differently. The build
@@ -37,8 +37,6 @@ record it in.
 run, load every asset whose condition holds, and apply each where a step names
 its section. With none loaded, the steps' generic text applies.
 <!-- facts:end -->
-
-Prefix every tool command in this skill with the wrapper, `gh` included.
 
 ## input
 

@@ -53,12 +53,12 @@ shell variable.
 |---|---|
 | `<repo>` | `gh repo view --json nameWithOwner -q .nameWithOwner` |
 | `<base>` | `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; if that fails, `git symbolic-ref --short refs/remotes/origin/HEAD \| sed 's\|^origin/\|\|'` |
-| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
 | gates | AGENTS.md build section: the format, lint/analyze and test commands, in order, or the one command that runs them all |
 | format fix | AGENTS.md build section: the write-mode formatter, if the format gate only checks |
 | setup | AGENTS.md *Worktree setup*: the steps a fresh worktree needs (dependencies, code generation), or none |
-| build-input docs | AGENTS.md *Project structure*: Markdown that feeds the build (content collections, docs sites), or none |
-| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| build-input docs | AGENTS.md *Project structure*: Markdown the build reads, or none. Whatever AGENTS.md says, Markdown or MDX inside the source tree that the build reads (content collections, MDX pages, a docs site's sources) counts too. A change to any of it runs the gates like code |
+| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
 | assets | the stack and field assets that apply: see *Assets* below |
 
 **AGENTS.md sections by role.** Projects name sections differently. The build
@@ -101,9 +101,16 @@ project's profile):
 `labels` (`gh label list`, read at run time), keeps its rule in a project copy
 too: `/setup-skills` copies it unchanged instead of writing a value.
 
-`wrapper` is applied by a rule in the skill's body, not per command: "prefix
-every tool command in this skill with the wrapper, `gh` and the gates
-included".
+The `wrapper`, `build-input docs` and `skill names` rows are word for word
+the same in every skill that has them, so a reader learns each once and a
+fix lands everywhere. `wrapper` is applied as its row says, not per command:
+the body names no wrapper. Wrapping only what the wrapper provides keeps
+plain `git` and `gh` calls matching the skill's `allowed-tools`; a project
+whose version manager provides `gh` lists it in that manager's config, and
+the rule wraps it there.
+
+The `skill names` row, and the closing sentence about short forms, replace
+every per-skill variant: skills never restate it in their own words.
 
 ### Project form
 
@@ -208,5 +215,8 @@ copied into a project, so it has no facts block, no assets and no suffix.
 
 ## Model pins
 
-A skill that sets `model` uses the alias (`haiku`), never a dated model ID.
-Skills that make judgement calls set no `model`.
+Pin a model only where a smaller one is enough for the skill's work:
+`commit`, `commit-and-pr`, `issue` and `pr` pin `haiku`. Always pin the
+alias, never a dated model ID, so each run gets the latest version of that
+model. Skills whose work needs the strongest reasoning (review, design,
+coordination) set no `model` and run on the session's.

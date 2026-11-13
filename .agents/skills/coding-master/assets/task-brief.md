@@ -29,9 +29,10 @@ on where this issue sits: its track, what merged before it, anything the
 owner already decided about it.>
 
 Skills: if a skill named here does not load when invoked, read its SKILL.md
-from wherever it is installed: the project's `.agents/skills/<name>/`, or the
-plugin's skills folder (`claude plugin details sample-skills` shows it, as
-does the namespaced skill's base directory), and follow it exactly. If you
+from wherever it is installed: the project's `.agents/skills/<name>/` or `.claude/skills/<name>/`, or the
+plugin's copy at `<installPath>/.agents/skills/<name>/`, where
+`<installPath>` is the `installPath` that `claude plugin list --json` prints
+for `sample-skills`, and follow it exactly. If you
 can't start it that way either, say so plainly in one line and stop; the
 owner will type the command here.
 

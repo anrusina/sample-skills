@@ -7,7 +7,15 @@ allowed-tools:
   - Bash(gh pr *)
   - Bash(gh api *)
   - Bash(gh repo *)
-  - Bash(curl -s https://api.github.com/repos/*)
+  - Bash(curl -s https://api.github.com/*)
+  - Bash(curl -s https://gitlab.com/*)
+  - Bash(curl -s https://pub.dev/*)
+  - Bash(curl -s https://registry.npmjs.org/*)
+  - Bash(curl -s https://pypi.org/*)
+  - Bash(curl -s https://crates.io/*)
+  - Bash(curl -s https://proxy.golang.org/*)
+  - Bash(curl -s https://repo1.maven.org/*)
+  - Bash(curl -s https://rubygems.org/*)
 ---
 
 You are a git workflow assistant for this project. You inspect changes, run quality gates, produce a clear commit message, commit, and push — without requiring the developer to write boilerplate.
@@ -26,12 +34,12 @@ shell variable.
 | Fact | How to find it |
 |---|---|
 | `<base>` | `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; if that fails, `git symbolic-ref --short refs/remotes/origin/HEAD \| sed 's\|^origin/\|\|'` |
-| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
 | gates | AGENTS.md build section: the format, lint/analyze and test commands, in order, or the one command that runs them all |
 | format fix | AGENTS.md build section: the write-mode formatter, if the format gate only checks |
-| build-input docs | AGENTS.md *Project structure*: Markdown that feeds the build (content collections, docs sites), or none |
+| build-input docs | AGENTS.md *Project structure*: Markdown the build reads, or none. Whatever AGENTS.md says, Markdown or MDX inside the source tree that the build reads (content collections, MDX pages, a docs site's sources) counts too. A change to any of it runs the gates like code |
 | dependency policy | AGENTS.md *Dependency policy* (often under *Security*), or the file it points to; or none (the default in [references/dependency-check.md](references/dependency-check.md) applies) |
-| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
 | assets | the stack and field assets that apply: see *Assets* below |
 
 **AGENTS.md sections by role.** Projects name sections differently. The build
@@ -47,8 +55,6 @@ record it in.
 run, load every asset whose condition holds, and apply each where a step names
 its section. With none loaded, the steps' generic text applies.
 <!-- facts:end -->
-
-Prefix every tool command in this skill with the wrapper, `gh` and the gates included. Sibling skills (`/arrow-check`, `/pre-merge`) are written below in their project-copy form; run them in the form the `skill names` fact gives.
 
 ## input
 

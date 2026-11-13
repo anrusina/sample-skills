@@ -21,15 +21,12 @@ shell variable.
 
 | Fact | How to find it |
 |---|---|
-| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
 <!-- facts:end -->
 
-`/commit` and `/pr` below are written in their project-copy form. Run them in
-the form this skill was invoked with: `/sample-skills:commit` and
-`/sample-skills:pr` when this is `/sample-skills:commit-and-pr`, `/commit` and
-`/pr` when it is `/commit-and-pr`. If a sibling skill does not load, read its
-`SKILL.md` from the folder beside this skill's own (`../commit/SKILL.md`,
-`../pr/SKILL.md`, relative to this skill's directory) and follow it.
+If `/commit` or `/pr` does not load, read its `SKILL.md` from the folder
+beside this skill's own (`${CLAUDE_SKILL_DIR}/../commit/SKILL.md`, or
+`../sample-skills-commit/` in a Codex install) and follow it.
 
 ## invocation
 

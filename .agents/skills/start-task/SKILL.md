@@ -24,10 +24,10 @@ shell variable.
 | Fact | How to find it |
 |---|---|
 | `<base>` | `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; if that fails, `git symbolic-ref --short refs/remotes/origin/HEAD \| sed 's\|^origin/\|\|'` |
-| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
 | setup | AGENTS.md *Worktree setup*: the steps a fresh worktree needs (dependencies, code generation), or none |
 | milestones | AGENTS.md *Milestones*: which milestones are active delivery milestones and which are future/backlog ones, or none (skip the milestone warning) |
-| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
 | assets | the stack and field assets that apply: see *Assets* below |
 
 **AGENTS.md sections by role.** Projects name sections differently. The build
@@ -53,8 +53,6 @@ its section. With none loaded, the steps' generic text applies.
 
 Read **`AGENTS.md`** before fetching anything or forming any plan — read it,
 don't recall it. Order: `AGENTS.md` → ticket (step 1) → upstream docs.
-
-Prefix every tool command in this skill with the wrapper, `gh` included.
 
 ## step 1 — fetch and read the issue
 

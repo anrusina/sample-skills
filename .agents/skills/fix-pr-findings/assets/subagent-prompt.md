@@ -18,7 +18,8 @@ Format fix: <the format-fix fact, or "none">
 Build-input docs: <the build-input docs fact, or "none">
 Field and stack rules: <the *Fix* section of each loaded asset, pasted in, or "none">
 
-Prefix every tool command with the tool wrapper, if any.
+Run the quality gates, and any tool the wrapper provides, through the tool
+wrapper; run git and other commands bare.
 
 Steps:
 1. Read AGENTS.md for project constraints.

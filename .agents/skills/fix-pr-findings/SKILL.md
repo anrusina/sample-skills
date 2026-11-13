@@ -19,11 +19,11 @@ shell variable.
 | Fact | How to find it |
 |---|---|
 | `<repo>` | `gh repo view --json nameWithOwner -q .nameWithOwner` |
-| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
 | gates | AGENTS.md build section: the format, lint/analyze and test commands, in order, or the one command that runs them all |
 | format fix | AGENTS.md build section: the write-mode formatter, if the format gate only checks |
-| build-input docs | AGENTS.md *Project structure*: Markdown that feeds the build (content collections, docs sites), or none |
-| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| build-input docs | AGENTS.md *Project structure*: Markdown the build reads, or none. Whatever AGENTS.md says, Markdown or MDX inside the source tree that the build reads (content collections, MDX pages, a docs site's sources) counts too. A change to any of it runs the gates like code |
+| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
 | assets | the stack and field assets that apply: see *Assets* below |
 
 **AGENTS.md sections by role.** Projects name sections differently. The build
@@ -40,7 +40,7 @@ run, load every asset whose condition holds, and apply each where a step names
 its section. With none loaded, the steps' generic text applies.
 <!-- facts:end -->
 
-Prefix every tool command in this skill with the wrapper, `gh` and the gates included, and pass the wrapper on to every sub-agent. Sibling skills appear below as `/<name>`; name them in the form *skill names* gives.
+Pass the wrapper on to every sub-agent, with the row's rule.
 
 A **documentation-only fix** is one whose changed files are all Markdown or under `docs/`, and none of them under a *build-input docs* path: Markdown the build reads is a build input, so a fix to it runs the gates like code.
 

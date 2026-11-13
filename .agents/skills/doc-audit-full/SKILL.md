@@ -21,10 +21,10 @@ shell variable.
 | Fact | How to find it |
 |---|---|
 | `<base>` | `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; if that fails, `git symbolic-ref --short refs/remotes/origin/HEAD \| sed 's\|^origin/\|\|'` |
-| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
 | gates | AGENTS.md build section: the format, lint/analyze and test commands, in order, or the one command that runs them all |
 | format fix | AGENTS.md build section: the write-mode formatter, if the format gate only checks |
-| skill names | sibling skills run in the same form as this one: `/sample-skills:<name>` from the plugin, `/<name>` from a project copy |
+| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
 | assets | the stack and field assets that apply: see *Assets* below |
 
 **AGENTS.md sections by role.** Projects name sections differently. The build
@@ -40,8 +40,6 @@ record it in.
 run, load every asset whose condition holds, and apply each where a step names
 its section. With none loaded, the steps' generic text applies.
 <!-- facts:end -->
-
-Prefix every tool command in this skill with the wrapper, `gh` and the gates included. Other skills are named here in their short form (`/doc-audit`, `/arrow-check`, `/design-docs`, `/issue`); write them in the form the skill names fact gives.
 
 ## input
 

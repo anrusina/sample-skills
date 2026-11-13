@@ -36,8 +36,8 @@ shell variable.
 |---|---|
 | `<repo>` | `gh repo view --json nameWithOwner -q .nameWithOwner` |
 | `<base>` | `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; if that fails, `git symbolic-ref --short refs/remotes/origin/HEAD \| sed 's\|^origin/\|\|'` |
-| wrapper | AGENTS.md build section: the prefix its tools run through (a version manager's exec command, for example), or none |
-| skill names | for each skill a session is told to run (`start-task`, `commit-and-pr`, `review-pr`, `fix-pr-findings`, `pre-merge`, `issue`): `/<name>` when the project has its own copy in `.agents/skills/<name>/` (look in the primary checkout, where sessions load skills from), otherwise the namespaced form the session's skill list shows (e.g. `/sample-skills:review-pr`) |
+| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'`; run every other command bare, so it matches `allowed-tools` |
+| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
 | releases | AGENTS.md *Releases*: the workflow that deploys on merge, the paths it ignores, and where the deploy lands, or none (skip step 8.1) |
 | manual workflows | AGENTS.md build or release section: workflows run by hand (a branch build, a native build), or none |
 
@@ -49,10 +49,6 @@ holds, not by its exact title. When a required fact is missing, ask the
 developer once, use the answer, and tell them which AGENTS.md section to
 record it in.
 <!-- facts:end -->
-
-Prefix every tool command in this skill with the wrapper, `gh` included.
-Skills are named below in their short form (`/review-pr`); in commands to
-sessions and in the briefs, use the form recorded in the skill names fact.
 
 ## input
 

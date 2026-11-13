@@ -27,9 +27,10 @@ post the review to GitHub. A coordinator session started you; another session
 owns the fixes.
 
 Skills: if `<review-pr>` does not load when invoked, read its SKILL.md from
-wherever it is installed: the project's `.agents/skills/review-pr/`, or the
-plugin's skills folder (`claude plugin details sample-skills` shows it, as
-does the namespaced skill's base directory), and follow it exactly. If you
+wherever it is installed: the project's `.agents/skills/review-pr/` or `.claude/skills/review-pr/`, or the
+plugin's copy at `<installPath>/.agents/skills/review-pr/`, where
+`<installPath>` is the `installPath` that `claude plugin list --json` prints
+for `sample-skills`, and follow it exactly. If you
 can't start it that way either, say so plainly in one line and stop; the
 owner will type the command here.
 

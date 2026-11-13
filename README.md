@@ -158,7 +158,7 @@ Copy [`AGENTS.md`](AGENTS.md) too if the project has none (or merge its sections
 
 **Without the plugin**, copy by hand: `cp -R path/to/sample-skills/.agents path/to/project/`, `ln -s ../.agents/skills path/to/project/.claude/skills`, delete `setup-skills` and the assets the project doesn't use, and fill in `AGENTS.md`. The skills then work out their facts at run time, as the plugin's do.
 
-Whichever way, tighten each skill's `allowed-tools` to the project's own commands (its wrapper-prefixed `gh`, gates and setup commands), so they run without permission prompts.
+The generic skills run `git` and `gh` bare and wrap only the gates and the tools the project's wrapper provides, so their `allowed-tools` match. A project copy adds its own commands (the gates, setup steps, any wrapper-provided tool) to each skill's `allowed-tools`; `/setup-skills` does this when it writes the copy.
 
 ## Structure
 
