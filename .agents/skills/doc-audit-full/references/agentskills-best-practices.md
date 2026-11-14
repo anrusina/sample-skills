@@ -71,17 +71,17 @@ Check for these high-value patterns. Missing patterns are not always gaps — on
 |---|---|---|
 | `name` | Yes | Matches directory name |
 | `description` | Yes | Trigger-phrased for auto-invokable skills ("Use when..."). Clear enough to match real user prompts. |
-| `model` | Yes | See model calibration below |
-| `disable-model-invocation` | For side-effect skills | Must be `true` on skills that create PRs, open issues, push commits, or modify shared state |
+| `model` | Routine skills only | See model calibration below |
+| `disable-model-invocation` | As recorded | Must match the project's invocation-gating table, if it records one — look in `AGENTS.md`, then `docs/dev/skills.md`, for a table listing which skills are gated. A skill there marked open carries an explicit-request check in its body instead; flag any skill whose flag differs from the table, but never add or remove the flag to fix it. A new side-effect skill (creates PRs, opens issues, pushes commits, modifies shared state) is gated unless its body has an explicit-request check, and gets a row in that table. When the project records no gating table, skip the comparison and say so in the report |
 | `allowed-tools` | Recommended | List specific `Bash(pattern *)` entries to reduce permission prompts |
 
 **Model calibration:**
 
-| Model | Use for |
+| `model` | Use for |
 |---|---|
-| `claude-haiku-4-5-20251001` | Routine, well-defined tasks: commit messages, issue creation, label lookup |
-| `claude-sonnet-4-6` | Tasks requiring reasoning, synthesis, or cross-file analysis: code review, doc repair |
-| `claude-opus-4-8` | Rare, high-complexity tasks: architectural decisions, ambiguous multi-system analysis |
+| `haiku` | Routine, well-defined tasks: commit messages, issue creation, label lookup |
+| *(omitted)* | Everything requiring reasoning, synthesis, or cross-file analysis: code review, doc repair, design docs. The skill runs on the session's default model, so it improves as the default does instead of staying pinned to an older one. |
 
-Flag `claude-sonnet-4-6` or `claude-opus-4-8` on routine mechanical skills as over-powered.
-Flag `claude-haiku-4-5-20251001` on skills that require non-obvious judgment or cross-file synthesis as under-powered.
+Flag any dated model ID (`claude-haiku-4-5-20251001`, say) as stale — pin the `haiku` alias. Flag any non-haiku `model` pin as stale — judgment skills omit the field.
+Flag `haiku` on skills that require non-obvious judgment or cross-file synthesis as under-powered.
+Flag a routine mechanical skill with no `model` as over-powered — it should pin haiku.

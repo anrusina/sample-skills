@@ -1,0 +1,14 @@
+{
+  "name": "sample-skills",
+  "description": "Marketplace for the sample-skills plugin: generic Arrow of Intent workflow skills.",
+  "owner": {
+    "name": "Nastya"
+  },
+  "plugins": [
+    {
+      "name": "sample-skills",
+      "source": "./",
+      "description": "Generic Arrow of Intent workflow skills, namespaced as /sample-skills:<skill>."
+    }
+  ]
+}

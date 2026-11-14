@@ -14,14 +14,19 @@ Ref: <discussion URL>
 When one fix covers multiple findings:
 
 ```
-fix: cancel subscriptions and release resources in dispose (PR #9 high #2, medium #3)
+fix: release listeners and timers on teardown (PR #9 high #2, medium #3)
 
 Addresses review findings from PR #9:
-- High #2: SubscriptionManager leak in PdfViewerState
-- Medium #3: AnimationController not released in GridOverlayState
+- High #2: event listener leak in CheckoutView
+- Medium #3: retry timer not cancelled in SessionRefresher
 
-Both resources released in dispose() per component lifecycle contract.
+Both are released in their owner's teardown hook, so neither fires
+after the view or service is gone.
 
-Ref: https://github.com/{owner}/{repo}/pull/9#discussion_r188675
-Ref: https://github.com/{owner}/{repo}/pull/9#discussion_r188684
+Ref: https://github.com/<owner/name>/pull/9#discussion_r188675
+Ref: https://github.com/<owner/name>/pull/9#discussion_r188684
 ```
+
+`<owner/name>` is `<repo>` — copy the discussion URL from the finding rather than building it by hand.
+
+No AI attribution trailer unless `AGENTS.md` asks for one.
