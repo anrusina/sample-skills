@@ -3,8 +3,15 @@ name: pr
 description: "Open a pull request from the current branch's pushed commits: writes the title and a body with what changed, the issue links (Closes, or Ref when an acceptance criterion is unmet), the specs it implements and a testing checklist, then adds existing labels and assigns it. Use when commits are pushed and need a PR: 'open a PR', 'raise a pull request', or the second half of /commit-and-pr. Not for committing (/commit) or reviewing a PR (/review-pr). Generic copy: if a project skill named `pr` is also listed, use that one instead."
 model: haiku
 allowed-tools:
-  - Bash(git *)
-  - Bash(gh pr *)
+  - Bash(git diff *)
+  - Bash(git log *)
+  - Bash(git rev-parse *)
+  - Bash(git grep *)
+  - Bash(git symbolic-ref *)
+  - Bash(git branch *)
+  - Bash(gh pr create *)
+  - Bash(gh pr edit *)
+  - Bash(gh pr view *)
   - Bash(gh api *)
   - Bash(gh label *)
   - Bash(gh repo *)

@@ -1,10 +1,19 @@
 ---
 name: commit
-description: "Commit the current task's changes and push them, with no confirmation prompts: stages the task's files, runs the quality gates and /arrow-check, checks new dependencies against the dependency policy, creates a branch when on the default branch, writes a focused message and commits it as a new commit (never amending reviewed history), then pushes. --squash folds the unpushed commits into one. Use whenever changes need committing: 'commit this', 'save this to git', the end of a task, a fix ready to push. To also open a PR, use /commit-and-pr. Generic copy: if a project skill named `commit` is also listed, use that one instead."
+description: "Commit the current task's changes and push them: stages the task's files, runs the quality gates and /arrow-check, checks new dependencies against the dependency policy, creates a branch when on the default branch, writes a focused message and commits it as a new commit (never amending reviewed history), then pushes. --squash folds the unpushed commits into one. Use whenever changes need committing: 'commit this', 'save this to git', the end of a task, a fix ready to push. To also open a PR, use /commit-and-pr. Generic copy: if a project skill named `commit` is also listed, use that one instead."
 model: haiku
 allowed-tools:
-  - Bash(git *)
-  - Bash(gh pr *)
+  - Bash(git status *)
+  - Bash(git diff *)
+  - Bash(git log *)
+  - Bash(git show *)
+  - Bash(git rev-parse *)
+  - Bash(git symbolic-ref *)
+  - Bash(git merge-base *)
+  - Bash(git ls-files *)
+  - Bash(git add *)
+  - Bash(git checkout -b *)
+  - Bash(gh pr view *)
   - Bash(gh api *)
   - Bash(gh repo *)
   - Bash(curl -s https://api.github.com/*)
@@ -20,7 +29,7 @@ allowed-tools:
 
 You are a git workflow assistant for this project. You inspect changes, run quality gates, produce a clear commit message, commit, and push — without requiring the developer to write boilerplate.
 
-**Invoking `/commit` is the approval.** The developer reviews changes in the pull request, not in the staging area or in chat. Do not ask them to stage files, confirm the file list, or approve the commit message. Stop only for a real blocker: a failed quality gate, an Arrow of Intent contradiction, a dependency that fails the security policy, or a destructive action (force-push).
+**Invoking `/commit` is the approval.** The developer reviews changes in the pull request, not in the staging area or in chat. Do not ask them to stage files, confirm the file list, or approve the commit message. Stop only for a real blocker: a failed quality gate, an Arrow of Intent contradiction, a dependency that fails the security policy, or a destructive action (force-push). `git commit` and `git push` stay out of `allowed-tools` on purpose: unless the session already allows them, their permission prompt is where the developer says yes.
 
 ## Project facts
 
@@ -213,7 +222,7 @@ Work done:
 
 ## step 9 — commit
 
-Commit without asking for approval. Write the message into a `mktemp` file with a quoted heredoc and commit from it, in one call: inside `git commit -m "…"` the shell would run every backticked identifier in the message.
+Don't ask for approval in chat. Write the message into a `mktemp` file with a quoted heredoc and commit from it, in one call: inside `git commit -m "…"` the shell would run every backticked identifier in the message.
 
 ```bash
 msg=$(mktemp)

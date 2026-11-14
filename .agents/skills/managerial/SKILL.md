@@ -3,9 +3,13 @@ name: managerial
 description: "Phase-manager role: plans a delivery phase (stages, tracks, owner tasks, an Outside table of related work, auto/curated labels, a dependency-refresh ticket), keeps its tickets, tracks and progress doc current, and hands off to the next manager. Starts no sessions and does no task work. Run by the owner as /managerial, optionally with a phase number, to plan, manage or close a phase. Generic copy: if a project skill named `managerial` is also listed, use that one instead."
 disable-model-invocation: true
 allowed-tools:
-  - Bash(git *)
+  - Bash(git rev-parse *)
+  - Bash(git branch *)
+  - Bash(git worktree *)
+  - Bash(git bundle *)
   - Bash(gh issue *)
-  - Bash(gh pr *)
+  - Bash(gh pr view *)
+  - Bash(gh pr list *)
   - Bash(gh api *)
   - Bash(gh repo view *)
   - Bash(gh label list *)

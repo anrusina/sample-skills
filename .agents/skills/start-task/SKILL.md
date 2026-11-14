@@ -2,7 +2,17 @@
 name: start-task
 description: "Start work on a GitHub issue: reads it with every comment, makes a worktree at the latest default branch, checks the HLD → LLD → EARS spec chain for its subsystem, reports what is ready and what must be written before any code, and creates the branch when the chain is complete. Use for '/start-task [issue]', 'start on issue 42', 'pick up #42', or a coordinator's brief that starts an issue. Not for filing an issue (/issue) or writing the missing docs (/design-docs). Generic copy: if a project skill named `start-task` is also listed, use that one instead."
 allowed-tools:
-  - Bash(git *)
+  - Bash(git status *)
+  - Bash(git diff *)
+  - Bash(git grep *)
+  - Bash(git rev-parse *)
+  - Bash(git symbolic-ref *)
+  - Bash(git fetch *)
+  - Bash(git pull *)
+  - Bash(git branch *)
+  - Bash(git switch *)
+  - Bash(git checkout *)
+  - Bash(git worktree *)
   - Bash(gh api *)
   - Bash(gh issue *)
   - Bash(gh repo *)
