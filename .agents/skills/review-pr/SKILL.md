@@ -8,6 +8,7 @@ allowed-tools:
   - Bash(git show *)
   - Bash(git blame *)
   - Bash(git grep *)
+  - Bash(git -C * grep *)
   - Bash(git rev-parse *)
   - Bash(git rev-list *)
   - Bash(git merge-base *)

@@ -12,6 +12,7 @@ allowed-tools:
   - Bash(git branch *)
   - Bash(git switch *)
   - Bash(git checkout *)
+  - Bash(git -C * checkout -b *)
   - Bash(git worktree *)
   - Bash(gh api *)
   - Bash(gh issue *)
