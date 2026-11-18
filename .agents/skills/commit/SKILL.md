@@ -102,7 +102,7 @@ git rev-parse --abbrev-ref HEAD
 
 Note the branch name it prints: step 10 writes it in as `<branch>`.
 
-**On the default branch (`<base>`)** — committing directly to it is not allowed. Suggest a branch:
+**On the default branch (`<base>`), or detached (it prints `HEAD`)** — committing here is not allowed. Suggest a branch:
 ```
 feature-<N>/<3-5-word-slug>   # new functionality
 fix-<N>/<3-5-word-slug>        # bug fixes
