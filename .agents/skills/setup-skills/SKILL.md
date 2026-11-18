@@ -181,11 +181,13 @@ remove the clone, and stop.
    ```
    It keeps only the connected assets, renders the facts block (the
    anatomy's *Project form*), removes the "Generic copy" sentence, and adds
-   the project's commands and wrapped tools to `allowed-tools`.
+   the project's commands and wrapped tools to `allowed-tools`. The first
+   render also writes `.agents/skills/_shared/`, the files the skills share
+   (not a skill); `update` keeps it current and the lock records it.
 3. **Claude Code discovery.** If `.claude/skills` doesn't exist:
    `mkdir -p .claude` then `ln -s ../.agents/skills .claude/skills`. If it
    already links there, leave it. If it is a real folder, link each rendered
-   skill into it (`ln -s ../../.agents/skills/<skill> .claude/skills/<skill>`)
+   skill, and `_shared`, into it (`ln -s ../../.agents/skills/<skill> .claude/skills/<skill>`)
    unless the name is taken there, and name the taken ones.
 4. **Managed only:** write the lock:
    ```bash

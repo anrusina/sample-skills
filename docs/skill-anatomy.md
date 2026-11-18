@@ -158,15 +158,17 @@ project's own copy, edited by hand.
 ## Scripts
 
 A fixed sequence of `git` and `gh` calls the model would otherwise work out on
-every run is a script in the skill's `scripts/` folder. The skill keeps the
+every run is a script: in the skill's `scripts/` folder, or in
+`_shared/scripts/` when more than one skill runs it. The skill keeps the
 judgement (which fact, which bucket, whether to stop); the script does what
 has one right answer.
 
 - **Language:** bash 3.2 or later, git and gh, plus POSIX tools (`awk`,
   `sed`, `grep`, `sort`). No `jq` (use gh's `--jq`), no Python.
-- **Calling it:** `${CLAUDE_SKILL_DIR}/scripts/<name>.sh`, in the body and in
-  `allowed-tools`, so one `Bash(${CLAUDE_SKILL_DIR}/scripts/<name>.sh *)`
-  entry runs it without a prompt. The Codex installer writes the installed
+- **Calling it:** `${CLAUDE_SKILL_DIR}/scripts/<name>.sh` (a shared one:
+  `${CLAUDE_SKILL_DIR}/../_shared/scripts/<name>.sh`), in the body and in
+  `allowed-tools`, so one `Bash(<that path> *)` entry runs it without a
+  prompt. The Codex installer writes the installed
   path in its place.
 - **Wrapper:** every script takes `--wrap '<wrapper>'` as its first argument
   and runs its own `git` and `gh` through it.
@@ -174,19 +176,38 @@ has one right answer.
   argument with exit 2. Output is `key=value` lines or one record per line.
   A script never asks or decides a question: it stops with a message and a
   non-zero exit, and the skill takes it from there.
-- **Shared scripts** are copied byte for byte into every skill that uses
-  them, so each skill stands alone. `scripts/check-shared-scripts.sh` fails
-  when two copies differ.
 
 | Script | In | Does |
 |---|---|---|
-| `review-threads.sh` | review-pr, fix-pr-findings, pre-merge | a PR's review threads, unresolved or all, one JSON object each |
-| `worktree.sh` | start-task, review-pr, pre-merge, coding-master | add, move and remove worktrees under the primary checkout's `.claude/worktrees/` |
-| `spec-ids.sh` | arrow-check, start-task, pre-merge, pr, doc-audit, doc-audit-full | defined EARS IDs (table or line form), duplicates, `@spec` tags, orphans, tags added on a branch |
+| `_shared/scripts/review-threads.sh` | review-pr, fix-pr-findings, pre-merge | a PR's review threads, unresolved or all, one JSON object each |
+| `_shared/scripts/worktree.sh` | start-task, review-pr, pre-merge, coding-master | add, move and remove worktrees under the primary checkout's `.claude/worktrees/` |
+| `_shared/scripts/spec-ids.sh` | arrow-check, start-task, pre-merge, pr, doc-audit, doc-audit-full | defined EARS IDs (table or line form), duplicates, `@spec` tags, orphans, tags added on a branch |
 | `review-round.sh` | review-pr | resolve the PR and decide between a full and a follow-up round |
 | `rebuild.sh`, `ci-run.sh` | pre-merge | the docs-first rebuild with its content check; the CI-equivalent run |
 | `feedback.sh` | feedback-review | new feedback since the last review, and the review timestamp |
 | `setup.sh` | setup-skills | render, lock, plan and apply an update |
+
+## Shared files
+
+Text or a script more than one skill needs lives once, in
+`.agents/skills/_shared/`, not copied into each skill. It is not a skill (no
+`SKILL.md`), and it is installed with any skill: the plugin carries the whole
+folder, `/setup-skills` writes it into a project and tracks it in the lock,
+and the Codex installer installs it as `sample-skills-_shared`. A skill names
+a shared file by a relative path, `../_shared/<file>` from its `SKILL.md`
+(`../../../_shared/<file>` from an asset), which resolves the same through the
+`.claude/skills` link. Shared files carry no project facts, since only a
+skill's facts block is rendered per project. `scripts/check-shared.sh` fails
+when a named shared file is missing, a shared file is named by no skill, or a
+skill keeps its own copy of a shared script.
+
+| File | Used by | Holds |
+|---|---|---|
+| `review-replies.md` | review-pr, fix-pr-findings, pre-merge | the reply prefixes each matches on, and the reply and resolve commands |
+| `design-doc-rules.md` | arrow-check, design-docs, doc-audit, doc-audit-full, review-pr | the Arrow of Intent rules a design doc keeps |
+| `git-conventions.md` | commit, start-task, pre-merge | branch names, the commit message format |
+| `agentskills-best-practices.md`, `code-doc-conventions.md` | doc-audit, doc-audit-full, review-pr | the skill-file and code-doc references |
+| `assets/stack/<id>.md` | start-task, review-pr, pre-merge | a stack's setup steps and what makes them stale (connected like any asset) |
 
 ## Assets
 

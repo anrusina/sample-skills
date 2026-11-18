@@ -8,7 +8,7 @@ The same skills are used in three ways:
 
 - **As a Claude Code plugin.** Installed once per laptop, every skill is available in every project as `/sample-skills:<skill>`, so a new project can use them from its first session. These generic copies work out each project fact at run time.
 - **As a project's own copy.** Once a project wants skills tuned to it, `/sample-skills:setup-skills` copies them into the project's `.agents/skills/`, writes the project's facts into each one and keeps only the stack and field assets the project uses. The project commits that copy, tailors it, and runs it as `/<skill>`.
-- **As a Codex skill set.** `scripts/install-codex.sh` copies the skills into `~/.agents/skills/` as `sample-skills-<skill>`.
+- **As a Codex skill set.** `scripts/install-codex.sh` copies the skills into `~/.agents/skills/` as `sample-skills-<skill>`, and their shared files as `sample-skills-_shared`.
 
 A typical path: install the plugin, start a new repository with the generic skills, then in one of the first commits run `/sample-skills:setup-skills`, review what it wrote, and commit the project's own copy.
 
@@ -170,6 +170,7 @@ Copy [`AGENTS.md`](AGENTS.md) too if the project has none (or merge its sections
       assets/            ← output templates, plus stack/ and field/ assets and their index.md
       references/        ← reference docs loaded on demand
       scripts/           ← fixed git/gh sequences the skill runs (see docs/skill-anatomy.md § Scripts)
+    _shared/             ← text, scripts and setup assets more than one skill uses (not a skill)
 .claude/
   skills -> ../.agents/skills   ← symlink for Claude Code project discovery
 .claude-plugin/
@@ -179,7 +180,7 @@ docs/
   skill-anatomy.md       ← how a skill is built: facts block, slots, assets, ids
 scripts/
   install-codex.sh       ← laptop-wide install for Codex
-  check-shared-scripts.sh ← fails when two copies of a shared skill script differ
+  check-shared.sh        ← fails when a skill names a missing shared file, or keeps its own copy
 AGENTS.md                ← standing-instructions template the skills read
 ```
 
