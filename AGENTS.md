@@ -4,13 +4,11 @@
 
 <!--
 This file is the template a project copies to its root and fills in. The
-generic skills (the sample-skills plugin) read the sections below to find the
-project's own facts (quality gates, worktree setup, pre-merge checks, project
-board…). They match a section by what it holds, so a heading can be renamed,
-but keeping these names makes the match certain. A section marked "optional"
-can be deleted; the skills then skip the steps that need it. /setup-skills
-reads the same sections when it writes these facts into a project's own copy
-of the skills. Delete this comment once filled.
+skills and /setup-skills read the sections below to find the project's facts.
+They match a section by what it holds, so a heading can be renamed, but
+keeping these names makes the match certain. A section marked "optional" can
+be deleted; the skills then skip the steps that need it. Delete this comment
+once filled.
 -->
 
 ---
@@ -84,11 +82,7 @@ AUTH-001: When a user submits invalid credentials, the system shall show an erro
 CART-002: When a user removes the last item from the cart, the system shall show the empty-cart state.
 ```
 
-Tag tests with the spec ID on the line before the test:
-```
-// @spec AUTH-001
-test('invalid credentials show an error and clear the password', () { ... });
-```
+Tests carry the spec ID (see *Testing*).
 
 ### Scope-boundary notes
 
@@ -144,9 +138,8 @@ through it, and everything else bare.}
 ### Worktree setup (optional)
 
 Commands a fresh git worktree needs before the gates pass (dependency install,
-code generation, trusting the tool-version config). `/start-task` and
-`/coding-master` run them in each new worktree, `/review-pr` in its review
-worktree, and `/pre-merge` again after rebasing.
+code generation, trusting the tool-version config). The skills run them in
+each new worktree and again after a rebase.
 
 ---
 
@@ -168,14 +161,12 @@ succeeded. `/coding-master` checks it after each merge.
 ## Project board (optional)
 
 GitHub project board that new issues and PR-linked issues go on: owner and
-project number (from the project URL). Without this section the skills skip
-every board step.
+project number (from the project URL).
 
 ## Milestones (optional)
 
-Which milestones are active delivery milestones and which are backlog, so
-`/start-task` can warn before work starts on a backlog issue and `/managerial`
-and `/feedback-review` know where deferred work goes.
+Which milestones are active delivery milestones and which are backlog (where
+deferred work goes).
 
 ## Feedback (optional)
 
@@ -238,10 +229,9 @@ Commits carry no AI attribution trailer unless this file asks for one.
 
 Before adding any package:
 
-1. Verify the specific version being added has been published for at least **14 days**.
+1. Verify the specific version being added has been published for at least **14 days**, however well-known the author.
 2. Check the package's source repo for unusual recent commits, new maintainers, or activity spikes.
 3. Record the check as a comment next to the dependency in the manifest.
-4. Never add a package published less than 14 days ago, regardless of how well-known the author is.
 
 ---
 

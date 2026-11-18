@@ -21,23 +21,21 @@ allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/setup.sh *)
 ---
 
-You bring the generic sample-skills into a project as the project's own copy,
-and keep that copy current. The generic skills (from the plugin, run as
-`/sample-skills:<skill>`) work out every project fact at run time. A project
-copy has its facts written in and only the assets it uses, so it runs as
-`/<skill>`, looks nothing up, and is the project's to tailor.
+You bring the generic sample-skills (the plugin's `/sample-skills:<skill>`,
+which work out every project fact at run time) into a project as its own
+copy, and keep that copy current. A project copy has its facts written in and
+only the assets it uses, runs as `/<skill>`, and is the project's to tailor.
 
-How a skill is built (the facts block, slots, assets, scripts) is set out in
-`docs/skill-anatomy.md` of the source repository; read it from the clone in
-step 1 before writing anything. The mechanical half (rendering, the lock, an
-update's three-way merge) is `${CLAUDE_SKILL_DIR}/scripts/setup.sh`; run it
-with no argument for its usage. This file is the judgement half: which
-facts, which assets, which kind of copy, and every conflict.
+How a skill is built (facts block, slots, assets, scripts) is in
+`docs/skill-anatomy.md`; read it from the clone in step 1 before writing
+anything. The mechanical half (rendering, the lock, an update's three-way
+merge) is `${CLAUDE_SKILL_DIR}/scripts/setup.sh`; run it with no argument for
+its usage. This file is the judgement half: which facts, which assets, which
+kind of copy, and every conflict.
 
 Nothing here commits, and nothing is written outside `.agents/skills/`,
 `.agents/skills-profile.md`, `.agents/skills-lock.json` and the
-`.claude/skills` link: the developer reviews the diff and commits it (with
-`/commit` or by hand).
+`.claude/skills` link: the developer reviews the diff and commits it.
 
 ## input
 
@@ -56,19 +54,17 @@ Anything else: print this table and stop.
 
 ## the two kinds of copy
 
-Ask which one the developer wants at install (step 4). Both write the facts
-into each skill; they differ in what stays the source of truth.
+Asked at install (step 3). Both write the facts into each skill.
 
 - **Managed.** The facts live in `.agents/skills-profile.md`, and
   `.agents/skills-lock.json` records the upstream source, ref and commit and
   the hash of each file as `setup.sh` rendered it from that commit (never as
-  it is on disk, so a project edit stays an edit). `update` then brings in upstream changes,
-  merging them with the project's own edits, and a profile edit reaches
-  every skill. Choose this to keep receiving upstream improvements.
-- **Detached.** No profile and no lock: the copy is the project's from then
-  on, to edit freely. `update` can still compare it with upstream and propose
-  changes skill by skill, but cannot merge on its own. Choose this when the
-  project will reshape the skills.
+  on disk, so a project edit stays an edit). `update` merges upstream changes
+  with the project's edits, and a profile edit reaches every skill. For
+  projects that want upstream improvements.
+- **Detached.** No profile and no lock: the copy is the project's to edit
+  freely. `update` can only compare it with upstream and propose changes
+  skill by skill. For projects that will reshape the skills.
 
 ## step 0 — preconditions
 
@@ -84,8 +80,8 @@ into each skill; they differ in what stays the source of truth.
 
 ## step 1 — fetch upstream
 
-Clone the source into a fresh temporary folder: always a clone, never the
-plugin's own files, so the commit is exact and older versions can be read.
+Clone the source into a fresh temporary folder, never using the plugin's own
+files, so the commit is exact and older versions can be read.
 
 ```bash
 mktemp -d
@@ -97,9 +93,8 @@ git -C <tmp> rev-parse HEAD
 ```
 
 `<source>` and `<ref>` come from `--source` at install, from the profile's
-`source:` and `ref:` on any later run of a managed copy (so a fork stays the
-upstream), and otherwise default to `anrusina/sample-skills` and its default
-branch. Note the commit as `<new>`. For `connect`, `disconnect`, `add` and
+`source:` and `ref:` on later runs of a managed copy, and otherwise default to
+`anrusina/sample-skills` and its default branch. Note the commit as `<new>`. For `connect`, `disconnect`, `add` and
 `remove` on a managed copy, also check out the lock's commit
 (`git -C <tmp> checkout --quiet <old>`), so a new file matches the version
 the copy holds. The upstream skills are `<tmp>/.agents/skills/<name>/`, every
@@ -109,8 +104,8 @@ folder there except `setup-skills`.
 
 Work out each fact in the anatomy's table and note where each value came from
 (`gh`, an AGENTS.md section by name, a manifest, the Makefile, an existing
-skill, or "not found"). A value found here is written into every skill and
-never looked up again, so look wider than the skills' own rules:
+skill, or "not found"). A value found here is never looked up again, so look
+wider than the skills' own rules:
 
 - `<repo>`, `<base>`: `gh repo view`.
 - wrapper: AGENTS.md as a whole (a "run tools through …" rule anywhere), and
@@ -129,15 +124,13 @@ never looked up again, so look wider than the skills' own rules:
   tool-version file).
 - build-input docs: AGENTS.md *Project structure*, and any content folder the
   build reads Markdown from.
-- every optional fact in the anatomy's list (pre-merge checks, releases,
-  project board, milestones, feedback, dependency policy and the rest),
-  stored as the **whole** text of the section it names, not a pointer to it:
-  each skill takes the part it needs at run time.
+- every optional fact in the anatomy's list, stored as the **whole** text of
+  the section it names, not a pointer to it.
 - **the project's existing skills.** Read every skill in `.agents/skills/` or
   `.claude/skills/` that upstream would replace. They often hold facts
   AGENTS.md lacks (a wrapper-prefixed `gh`, a version-bump target, fixture
   links, setup steps, a board number); take each into the proposal with
-  `From: existing skill <name>`, or it is lost with the skill.
+  `From: existing skill <name>`.
 - assets: each stack id whose marker file is at the repo root, and each field
   id whose condition holds, read as the anatomy's id table words it
   (`web-site` needs rules for search, links, claims or a budget; `fonts`
@@ -145,9 +138,8 @@ never looked up again, so look wider than the skills' own rules:
 - skills: all upstream skills by default.
 
 Three facts are required: `<repo>`, `<base>` and the gates. Ask for a missing
-one in the step 4 proposal; never guess a gate command, because every skill
-that runs it would then fail or, worse, pass. Every other fact may be
-`none`. A setup step not found in the project is only proposed (from the
+one in the step 3 proposal; never guess a gate command. Every other fact may
+be `none`. A setup step not found in the project is only proposed (from the
 loaded stack assets' *Setup* sections, in start-task), for the developer to
 confirm.
 
@@ -157,8 +149,7 @@ Show one proposal and ask for one answer:
 
 1. **Facts**: a table `Fact | Value | From`, the missing ones marked. For each
    value the developer supplies rather than the repo, give the line to add to
-   AGENTS.md (and the section it belongs in), so people and other tools see
-   it too; this skill doesn't write AGENTS.md itself.
+   AGENTS.md and its section; this skill doesn't write AGENTS.md itself.
 2. **Assets**: connected ids, and each id not connected with its condition, so
    the developer can add or drop one.
 3. **Skills**: the list to install. Name anything worth dropping: the
@@ -168,15 +159,13 @@ Show one proposal and ask for one answer:
    updates) or detached.
 5. **Conflicts**: each upstream skill whose name the project already uses
    (count it once when `.claude/skills` links to `.agents/skills`):
-   - in `.agents/skills/`: keep the project's skill (the default; it is then
-     recorded under `kept`, so `update` leaves it alone and stops offering
-     upstream's) or replace it. For a replacement, summarise what the
-     project's version has that upstream's lacks, and which of it step 2
-     carried into the facts;
-   - in a real `.claude/skills/` folder: only keep. Claude Code would go on
-     loading that folder's copy, so a replacement written to `.agents/skills/`
-     changes nothing; say the developer must move or remove that folder
-     first, then run `add <skill>`.
+   - in `.agents/skills/`: keep the project's skill (the default; recorded
+     under `kept`, so `update` leaves it alone) or replace it. For a
+     replacement, summarise what the project's version has that upstream's
+     lacks, and which of it step 2 carried into the facts;
+   - in a real `.claude/skills/` folder: only keep, since Claude Code would go
+     on loading that copy; to replace it, the developer moves or removes that
+     folder first, then runs `add <skill>`.
 
 With `--dry-run`, show the proposal and the files step 4 would write with
 the defaults (managed copy, every proposed skill and asset, conflicts kept),
@@ -186,24 +175,18 @@ remove the clone, and stop.
 
 1. **Write the profile** in the format below. A detached copy uses one too,
    as a temporary file (`mktemp`) with `kind: detached`, removed at the end.
-2. **Render each chosen skill.** It deletes the skill's folder first, so no
-   file of an old version is left behind:
+2. **Render each chosen skill** (it deletes the skill's folder first):
    ```bash
    ${CLAUDE_SKILL_DIR}/scripts/setup.sh render <profile> <tmp>/.agents/skills <skill>
    ```
-   That writes the files with only the connected assets (and `assets/index.md`
-   without the others' rows), renders the facts block (the anatomy's
-   *Project form*), removes the description's "Generic copy" sentence, and
-   adds to `allowed-tools` the gates, format fix and setup commands of the
-   skills that run them, and the wrapper-prefixed form of each wrapped tool's
-   pattern.
+   It keeps only the connected assets, renders the facts block (the
+   anatomy's *Project form*), removes the "Generic copy" sentence, and adds
+   the project's commands and wrapped tools to `allowed-tools`.
 3. **Claude Code discovery.** If `.claude/skills` doesn't exist:
    `mkdir -p .claude` then `ln -s ../.agents/skills .claude/skills`. If it
-   already links there, leave it. If it is a real folder, Claude Code reads
-   only that folder: link each rendered skill into it
-   (`ln -s ../../.agents/skills/<skill> .claude/skills/<skill>`) unless the
-   name is taken there, and name the taken ones (the folder's own skill
-   wins).
+   already links there, leave it. If it is a real folder, link each rendered
+   skill into it (`ln -s ../../.agents/skills/<skill> .claude/skills/<skill>`)
+   unless the name is taken there, and name the taken ones.
 4. **Managed only:** write the lock:
    ```bash
    ${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <tmp>/.agents/skills <new>
@@ -212,9 +195,8 @@ remove the clone, and stop.
 ### the profile
 
 `.agents/skills-profile.md` is Markdown with the values in YAML frontmatter,
-in the small subset `setup.sh` reads (a one-line value, `[a, b]`, a block of
-`- item` lines indented under the key, or a `|` block; single or double quotes
-around a value or list item are fine):
+in the subset `setup.sh` reads (a one-line value, `[a, b]`, an indented block
+of `- item` lines, or a `|` block; quotes are fine):
 
 ```markdown
 ---
@@ -274,9 +256,9 @@ ${CLAUDE_SKILL_DIR}/scripts/setup.sh plan .agents/skills-profile.md <tmp> <old> 
 ${CLAUDE_SKILL_DIR}/scripts/setup.sh update .agents/skills-profile.md <tmp> <old> <new>
 ```
 
-It touches only the files the lock records, plus the new upstream files of
-the profile's skills and connected ids; a skill under `kept`, and anything the
-project added itself, is never touched. Per file:
+It touches only the files the lock records and new upstream files of the
+profile's skills and connected ids, never a `kept` skill or a file the project
+added. Per file:
 
 | Plan line | Meaning | Done by the script |
 |---|---|---|
@@ -289,27 +271,23 @@ project added itself, is never touched. Per file:
 | `ask-delete` | removed upstream, edited here | left; ask: keep or delete |
 | `ask-new` | new upstream at a path the project already uses | left; ask which to keep |
 
-"Upstream changed" is decided on the raw upstream files, never on rendered
-ones, so a profile edit never passes for an upstream change. A conflict is
-left untouched: the script prints the rendered base and upstream versions
-and its conflict-marked attempt. Show the developer each conflict and each
-`ask-*` file, write what they choose, `rerender` each skill whose SKILL.md
-they resolved (a conflict keeps the old facts block), then write the lock
-with the `lock` command the script printed last. The script writes the lock itself only when
-nothing is left to decide.
+A conflict is left untouched; the script prints the rendered base and
+upstream versions and its conflict-marked attempt. Show the developer each
+conflict and each `ask-*` file, write what they choose, `rerender` each skill
+whose SKILL.md they resolved (a conflict keeps the old facts block), then run
+the `lock` command the script printed last (it writes the lock itself only
+when nothing is left to decide).
 
 A new upstream skill is offered (`add <skill>`), not added; a new upstream
-asset id is listed, not connected. With no upstream change (`<new>` equals
-`<old>`), `update` still rewrites the facts blocks from the profile: editing
-the profile and running `update` is how a fact changes.
+asset id is listed, not connected. With no upstream change, `update` still
+rewrites the facts blocks from the profile.
 
-**Detached copy.** There is no base to merge from. Read the facts back from
-the facts blocks into a temporary profile, print each upstream file with
-`setup.sh render-file` into a `mktemp -d` folder (never `render`, which
-replaces `.agents/skills/<skill>/` itself), and show `git diff --no-index <project skill>
-<rendered skill>` skill by skill, summarising what upstream changed. Apply
-only what the developer picks, by editing the project's file; never overwrite
-it whole.
+**Detached copy.** Read the facts back from the facts blocks into a temporary
+profile, print each upstream file with `setup.sh render-file` into a
+`mktemp -d` folder (never `render`, which replaces `.agents/skills/<skill>/`),
+and show `git diff --no-index <project skill> <rendered skill>` skill by
+skill, summarising what upstream changed. Apply only what the developer
+picks, by editing the project's file; never overwrite it whole.
 
 ## connect, disconnect
 
@@ -321,9 +299,9 @@ ${CLAUDE_SKILL_DIR}/scripts/setup.sh assets .agents/skills-profile.md <tmp>/.age
 ${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <tmp>/.agents/skills <old>
 ```
 
-It copies in the connected files that are missing, removes unconnected ones
-(an edited one is listed, not removed: ask about it), rewrites each
-`assets/index.md` and each facts block's assets line. Detached: copy or
+It syncs the asset files, each `assets/index.md` and each facts block's
+assets line; an edited asset file is listed, not removed: ask about it.
+Detached: copy or
 remove the asset files by hand (ask before removing any) and edit the assets
 line.
 
@@ -331,11 +309,10 @@ line.
 
 `add <skill>` (managed): when the project already has that skill (a kept
 one), first summarise what its copy has that upstream's lacks and ask before
-replacing it. Add it to the profile's `skills` (and take it out of
-`kept`), `render` it with the clone at the lock's commit (and link it as in
-install step 4.3), then rerender every
-other installed skill, so their skill-names rows name it as `/<skill>`, and
-write the lock:
+replacing it. Add it to the profile's `skills` (and take it out of `kept`),
+`render` it with the clone at the lock's commit (and link it as in install
+step 4.3), then rerender every other installed skill, so their skill-names
+rows name it as `/<skill>`, and write the lock:
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/setup.sh render .agents/skills-profile.md <tmp>/.agents/skills <skill>
@@ -345,11 +322,10 @@ ${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <tmp>/.agent
 
 `remove <skill>`: show the edits the project made to it (files whose hash
 differs from the lock), then delete `.agents/skills/<skill>/` (and its link
-in a real `.claude/skills/` folder), take it out of
-the profile, rerender the others (their rows now name it
-`/sample-skills:<skill>`) and write the lock. Name each installed skill that
+in a real `.claude/skills/` folder), take it out of the profile, rerender the
+others (their rows now name it `/sample-skills:<skill>`) and write the lock. Name each installed skill that
 calls the removed one. Detached: render or delete the skill the same way,
 then edit the skill-names row in every other skill by hand.
 
-The Arrow of Intent is part of every skill's core; there is nothing to
-switch it off. `setup-skills` itself is never copied into a project.
+The Arrow of Intent is part of every skill; there is no switch for it.
+`setup-skills` itself is never copied into a project.

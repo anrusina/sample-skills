@@ -8,7 +8,7 @@ The same skills are used in three ways:
 
 - **As a Claude Code plugin.** Installed once per laptop, every skill is available in every project as `/sample-skills:<skill>`, so a new project can use them from its first session. These generic copies work out each project fact at run time.
 - **As a project's own copy.** Once a project wants skills tuned to it, `/sample-skills:setup-skills` copies them into the project's `.agents/skills/`, writes the project's facts into each one and keeps only the stack and field assets the project uses. The project commits that copy, tailors it, and runs it as `/<skill>`.
-- **As a Codex skill set.** `scripts/install-codex.sh` copies the skills into `~/.agents/skills/` as `sample-skills-<skill>`, all but `setup-skills` (the plugin's installer) and the two coordinator roles (they need the Claude desktop app).
+- **As a Codex skill set.** `scripts/install-codex.sh` copies the skills into `~/.agents/skills/` as `sample-skills-<skill>`.
 
 A typical path: install the plugin, start a new repository with the generic skills, then in one of the first commits run `/sample-skills:setup-skills`, review what it wrote, and commit the project's own copy.
 
@@ -53,7 +53,7 @@ Four skills are gated with `disable-model-invocation: true`, so only a person ty
 
 ## How the skills find a project's facts
 
-Each skill has one **facts block**, a `## Project facts` section between `<!-- facts:begin -->` and `<!-- facts:end -->` markers. Nothing else in the skill differs between the plugin and a project copy.
+Each skill has one **facts block**, a `## Project facts` section between `<!-- facts:begin -->` and `<!-- facts:end -->` markers; it is the only part of the skill that differs between the plugin and a project copy.
 
 - **In the plugin**, the block says how to find each fact at the start of a run, and the skill writes the values into its commands:
 
@@ -71,7 +71,7 @@ Each skill has one **facts block**, a `## Project facts` section between `<!-- f
 
 ## Stack and field assets
 
-Anything specific to a toolchain or a kind of product lives in small files inside the skill that needs it, rather than in the skill's own text:
+Anything specific to a toolchain or a kind of product lives in small files inside the skill that needs it:
 
 ```
 review-pr/
@@ -108,9 +108,9 @@ or, in one step inside a session (Claude Code 2.1.275 or later):
 /plugin install sample-skills --marketplace anrusina/sample-skills
 ```
 
-Every skill is then available in every project as `/sample-skills:<skill>`, for example `/sample-skills:commit`. Plugin skills are namespaced, so they never shadow a project's own skills: in a project with its own `commit` skill, `/commit` runs the project's version and the generic one stays reachable as `/sample-skills:commit`. Each generic description also ends by telling Claude to use a project skill of the same name when one is listed, so it picks the project's version when it chooses a skill by itself.
+Plugin skills are namespaced, so they never shadow a project's own skills: in a project with its own `commit` skill, `/commit` runs the project's version and the generic one stays reachable as `/sample-skills:commit`. When Claude picks a skill by itself, each generic description tells it to prefer a project skill of the same name.
 
-Why a plugin and not `~/.claude/skills/`: Claude Code runs a personal skill over a project skill of the same name, so a generic `commit` there would shadow every project's tailored `/commit`.
+Why not `~/.claude/skills/`: Claude Code runs a personal skill over a project skill of the same name, so a generic `commit` there would shadow every project's tailored `/commit`.
 
 **Getting updates.** The plugin has no `version` field, so it tracks this repository's commits:
 
@@ -130,7 +130,7 @@ git clone https://github.com/anrusina/sample-skills.git
 sample-skills/scripts/install-codex.sh
 ```
 
-It leaves out `setup-skills`, `coding-master` and `managerial`, and writes each skill's installed path where Claude Code would fill in `${CLAUDE_SKILL_DIR}`. To update, `git pull` in the clone and run the script again; it builds each skill in a temporary folder, replaces only the folders it installed (each carries a `.installed-by-sample-skills` marker) and drops skills that were removed upstream. `scripts/install-codex.sh --uninstall` removes them.
+It leaves out `setup-skills` (the plugin's installer) and the two coordinator roles, `coding-master` and `managerial` (they need the Claude desktop app). To update, `git pull` in the clone and run the script again; it replaces only the folders it installed (each carries a `.installed-by-sample-skills` marker) and drops skills removed upstream. `scripts/install-codex.sh --uninstall` removes them.
 
 ## Give a project its own copy
 
@@ -142,8 +142,8 @@ In the project, run:
 
 It works out the project's facts and assets, shows them in one proposal for you to correct, and asks which kind of copy you want:
 
-- **Managed**: the facts live in `.agents/skills-profile.md`, and `.agents/skills-lock.json` records the upstream source, ref and commit and a hash of each file as rendered from that commit, so a project edit stays an edit and a file the project added is never touched. Skills the project kept over upstream's are listed in the profile and left alone. `/sample-skills:setup-skills update` later brings in upstream changes and merges them with the project's own edits; editing the profile and running `update` changes a fact in every skill.
-- **Detached**: the facts are written into each skill and the copy is the project's from then on, to reshape freely. `update` can still compare it with upstream and propose changes skill by skill.
+- **Managed**: the facts live in `.agents/skills-profile.md`, and `.agents/skills-lock.json` records the upstream commit and a hash of each file as rendered. `/sample-skills:setup-skills update` later merges upstream changes with the project's own edits, leaving alone the files and skills the project added or kept; editing the profile and running `update` changes a fact in every skill.
+- **Detached**: the copy is the project's from then on, to reshape freely. `update` can still compare it with upstream and propose changes skill by skill.
 
 Either way it writes `.agents/skills/`, links `.claude/skills` to it for Claude Code, and commits nothing: review the diff, then commit it. Later:
 
@@ -158,7 +158,7 @@ Copy [`AGENTS.md`](AGENTS.md) too if the project has none (or merge its sections
 
 **Without the plugin**, copy by hand: `cp -R path/to/sample-skills/.agents path/to/project/`, `ln -s ../.agents/skills path/to/project/.claude/skills`, delete `setup-skills` and the assets the project doesn't use, and fill in `AGENTS.md`. The skills then work out their facts at run time, as the plugin's do.
 
-The generic skills run `git` and `gh` bare and wrap only the gates and the tools the project's wrapper provides, so their `allowed-tools` match. A project copy adds its own commands (the gates, setup steps, any wrapper-provided tool) to each skill's `allowed-tools`; `/setup-skills` does this when it writes the copy. No generic skill pre-approves `git commit`, `git push` or `gh pr merge`: they keep their permission prompt unless the session allows them, as a coordinator's flow does.
+`/setup-skills` adds a project copy's own commands (the gates, setup steps, any wrapper-provided tool) to each skill's `allowed-tools`. No skill pre-approves `git commit`, `git push` or `gh pr merge`: they keep their permission prompt unless the session allows them, as a coordinator's flow does.
 
 ## Structure
 

@@ -1,11 +1,10 @@
 # Skill anatomy
 
-How every skill in this repository is built, so it runs in two places from the
-same files:
+How every skill here is built, so the same files run in two places:
 
 - **From the plugin** (the generic copy): installed once per laptop, used in
-  any project as `/sample-skills:<skill>`. It knows nothing about the project,
-  so it works out each project fact at run time.
+  any project as `/sample-skills:<skill>`; it works out each project fact at
+  run time.
 - **From a project copy**: `/setup-skills` copies the skills into a project's
   `.agents/skills/`, writes the project's facts into each one, and copies in
   only the stack and field assets the project uses. The copy runs as
@@ -27,17 +26,18 @@ after its opening paragraphs, wrapped in markers:
 <!-- facts:end -->
 ```
 
-Everything between the markers is owned by `/setup-skills`. In the generic copy
-it says how to find each fact. In a project copy, `/setup-skills` replaces it
-with the literal values. Outside the block, the only differences are the
-description's closing sentence (removed), `allowed-tools` (adapted to the
-project's wrapper and commands) and the assets left out.
+`/setup-skills` owns everything between the markers: in the generic copy it
+says how to find each fact; in a project copy it holds the literal values.
+Outside the block, a project copy differs only in the description's closing
+sentence (removed), `allowed-tools` (adapted to the project's wrapper and
+commands) and the assets left out.
 
 ### Generic form
 
 The generic block lists **only the facts that skill uses**, each with its rule,
-followed by the closing paragraphs that apply. Use exactly these rule texts so
-`/setup-skills` and a reader see the same thing in every skill:
+followed by the closing paragraphs that apply. Use exactly these texts, word
+for word, in every skill that has the row; skills never restate them in their
+own words:
 
 ```markdown
 ## Project facts
@@ -76,11 +76,10 @@ its section. With none loaded, the steps' generic text applies.
 <!-- facts:end -->
 ```
 
-Keep only the table rows the skill uses, and drop the *Assets* paragraph from
-a skill without assets. A skill with optional facts adds rows for them in the
-same style, "AGENTS.md *Project board*: …, or none (skip the steps that
-need it)", saying in the rule which part of the section *this* skill needs.
-The optional rows in use, by name (one name means one fact, and one key in a
+Drop the *Assets* paragraph from a skill without assets. Optional facts get
+rows in the same style, "AGENTS.md *Project board*: …, or none (skip the
+steps that need it)", saying which part of the section *this* skill needs.
+The optional rows in use (one name means one fact, and one key in a
 project's profile):
 
 | Fact | Section | Used by |
@@ -98,19 +97,12 @@ project's profile):
 | blast-radius map | a section mapping the project's parts to the blast-radius levels | review-pr |
 
 **Run-time rows.** A row whose value must be current on every run, such as
-`labels` (`gh label list`, read at run time), keeps its rule in a project copy
-too: `/setup-skills` copies it unchanged instead of writing a value.
+`labels`, says "read at run time" in its rule; `/setup-skills` then copies the
+rule unchanged instead of writing a value.
 
-The `wrapper`, `build-input docs` and `skill names` rows are word for word
-the same in every skill that has them, so a reader learns each once and a
-fix lands everywhere. `wrapper` is applied as its row says, not per command:
-the body names no wrapper. Wrapping only what the wrapper provides keeps
-plain `git` and `gh` calls matching the skill's `allowed-tools`; a project
-whose version manager provides `gh` lists it in that manager's config, and
-the rule wraps it there.
-
-The `skill names` row, and the closing sentence about short forms, replace
-every per-skill variant: skills never restate it in their own words.
+`wrapper` is applied as its row says, not per command: the body names no
+wrapper. Plain `git` and `gh` stay unwrapped so they match `allowed-tools`,
+unless the version manager's config lists `gh`.
 
 ### Project form
 
@@ -135,17 +127,15 @@ edit the profile and run `/setup-skills update`, not this block).
 <!-- facts:end -->
 ```
 
-How a rule becomes a value, so that rendering has one right answer:
+How a rule becomes a value:
 
 - A rule's text after "or none." says how to apply the value (the wrapper
   and build-input docs rows); it stays beside the value.
 - An empty value is `none`, followed by the rule's own parenthesis after
   "or none" (`none (skip step 8.1)`), or by its "without that section, …"
   fallback.
-- A row whose rule says "read at run time" keeps its rule.
-- An optional fact holds the **whole** AGENTS.md section it names; a skill
-  that needs only part of it (which milestones are active, say) takes that
-  part at run time.
+- An optional fact holds the **whole** AGENTS.md section it names; each
+  skill takes the part it needs at run time.
 
 A **detached** copy has the same block with a first line that says it is the
 project's own copy, edited by hand.
@@ -155,43 +145,38 @@ project's own copy, edited by hand.
 - `<repo>` and `<base>` in a command are slots: write the fact's value in.
 - `gh api repos/{owner}/{repo}/…` is fine as is: `gh` fills `{owner}` and
   `{repo}` itself from the current checkout.
-- Other per-run values (a PR number, an issue number, a SHA) are also slots,
-  written in literally. A step that needs a value computed in an earlier call
-  says so: "the SHA noted in step 3".
+- Other per-run values (a PR number, a SHA) are also slots, written in
+  literally. A step that needs a value from an earlier call says so: "the SHA
+  noted in step 3".
 - Never `VAR=$(…)` in one fenced block and `$VAR` in another. A single block
   that sets and uses a variable in one call is fine.
 - Body text files go through `mktemp`, never a fixed `/tmp/<name>` that two
-  sessions can share. Commit messages too: write the message with a quoted
-  heredoc into a `mktemp` file and `git commit -F` it, in one call. Inside
-  `-m "…"` the shell runs every backticked identifier in the message.
+  sessions can share. A commit message is written with a quoted heredoc into
+  a `mktemp` file and committed with `git commit -F`, in one call, never
+  `-m "…"` (the shell would run its backticked identifiers).
 
 ## Scripts
 
-A fixed sequence of `git` and `gh` calls, one the model would otherwise work
-out again on every run, is a script in the skill's `scripts/` folder. The
-skill keeps the judgement (which fact, which bucket, whether to stop); the
-script does what has one right answer.
+A fixed sequence of `git` and `gh` calls the model would otherwise work out on
+every run is a script in the skill's `scripts/` folder. The skill keeps the
+judgement (which fact, which bucket, whether to stop); the script does what
+has one right answer.
 
 - **Language:** bash 3.2 or later, git and gh, plus POSIX tools (`awk`,
-  `sed`, `grep`, `sort`). No `jq` (gh's `--jq` covers JSON), no Python, so
-  a script runs on a stock macOS or Linux.
-- **Calling it:** `${CLAUDE_SKILL_DIR}/scripts/<name>.sh`. Claude Code
-  replaces the variable with the skill's own folder, in the body and in
+  `sed`, `grep`, `sort`). No `jq` (use gh's `--jq`), no Python.
+- **Calling it:** `${CLAUDE_SKILL_DIR}/scripts/<name>.sh`, in the body and in
   `allowed-tools`, so one `Bash(${CLAUDE_SKILL_DIR}/scripts/<name>.sh *)`
   entry runs it without a prompt. The Codex installer writes the installed
   path in its place.
 - **Wrapper:** every script takes `--wrap '<wrapper>'` as its first argument
-  and runs its own `git` and `gh` through it. The skill passes the wrapper
-  fact; the command still starts with the script's path, so it still
-  matches `allowed-tools`.
+  and runs its own `git` and `gh` through it.
 - **Shape:** the header comment is the usage text, printed on a wrong
-  argument with exit 2. Output is `key=value` lines or one record per line,
-  so the skill reads values straight off it. A script never asks a question
-  and never decides one: it stops with a message and a non-zero exit, and
-  the skill takes it from there.
-- **Shared scripts** are copied, byte for byte, into every skill that uses
-  them, because each skill must stand alone. `scripts/check-shared-scripts.sh`
-  at the repository root fails when two copies differ.
+  argument with exit 2. Output is `key=value` lines or one record per line.
+  A script never asks or decides a question: it stops with a message and a
+  non-zero exit, and the skill takes it from there.
+- **Shared scripts** are copied byte for byte into every skill that uses
+  them, so each skill stands alone. `scripts/check-shared-scripts.sh` fails
+  when two copies differ.
 
 | Script | In | Does |
 |---|---|---|
@@ -215,24 +200,23 @@ files under `assets/`:
     index.md            ← which assets exist and when each applies
     stack/<id>.md       ← one per toolchain
     field/<id>.md       ← one per kind of product concern
-    <templates>.md      ← output templates, as before
-  references/           ← reference docs, as before
+    <templates>.md      ← output templates
+  references/           ← reference docs
 ```
 
-A skill only has the assets it has something to say for: `review-pr` has
-review checks per stack and field, `commit` has registry lookups per stack.
-Each asset file has H2 sections named after the steps that load them (for
-example `## Review checks`, `## Dependency registry`). The SKILL.md step says
-"apply the *Review checks* section of each loaded asset"; an asset without
-that section adds nothing there.
+A skill only has the assets it has something to say for. Each asset file has
+H2 sections named after the steps that load them (for example
+`## Review checks`, `## Dependency registry`); the step says "apply the
+*Review checks* section of each loaded asset", and an asset without that
+section adds nothing there.
 
 Assets point at the project's own rule lists and never copy them: "apply every
 rule in AGENTS.md's accessibility section", not a restated list.
 
 ### Ids
 
-The same ids are used in every skill, so `/setup-skills` can connect one id
-across all skills at once.
+Ids are shared across skills, so `/setup-skills` connects one id in all of
+them at once.
 
 | Kind | Id | Applies when (generic copy) |
 |---|---|---|
@@ -244,7 +228,7 @@ across all skills at once.
 | stack | `jvm` | `pom.xml` or `build.gradle*` at the repo root |
 | stack | `ruby` | `Gemfile` or a `*.gemspec` at the repo root |
 | field | `accessibility` | AGENTS.md has accessibility rules (a section, or WCAG named) |
-| field | `i18n` | the project ships more than one locale, or AGENTS.md has localisation rules (translation files, no hard-coded strings) |
+| field | `i18n` | the project ships more than one locale, or AGENTS.md has localization rules (translation files, no hard-coded strings) |
 | field | `frontend-ui` | the project has a user interface with a theme or design tokens, or AGENTS.md has layout or theming rules |
 | field | `web-site` | the project is a public web site with rules for search, links, product claims or a performance budget (AGENTS.md has such rules; a web *app* without them doesn't qualify) |
 | field | `generated-artifacts` | build outputs are committed alongside their sources (whatever AGENTS.md calls them: generated files, built assets, outputs a `make` target writes into the tree) |
@@ -255,24 +239,22 @@ one line on what each provides there.
 
 ## Descriptions
 
-The description is what decides whether a skill is used at all, so it says,
-in this order:
+The description decides whether a skill is used at all. It says, in this
+order:
 
 1. **What it does**, including every side effect a user would want to know
    before it runs: it commits, pushes, posts to a PR, resolves threads,
    creates a worktree or an issue, edits files across the repository.
 2. **When to use it**: the request in the words people use ("commit this",
-   "review PR 12", "log this for later"), and the coordinator's request where
-   one relays it. Models tend to under-use skills, so name the triggers
-   plainly.
+   "review PR 12"), and the coordinator's request where one relays it. Name
+   the triggers plainly.
 3. **What it isn't for**, naming the sibling to use instead, where a
    neighbour is easy to confuse with it (commit and commit-and-pr, review-pr
    and fix-pr-findings and pre-merge, the three doc skills).
 4. **The generic-copy sentence**: *"Generic copy: if a project skill named
-   `<name>` is also listed, use that one instead."* With the plugin
-   installed, a project's own skill of the same name is listed beside the
-   generic one, and this tells Claude which to pick. `/setup-skills` removes
-   the sentence from project copies.
+   `<name>` is also listed, use that one instead."* It tells Claude which of
+   two same-named listed skills to pick; `/setup-skills` removes it from
+   project copies.
 
 A skill a person runs by hand (`disable-model-invocation: true`) is never
 picked by its description, so its description is a listing: what it does and
@@ -286,8 +268,7 @@ generic-copy sentence.
 
 ## Model pins
 
-Pin a model only where a smaller one is enough for the skill's work:
-`commit`, `commit-and-pr`, `issue` and `pr` pin `haiku`. Always pin the
-alias, never a dated model ID, so each run gets the latest version of that
-model. Skills whose work needs the strongest reasoning (review, design,
-coordination) set no `model` and run on the session's.
+Pin a model only where a smaller one is enough: `commit`, `commit-and-pr`,
+`issue` and `pr` pin `haiku`. Pin the alias, never a dated model ID. Skills
+needing the strongest reasoning (review, design, coordination) set no
+`model`.
