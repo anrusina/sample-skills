@@ -5,9 +5,9 @@ allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
 ---
 
-You are a design consistency validator for this project. You check that HLD, LLDs, and EARS specs are aligned — no contradictions, no orphans, no missing links. Report only: never edit files or suggest fixes. How intent changes is the developer's decision, and a suggested fix tends to get applied without that decision being made.
+You check that HLD, LLDs, and EARS specs are aligned — no contradictions, no orphans, no missing links. Report only: never edit files or suggest fixes; how intent changes is the developer's decision.
 
-Read the project's `AGENTS.md` first. Where it states its own Arrow of Intent rules (LLD altitude, error handling, telemetry signals, spec format), those rules decide the checks below; the checks here are the default where it says nothing. Projects name these sections differently (*LLD altitude*, *Error handling*, *LLD telemetry signals*, *EARS spec format*, for example): find each by what it holds, not by its exact title.
+Read the project's `AGENTS.md` first. Where it states its own Arrow of Intent rules (LLD altitude, error handling, telemetry signals, spec format), those decide the checks below; these checks are the default where it says nothing. Find each section by what it holds, not its exact title.
 
 ## Steps
 
@@ -24,14 +24,14 @@ For each subsystem named in the HLD:
 - Are the LLD's inputs/outputs consistent with the HLD data flow?
 - Does the LLD introduce any entities or decisions not present in the HLD?
 - Does the LLD reference the subsystem by the exact name used in the HLD?
-- Does the LLD map its design to individual numbered EARS IDs, EARS section anchors, or a per-ID coverage inventory? Flag that as a **Contradiction**; requirements are derived from the LLD. A link to the corresponding EARS file or a general namespace label such as `AUTH-NNN` is an allowed navigation aid.
-- **Altitude drift:** Does the LLD *pin* look-and-feel **values** rather than referencing the design system? Drift = pinned raw values: literal colors (hex such as `#3a7bd5`, named CSS colors like `green`), literal pixel/point sizes (`28px`, `200px`), font names or weights, icon glyphs, animation curves/durations, or exact user-visible string wording. Any such pinned value is a **Contradiction** (LLD → UI boundary violation).
-  - **Acceptable — not drift:** references to *named design-system tokens* (e.g. `errorFieldColor`, `spacing.md`, `colorScheme.primary`, a named breakpoint constant in the project's design system), a named text style rather than a font name or weight, a design-system animation constant rather than a duration, a localization key or a plain description ("the cancel label") rather than the exact wording, and a plain description ("a check icon") rather than a glyph name. These defer the value to the design system, which is exactly what a "no hardcoded colors or sizes" rule prescribes. A token *reference* is the opposite of pinning look-and-feel.
-  - A token reference that **also restates the literal value** — e.g. `` `errorFieldColor` (#d93025) `` — *is* drift: the value must live only in the design system, not be duplicated in the LLD.
-  - **Exception:** content explicitly marked `<!-- UI concern -->` is flagged as a note, not a contradiction.
+- Does the LLD map its design to individual numbered EARS IDs, EARS section anchors, or a per-ID coverage inventory? Flag that as a **Contradiction**: requirements are derived from the LLD. A link to the EARS file or a namespace label such as `AUTH-NNN` is an allowed navigation aid.
+- **Altitude drift:** a look-and-feel **value** pinned in the LLD is a **Contradiction** (LLD → UI boundary violation): literal colors (hex such as `#3a7bd5`, named CSS colors like `green`), literal pixel/point sizes (`28px`), font names or weights, icon glyphs, animation curves/durations, or exact user-visible wording.
+  - **Not drift:** *named design-system tokens* (e.g. `errorFieldColor`, `spacing.md`, `colorScheme.primary`, a named breakpoint constant), a named text style, a design-system animation constant, a localization key, or a plain description ("the cancel label", "a check icon").
+  - A token reference that **also restates the literal value** — e.g. `` `errorFieldColor` (#d93025) `` — *is* drift.
+  - **Exception:** content marked `<!-- UI concern -->` is a note, not a contradiction.
 - Does the LLD's Open Questions section contain UI questions rather than design/architecture decisions? Flag these as **Altitude drift** (note, not a contradiction).
-- **Cross-LLD ownership:** Does the LLD describe behavior, rationale, or rules that belong to another subsystem's LLD rather than its own? Signs of a violation: explaining what another subsystem "will do" or "must do," restating another LLD's design rationale inline, or duplicating rules already specified in a different LLD. Cross-references with links (e.g. `see [Auth LLD §3.6]`) are correct and expected — flag only inline duplication or paraphrasing. Flag as **Contradiction** (cross-LLD ownership violation).
-- **Telemetry signals:** If the LLD documents log events with product intelligence, does it have a `## Telemetry signals` section? Flag a missing section as **Missing**. If the section exists, does every failure signal row have a denominator event named in "Pairs with"? Flag incomplete rows as **Broken**.
+- **Cross-LLD ownership:** flag as a **Contradiction** an LLD that describes behavior, rationale, or rules belonging to another subsystem's LLD: saying what another subsystem "will do" or "must do", restating another LLD's rationale, or duplicating its rules. Linked cross-references (e.g. `see [Auth LLD §3.6]`) are fine — flag only inline duplication or paraphrase.
+- **Telemetry signals:** an LLD that documents log events with product intelligence but has no `## Telemetry signals` section is **Missing**; a failure signal row with no denominator event in "Pairs with" is **Broken**.
 - **Known failures:** Does each error-handling row name a typed outcome (raising side) or a user-visible presentation with its recovery actions (presenting side), not just "throws" or "shows an error"? Does a failure the LLD presents link to the LLD that raises it? Where `AGENTS.md` lists the existing surfaces a known failure may show on (for example an inline banner, a notice, a modal, or the screen's own failure view), does the presenting LLD name one, or say why none fits? Where the project has an app-wide error boundary, does any LLD other than the one that owns it define its own catch-all for unexpected exceptions without recording why, or without critical-level logging and the project's unexpected-failure telemetry signal? Flag each as **Broken**.
 
 ### 3. Check EARS spec alignment
@@ -39,7 +39,7 @@ For each `docs/specs/EARS-<subsystem>.md` file:
 - Does every spec ID prefix match a real subsystem name from the HLD?
 - Does every spec map to an identifiable section in the corresponding LLD?
 - Does any spec contradict an HLD architectural decision?
-- Find code and tests that still cite a deprecated or undefined ID. The script reads both EARS forms (a `| ID |` table row and an `ID: When …` line) and looks only outside `docs/`, `.agents/`, `.claude/` and Markdown, so a doc's or a skill's own `@spec` examples never count:
+- Find code and tests that still cite a deprecated or undefined ID. The script reads both EARS forms (a `| ID |` table row and an `ID: When …` line) and skips `docs/`, `.agents/`, `.claude/` and Markdown:
   ```bash
   ${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh orphans
   ```
@@ -72,5 +72,3 @@ Use exactly this format, with a heading for every category (write "None" under a
 ### Notes (do not block)
 - <altitude drift in Open Questions, content marked `<!-- UI concern -->`>
 ```
-
-Contradictions, Orphans and Broken items block a commit: each is a defect in documents code is about to be written against. Missing items are reminders during planning, and Notes are for the developer's judgement.

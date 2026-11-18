@@ -2,10 +2,9 @@
 
 Write for the developer who needs to understand intent, not implementation.
 
-These are the language-neutral rules `/doc-audit` and `/doc-audit-full` apply
-to doc comments and diagrams. The doc-comment syntax, the identifier-linking
-style and an example come from the *Doc comments* section of the loaded stack
-asset (`assets/stack/<id>.md`).
+Language-neutral rules for doc comments and diagrams. The doc-comment syntax,
+the identifier-linking style and an example come from the *Doc comments*
+section of the loaded stack asset (`assets/stack/<id>.md`).
 
 | Rule | What it means |
 |---|---|
@@ -15,10 +14,9 @@ asset (`assets/stack/<id>.md`).
 
 ## Doc comment style
 
-Use the language's standard doc-comment syntax — the one its documentation
-tool and editors pick up — never a plain comment where a doc comment is meant.
-With no stack asset loaded, that is the language's own convention (for example
-`///` line comments, `/** … */` blocks, or docstrings).
+Use the language's standard doc-comment syntax (with no stack asset loaded,
+its own convention: `///`, `/** … */`, docstrings), never a plain comment
+where a doc comment is meant.
 
 - Doc comments go only on public API whose contract is non-obvious: what a
   caller must pass, what comes back in each case, what it guarantees or
@@ -30,7 +28,7 @@ With no stack asset loaded, that is the language's own convention (for example
   symbols are caught.
 - No doc comments on trivial getters, test helpers, or generated code.
 
-The shape of a good comment against a bad one, whatever the language:
+Example:
 
 - Bad: "Returns the cart total." — paraphrases the name.
 - Good: "Sum of line prices after discounts, before tax and shipping. Zero for

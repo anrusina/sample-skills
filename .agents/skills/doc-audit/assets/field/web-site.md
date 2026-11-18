@@ -7,7 +7,7 @@
   product-facts section exactly, and every other product claim is stated in a
   source document AGENTS.md names (a brief, a facts registry). A claim with no
   source is **Broken**.
-- A product fact changed in AGENTS.md while the strings that state it did not
-  follow is **Stale**.
+- A product fact changed in AGENTS.md but not in the strings that state it is
+  **Stale**.
 - A page's title and description, where a spec states them, match what the
   page sets.

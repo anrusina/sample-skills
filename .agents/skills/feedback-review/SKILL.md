@@ -6,7 +6,7 @@ allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/feedback.sh *)
 ---
 
-You are the feedback review assistant for this project. At the start of each session you surface new user feedback, match it against existing issues to catch duplicates, and give a triage recommendation for each item — so the developer spends minutes reviewing, not hours hunting.
+You surface new user feedback, match it against existing issues to catch duplicates, and give a triage recommendation for each item.
 
 ## Project facts
 
@@ -46,7 +46,7 @@ gh api 'repos/{owner}/{repo}/milestones' --paginate --jq '.[].title'
 
 If exactly one set of labels and at most one inbox-like milestone match, use them and say which. If nothing matches or the match is ambiguous, ask the developer once which labels (and milestone, if any) mark feedback, use the answer, and tell them to record it in an AGENTS.md *Feedback* section.
 
-Never create labels or milestones: they are the project's own taxonomy, and a new one splits it.
+Never create labels or milestones.
 
 ### 1. Fetch new feedback
 
@@ -54,14 +54,11 @@ Never create labels or milestones: they are the project's own taxonomy, and a ne
 ${CLAUDE_SKILL_DIR}/scripts/feedback.sh --wrap '<wrapper>' fetch --milestone "<inbox milestone>" <feedback label>...
 ```
 
-Drop `--milestone` when the project has no inbox milestone. The script asks
-for each label on its own (several `--label` flags would match only issues
-carrying all of them), filters by date on the server so no item is cut off
-by a page limit, and merges the results by number. It prints
-`since=<last review, or none>` (none: a first run, so every open item),
-`started=<now>` (note it: step 5 records it), then one JSON object per item.
-The timestamp lives in `.feedback-last-reviewed` at the primary checkout's
-root, kept out of git.
+Drop `--milestone` when the project has no inbox milestone. The script
+prints `since=<last review, or none>` (none: a first run, so every open
+item), `started=<now>` (note it: step 5 records it), then one JSON object
+per item. The timestamp lives in `.feedback-last-reviewed` at the primary
+checkout's root.
 
 If no new items: report "No new feedback since <last reviewed date>." and stop.
 
@@ -77,7 +74,7 @@ gh issue list \
   --json number,title,labels,state \
   --limit 5
 ```
-Try 2–3 keyword extractions per item. Report the top 1–2 sibling matches with their state (open/closed) and labels. Skip the item itself and other items in this same batch, unless two new items duplicate each other — then say so.
+Try 2–3 keyword extractions per item. Report the top 1–2 siblings with their state and labels. Skip the item itself and other items in this batch, unless two new items duplicate each other — then say so.
 
 **c. Assign a triage recommendation:**
 
@@ -115,7 +112,7 @@ Action: <one-line proposed action>
 
 ### 4. Batch actions (confirm before executing)
 
-After presenting all items, propose a batch of gh commands to action the straightforward ones:
+After presenting all items, propose gh commands for the straightforward ones:
 
 ```bash
 # Close duplicates
@@ -133,15 +130,14 @@ Ask the developer to confirm before running any of these. Run only the commands 
 ### 5. Record the review
 
 Record the `started=` time step 1 printed, not the time now, so feedback
-filed while this review ran is picked up next time. Record it once the
-review was presented, whether or not any batch action ran: the items were
-reviewed either way.
+filed during this review is picked up next time. Record it once the review
+was presented, whether or not any batch action ran.
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/feedback.sh --wrap '<wrapper>' stamp <started>
 ```
 
 ## Rules
-- Summarise user language as written: do not paraphrase a bug into a feature request, since the reporter's own words are the evidence.
+- Summarise user language as written: do not paraphrase a bug into a feature request.
 - If a sibling is ambiguous, flag it as "possible duplicate — review manually."
 - Never expose personal data from a submission (email addresses, names, account details) in the output.

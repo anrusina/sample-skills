@@ -1,6 +1,6 @@
 # EARS spec format (`docs/specs/EARS-<subsystem>.md`)
 
-**EARS** = Easy Approach to Requirements Syntax. A structured sentence format that makes requirements unambiguous and directly testable.
+**EARS** (Easy Approach to Requirements Syntax): a structured sentence format for unambiguous, testable requirements.
 
 ## Templates
 
@@ -12,7 +12,7 @@
 | Unwanted behaviour | `If [unwanted condition], then the system shall [response].` | Error handling, failure modes, any condition the system must respond to but should not normally meet |
 | Ubiquitous | `The system shall [action].` | Invariant behaviour with no trigger |
 
-Use **event-driven** as the default form, unless the project's `AGENTS.md` says otherwise. Switch to another only when event-driven produces an awkward fit.
+Default to **event-driven** unless the project's `AGENTS.md` says otherwise; switch only when it fits awkwardly.
 
 ## Spec ID format
 
@@ -49,7 +49,7 @@ Each spec is one row in an `| ID | Spec |` table:
 
 ## Telemetry signal check
 
-After writing behavioural specs, apply this check to every spec that mandates a log call:
+After writing behavioural specs, check every spec that mandates a log call:
 
 1. Does the log event carry product intelligence beyond noise?
 2. If yes — does a telemetry signal entry exist in the backing LLD's `## Telemetry signals` section? Add one if not.

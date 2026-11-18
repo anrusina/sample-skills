@@ -3,9 +3,9 @@ name: design-docs
 description: "Write or update the design documents along the Arrow of Intent: the HLD, one LLD per subsystem and its EARS specs, in the project's formats and altitude rules (behaviour, contracts and data, never look-and-feel). Use when intent must be written before code: a new subsystem, an LLD section, EARS requirements, or a gap /start-task reported (no HLD section, LLD or spec). Not for checking that the docs agree (/arrow-check) or auditing them against the code (/doc-audit). Generic copy: if a project skill named `design-docs` is also listed, use that one instead."
 ---
 
-You are a design document assistant for this project. You write and validate HLD, LLD, and EARS spec documents following the Arrow of Intent methodology.
+You write and validate HLD, LLD, and EARS spec documents following the Arrow of Intent.
 
-Read the project's `AGENTS.md` first: where it states its own rules for these documents (LLD altitude, error handling, telemetry signals, spec format), they take precedence over the defaults here. Projects name these sections differently (*LLD altitude*, *Error handling*, *LLD telemetry signals*, *EARS spec format*, for example): find each by what it holds, not by its exact title.
+Read the project's `AGENTS.md` first: where it states its own rules for these documents (LLD altitude, error handling, telemetry signals, spec format), they take precedence over the defaults here. Find each section by what it holds, not its exact title.
 
 ## Arrow of Intent hierarchy
 
@@ -13,7 +13,7 @@ Read the project's `AGENTS.md` first: where it states its own rules for these do
 HLD → LLDs → EARS Specs → Tests → Code
 ```
 
-Each layer is more specific than the one above. Intent flows downstream: a change starts at the highest layer it affects, then reaches each layer below it. Never change a lower layer first and backfill the one above it. A subsystem cannot exist in an LLD without appearing in the HLD first. A spec cannot exist without a backing LLD section.
+A change starts at the highest layer it affects, then reaches each layer below it; never change a lower layer first and backfill the one above. A subsystem cannot exist in an LLD without appearing in the HLD first, and a spec cannot exist without a backing LLD section.
 
 ## When writing or updating an HLD
 
@@ -36,5 +36,5 @@ Load [references/ears-format.md](references/ears-format.md). Apply all quality r
 5. LLD data structures must be consistent with HLD data model entities
 6. No EARS spec may contradict an HLD architectural decision
 7. If an LLD changes a data structure, the HLD data model must be updated first
-8. **LLD altitude:** LLDs must not contain look-and-feel specifics — no exact colors, pixel sizes, font specs, icon glyphs, animation curves/durations, or exact string wording. References to named design-system tokens (`errorFieldColor`, `spacing.md`, a breakpoint constant in the design system), a named text style, an animation constant, a localization key or a plain description ("the cancel label", "a check icon") are acceptable — pinning the literal value is the drift. Describe display rules as behaviour ("the system shall show X when Y"), not as UI spec. If a look-and-feel detail is unavoidable, mark it `<!-- UI concern -->`. Open-questions sections hold design/architecture decisions only, not UI questions. Where the project's `AGENTS.md` has an LLD altitude section (whatever its title), it is the canonical rule.
-9. **Cross-LLD ownership:** Each LLD describes only its own subsystem's slice of a cross-cutting concern. Do not describe what another subsystem's LLD does or why — link to it with a section reference instead (e.g. `see [Checkout LLD §2.1]`). Paraphrasing or duplicating another LLD's rules inline is a violation even if the content is accurate.
+8. **LLD altitude:** LLDs pin no look-and-feel values — no exact colors, pixel sizes, font specs, icon glyphs, animation curves/durations, or exact string wording. Named design-system tokens (`errorFieldColor`, `spacing.md`, a breakpoint constant), a named text style, an animation constant, a localization key or a plain description ("the cancel label", "a check icon") are fine. Describe display rules as behaviour ("the system shall show X when Y"). Mark an unavoidable look-and-feel detail `<!-- UI concern -->`. Open-questions sections hold design/architecture decisions only. An LLD altitude section in `AGENTS.md` is canonical.
+9. **Cross-LLD ownership:** Each LLD describes only its own subsystem's slice of a cross-cutting concern. Link to another subsystem's LLD with a section reference (e.g. `see [Checkout LLD §2.1]`) instead of describing what it does or why; inline paraphrase is a violation even when accurate.

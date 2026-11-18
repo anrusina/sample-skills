@@ -5,9 +5,7 @@ allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
 ---
 
-You are a documentation quality assistant. You audit docs for accuracy against the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) and surface broken, stale, and missing documentation — without making code changes.
-
-> For fixing docs, diagrams, and guides, use `/doc-audit-full`.
+You audit docs for accuracy against the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) and report broken, stale and missing documentation.
 
 ## Project facts
 
@@ -41,7 +39,7 @@ its section. With none loaded, the steps' generic text applies.
 
 ## input
 
-`$ARGUMENTS`: `--review` (default) — audit only, no changes.
+`$ARGUMENTS`: `--review` (default).
 
 ## --review
 
@@ -58,14 +56,14 @@ its section. With none loaded, the steps' generic text applies.
      ```
      Each line is `file:line`, the ID, and `undefined` (an orphaned tag) or `deprecated` (a deprecated spec still cited).
    - Flag tests that appear to cover spec behaviour but have no `@spec` tag.
-   - **Reverse direction:** for each spec ID in `docs/specs/EARS-<subsystem>.md` for changed subsystems, verify at least one test in the test tree is tagged `@spec SUBSYSTEM-NNN`. Flag specs with no test coverage.
+   - **Reverse direction:** flag each spec ID in `docs/specs/EARS-<subsystem>.md` for a changed subsystem that no test in the test tree tags `@spec SUBSYSTEM-NNN`.
 
 3. **LLD checks.** For each changed subsystem:
    - Does `docs/specs/LLD-<subsystem>.md` exist?
    - Does it still accurately describe the current data flow and component boundaries?
-   - **Telemetry signals** (only when AGENTS.md defines telemetry signals for LLDs): If the LLD documents log events with product intelligence, does it have a `## Telemetry signals` section? Flag a missing section as **Missing**. If the section exists, does every failure signal row have a denominator event named in "Pairs with"? Flag incomplete rows as **Broken**.
+   - **Telemetry signals** (only when AGENTS.md defines telemetry signals for LLDs): an LLD that documents log events with product intelligence but has no `## Telemetry signals` section is **Missing**; a failure signal row with no denominator event in "Pairs with" is **Broken**.
    - **Known failures** (only when AGENTS.md has error-handling rules for LLDs): Does each error-handling row name a typed outcome or a user-visible presentation with recovery actions, rather than "throws" or "shows an error"? Does a presented failure link to its raising LLD instead of restating it? Where AGENTS.md's error-handling rules name a fixed set of surfaces a failure may show on, does the row name one, or say why none fits? Flag gaps as **Broken**.
-   - **UI altitude:** does the LLD *pin* look-and-feel **values** — raw colors (hex or named), literal pixel or point sizes, font names or weights, icon glyphs, animation curves or durations, or exact user-visible string wording? Flag these as **Broken** (altitude drift: the LLD → UI boundary is crossed). A reference to a named design-system token (`color.primary`, `spacing.md`, a theme constant), a named text style, an animation constant, a localization key or a plain description ("the cancel label", "a check icon") is *not* drift; only pinning the literal value is, including a token reference that also restates its literal value. Content marked `<!-- UI concern -->` is a note, not broken. If AGENTS.md has an LLD-altitude rule (a section such as *LLD altitude*), it is the canonical rule.
+   - **UI altitude:** flag as **Broken** an LLD that *pins* look-and-feel **values**: raw colors (hex or named), literal pixel or point sizes, font names or weights, icon glyphs, animation curves or durations, or exact user-visible wording. A named design-system token (`color.primary`, `spacing.md`, a theme constant), a named text style, an animation constant, a localization key or a plain description ("the cancel label", "a check icon") is *not* drift, unless it also restates its literal value. Content marked `<!-- UI concern -->` is a note, not broken. An LLD-altitude rule in AGENTS.md (a section such as *LLD altitude*) is canonical.
    - Apply the *LLD checks* section of each loaded asset.
 
 4. **Check `docs/specs/HLD.md`:**
@@ -87,7 +85,7 @@ its section. With none loaded, the steps' generic text applies.
    - Workflow references to other skills (e.g. `/fix-pr-findings`, `/pre-merge`) that have been renamed or removed
    Report each as **Broken** or **Stale** in step 9, saying which reference category it is (bloat, scope, calibration, structure, frontmatter). Leave a facts block alone: in a project copy `/setup-skills` writes it.
 
-9. **Report gaps — no changes:**
+9. **Report gaps:**
    - **Broken** — factually wrong (missing spec, removed component still in HLD)
    - **Stale** — out of date but not yet wrong (LLD describes superseded flow)
    - **Missing** — behaviour in code with no spec, LLD, or HLD coverage

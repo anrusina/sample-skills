@@ -25,7 +25,7 @@ States, transitions, and triggers. Mermaid `stateDiagram-v2`.
 
 ### 6. Error handling
 
-Failure modes and how they surface to the caller or user. This table is the subsystem's inventory of **known failures**, the ones it can anticipate. Unexpected failures (defects) are not listed here: where the project has an app-wide error boundary, it is their only home.
+The subsystem's inventory of **known failures** (the ones it can anticipate) and how they surface to the caller or user. Unexpected failures (defects) are not listed: where the project has an app-wide error boundary, it is their only home.
 
 Each known failure is split between two LLDs, and each states only its own side:
 
@@ -36,7 +36,7 @@ Where the project's `AGENTS.md` lists the existing surfaces a known failure may 
 
 ### 7. EARS file and namespace
 
-Link to the corresponding EARS file and name the subsystem's general namespace(s), such as `AUTH-NNN`. This is a navigation aid, not a mapping from design sections to individual requirements. Do not cite numbered EARS IDs, EARS section anchors, or maintain a per-ID inventory in the LLD.
+Link to the corresponding EARS file and name the subsystem's general namespace(s), such as `AUTH-NNN`, as a navigation aid. Do not cite numbered EARS IDs or EARS section anchors, or keep a per-ID inventory: requirements are derived from the LLD.
 
 ### 8. Open questions
 
@@ -51,6 +51,6 @@ Rate-pair table — denominator event first, then failure signals grouped under 
 | `event_name` | `info` | condition that triggers this event | what product decision this enables | — |
 | `failure_name` | `warning` | failure condition | rate against denominator | `event_name` |
 
-Rules: denominator event confirms happy path (no separate success signal needed); omit pure-noise logging; every failure signal names its denominator in "Pairs with".
+Rules: the denominator event confirms the happy path (no separate success signal); omit pure-noise logging; every failure signal names its denominator in "Pairs with".
 
-**Does NOT belong in LLD:** actual code, details of other subsystems (reference them, don't describe them), or mappings to individual numbered EARS requirements. EARS-file links and general namespace labels are allowed for navigation; the LLD remains the source from which those requirements are derived.
+**Does NOT belong in LLD:** actual code, details of other subsystems (reference them, don't describe them), or mappings to individual EARS requirements (§7).

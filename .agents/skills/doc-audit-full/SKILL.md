@@ -5,11 +5,7 @@ allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
 ---
 
-You are a documentation quality assistant. You fix doc comments, update design docs, repair Mermaid diagrams, and keep the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) accurate — without the developer having to track drift manually.
-
-> For audit only (no changes), use `/doc-audit`.
-
-Runs the audit from `/doc-audit` first, then applies the requested fixes.
+You fix doc comments, update design docs, repair Mermaid diagrams, and keep the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) accurate. Every run starts with the `/doc-audit` audit, then applies the requested fixes.
 
 ## Project facts
 
@@ -52,18 +48,18 @@ its section. With none loaded, the steps' generic text applies.
 | `--fix-docs` | Repair stale spec tags, update LLDs and HLD sections |
 | `--fix-readme` | Update `README.md`, setup/tooling guides, and module guides |
 | `--diagrams` | Update Mermaid diagrams to match current code |
-| `--fix-skills` | Optimize `.agents/skills/` files against Agent Skills best practices (only when named) |
+| `--fix-skills` | Optimize `.agents/skills/` files against Agent Skills best practices |
 
-No arguments → run every flag in order except `--fix-skills`, which runs only when named: it rewrites skill files, and in a project copy `/setup-skills` manages those (an edit there conflicts with the next update), so it is never a side effect of a documentation pass.
+No arguments → run every flag in order except `--fix-skills`, which runs only when named: in a project copy `/setup-skills` manages the skill files, and an edit conflicts with its next update.
 
 ## --review
 
-Same as `/doc-audit`: follow its `--review` steps, with its assets (its `SKILL.md` sits beside this skill's folder, at `${CLAUDE_SKILL_DIR}/../doc-audit/SKILL.md`, or `sample-skills-doc-audit` in a Codex install); run its `spec-ids.sh` commands with this skill's own copy, `${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh`. Always run first in every invocation.
+Same as `/doc-audit`: follow its `--review` steps, with its assets (its `SKILL.md` sits beside this skill's folder, at `${CLAUDE_SKILL_DIR}/../doc-audit/SKILL.md`, or `sample-skills-doc-audit` in a Codex install); run its `spec-ids.sh` commands with this skill's own copy, `${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh`.
 
 ## --fix-comments
 
-1. Load [references/code-doc-conventions.md](references/code-doc-conventions.md) for doc comment style and conventions, and apply the *Doc comments* section of the loaded stack asset for the syntax.
-2. Add or update doc comments only on public API where the contract is non-obvious, in the language's doc-comment syntax:
+1. Load [references/code-doc-conventions.md](references/code-doc-conventions.md); take the syntax from the *Doc comments* section of the loaded stack asset.
+2. Add or update doc comments only on public API where the contract is non-obvious:
    - Imperative summary sentence.
    - Document parameters and return values as short fragments.
    - No trailing periods on fragments. Mark identifiers the way the stack asset says.
@@ -75,18 +71,18 @@ Same as `/doc-audit`: follow its `--review` steps, with its assets (its `SKILL.m
 
 ### Repair path — upstream docs exist but drifted
 
-1. For each orphaned `@spec` tag: update it only when the right ID is certain (the spec was renamed, and the EARS file or its history says to what). Otherwise list it as a gap; a guessed ID is worse than an orphan, because it looks covered.
+1. For each orphaned `@spec` tag: update it only when the right ID is certain (the spec was renamed, and the EARS file or its history says to what). Otherwise list it as a gap: a guessed ID looks covered.
 2. For each test covering spec behaviour but missing a `@spec` tag: add the correct spec ID.
-3. For each deprecated spec still referenced in code: **do not auto-fix** — list as a gap requiring human decision (un-deprecate, remap to a replacement spec, or remove the reference).
-4. For each LLD with stale flow: update the affected sections only. Do not rewrite prose that is still accurate.
-5. Only when AGENTS.md defines telemetry signals for LLDs: for each LLD that documents log events with product intelligence but has no `## Telemetry signals` section: draft and add the section in the rate-pair format — a table with columns Signal, Level, Emitted when, Product intelligence, Pairs with; the denominator event (the happy-path event confirming normal completion) first, then each failure signal naming that denominator in "Pairs with". If the `/design-docs` skill is available, follow its LLD template's *Telemetry signals* section instead. Populate signal rows from observable log calls in the subsystem code. Mark intent-dependent fields `[NEEDS HUMAN INPUT]`.
+3. For each deprecated spec still referenced in code: **do not auto-fix** — list as a gap for the developer to decide (un-deprecate, remap to a replacement spec, or remove the reference).
+4. For each LLD with stale flow: update the affected sections only, leaving accurate prose alone.
+5. Only when AGENTS.md defines telemetry signals for LLDs: for each LLD that documents log events with product intelligence but has no `## Telemetry signals` section, add one in the rate-pair format — columns Signal, Level, Emitted when, Product intelligence, Pairs with; the denominator (happy-path) event first, then each failure signal naming it in "Pairs with". If `/design-docs` is available, follow its LLD template's *Telemetry signals* section instead. Fill rows from the subsystem's log calls; mark intent-dependent fields `[NEEDS HUMAN INPUT]`.
 6. For each HLD gap: add the missing subsystem entry or update the stale one. Describe what exists — do not invent architecture.
-7. For each LLD that pins a look-and-feel value (a raw color, a literal size, a font, an icon glyph, an animation value or exact string wording): replace the value with the design-system token it stands for (a color or size token, a named text style, an animation constant, a localization key) or a plain description ("a check icon"), or remove it when the sentence carries no behaviour without it. If no token exists for the value, do not invent one: list it as a gap for the developer. AGENTS.md's LLD-altitude rule, if it has one, is the canonical rule.
+7. For each LLD that pins a look-and-feel value (a raw color, a literal size, a font, an icon glyph, an animation value or exact string wording): replace it with the design-system token it stands for (a color or size token, a named text style, an animation constant, a localization key) or a plain description ("a check icon"), or remove it when the sentence carries no behaviour without it. If no token exists, do not invent one: list it as a gap. AGENTS.md's LLD-altitude rule, if it has one, is canonical.
 8. Apply the *Fix docs* section of each loaded asset.
 
 ### Bootstrap path — code exists with no upstream docs
 
-When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft scaffolding as a starting point:
+When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft scaffolding:
 
 1. **Draft HLD subsystem entry** — fill in Responsibility, Inputs, and Outputs from code. Mark any section that requires design intent as `[NEEDS HUMAN INPUT: <what is missing>]`. Do not invent architectural decisions or scope boundaries.
 
@@ -95,10 +91,10 @@ When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft s
    > ⚠️ DRAFT — generated from code, verify intent before treating as authoritative.
    ```
 
-3. **Draft EARS specs** — derive from observable behaviour in code. Apply quality rules:
-   - Condition must be specific and testable.
-   - Action must be observable — never use "handle", "manage", or "process".
-   - Mark each generated spec `[DRAFT]` until a human confirms the intent matches design decisions.
+3. **Draft EARS specs** — derive from observable behaviour in code:
+   - Condition specific and testable.
+   - Action observable — never "handle", "manage", or "process".
+   - Mark each generated spec `[DRAFT]` until a human confirms its intent.
 
 4. **Output a gaps list** at the end of the run — one item per `[NEEDS HUMAN INPUT]` section, phrased as issue titles suitable for `/issue`:
    ```
@@ -115,7 +111,7 @@ When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft s
 1. Update `README.md`:
    - Add new commands or scripts; remove references to deleted ones.
    - Verify Quick Start commands still work.
-2. Update any setup or tooling guide beside `README.md` if any setup steps have changed.
+2. Update any setup or tooling guide beside `README.md` whose setup steps changed.
 3. For any new subsystem in the source tree that lacks a module-level README, create one with:
    - **Purpose** — one paragraph: what this module does and where it sits in the Arrow of Intent chain.
    - **Data flow** — Mermaid `sequenceDiagram` or `flowchart LR`.
@@ -134,25 +130,23 @@ Load [references/agentskills-best-practices.md](references/agentskills-best-prac
 
 For each `SKILL.md` in `.agents/skills/`, leaving every facts block (`<!-- facts:begin -->` … `<!-- facts:end -->`) untouched, since `/setup-skills` writes it:
 
-1. **Bloat** — remove prose that explains things the agent already knows from training (general concepts, standard library behaviour). Cut any instruction where "would the agent get this wrong without it?" is no.
+1. **Bloat** — cut any instruction the agent would not get wrong without it (general concepts, standard library behaviour).
 
-2. **Progressive disclosure** — if the file exceeds 500 lines or contains large inline reference blocks: extract them to `references/<topic>.md` or `assets/<template>.md` with an explicit conditional load instruction (`"load references/X.md if [condition]"`). Do not use a generic "see references/" pointer without a condition.
+2. **Progressive disclosure** — if the file exceeds 500 lines or holds large inline reference blocks: extract them to `references/<topic>.md` or `assets/<template>.md` with a conditional load instruction (`"load references/X.md if [condition]"`), never a bare "see references/".
 
-3. **Calibration** — if instructions present 3+ equivalent options without a clear default: pick the best default and relegate alternatives to a one-line note. Replace declaration-style output specs with a reusable procedural approach where the task class generalises.
+3. **Calibration** — where 3+ equivalent options have no clear default: pick the best default and relegate alternatives to a one-line note. Replace declaration-style output specs with a reusable procedure where the task class generalises.
 
-4. **Frontmatter** — add missing required fields. Check `disable-model-invocation` against the project's invocation-gating table, if it records one: look in `AGENTS.md`, then `docs/dev/skills.md`, for a table listing which skills are gated, and report any skill whose flag differs from it. If neither file has such a table, skip this check and say so in the summary. Never add or remove the flag yourself, since opening a skill to model invocation is a recorded decision, not a style fix. Add or complete `allowed-tools` with specific `Bash(pattern *)` entries. Flag model mismatches (see calibration table in the reference).
+4. **Frontmatter** — add missing required fields. Check `disable-model-invocation` against the project's invocation-gating table (in `AGENTS.md`, then `docs/dev/skills.md`) and report any skill whose flag differs; with no such table, skip this check and say so in the summary. Never add or remove the flag yourself: opening a skill to model invocation is a recorded decision, not a style fix. Add or complete `allowed-tools` with specific `Bash(pattern *)` entries. Flag model mismatches (see the calibration table in the reference).
 
 5. **Structure gaps** — add a `## gotchas` section when domain-specific traps exist but aren't documented. Convert prose output format descriptions to a template stored in `assets/`.
 
 6. **Stale references** — update renamed skill references, wrong label names, and changed hardcoded values.
 
-After all edits, print a summary: one bullet per skill file changed, listing what category of fix was applied and why.
-
-> Do not commit — let the developer review the diff first.
+After all edits, print a summary: one bullet per skill file changed, with the category of fix and why.
 
 ## conventions
 
-Load [references/code-doc-conventions.md](references/code-doc-conventions.md) for `--fix-comments` and `--diagrams` — it holds the documentation style, doc comment rules, anti-patterns, and Mermaid diagram conventions. The doc-comment syntax and an example come from the *Doc comments* section of the loaded stack asset.
+Load [references/code-doc-conventions.md](references/code-doc-conventions.md) for `--fix-comments` and `--diagrams` — documentation style, doc comment rules, anti-patterns, and Mermaid conventions.
 
 ## rules
 
