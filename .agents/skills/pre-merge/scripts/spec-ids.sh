@@ -13,7 +13,8 @@
 #   tags [path...]  every @spec tag: file:line<TAB>ID
 #   orphans [path...]
 #                   tags whose ID is not defined, or is deprecated:
-#                   file:line<TAB>ID<TAB>undefined|deprecated
+#                   file:line<TAB>ID<TAB>undefined|deprecated; exits 3,
+#                   as dupes does, when there are tags but no ID is found
 #   added <ref> [path...]
 #                   IDs tagged on lines added since <ref> (git diff <ref>...HEAD)
 #
@@ -42,7 +43,7 @@ defined() {
   files=$(ls "$specs"/EARS-*.md 2>/dev/null || true)
   [ -n "$files" ] || return 0
   # shellcheck disable=SC2086
-  grep -hE "^(\|[[:space:]]*|[-*][[:space:]]+)?($DEP)?(\*\*)?$ID(\*\*)?([[:space:]]*\||:)" $files \
+  { grep -hE "^(\|[[:space:]]*|[-*][[:space:]]+)?($DEP)?(\*\*)?$ID(\*\*)?([[:space:]]*\||:)" $files || true; } \
     | sed -E "s/^(\|[[:space:]]*|[-*][[:space:]]+)?//" \
     | awk -v id="$ID" '{
         status = ($0 ~ /^\[DEPRECATED/) ? "deprecated" : "active"
@@ -89,10 +90,14 @@ case "$cmd" in
   orphans)
     t=$(tags "$@")
     [ -n "$t" ] || exit 0
+    d=$(defined)
+    if [ -z "$d" ]; then
+      echo "spec-ids.sh: no spec ID found in $specs/EARS-*.md" >&2; exit 3
+    fi
     awk -F'\t' '
       FNR == NR { if (st[$1] != "active") st[$1] = $2; next }
       { s = st[$2]; if (s == "") print $1 "\t" $2 "\tundefined"; else if (s == "deprecated") print $1 "\t" $2 "\tdeprecated" }
-    ' <(defined) <(printf '%s\n' "$t")
+    ' <(printf '%s\n' "$d") <(printf '%s\n' "$t")
     ;;
   added)
     [ $# -ge 1 ] || usage
