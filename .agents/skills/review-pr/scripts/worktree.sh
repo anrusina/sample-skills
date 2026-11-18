@@ -42,6 +42,9 @@ case "$cmd" in
     [ -z "$pr" ] || run git fetch -q origin "pull/$pr/head"
     root=$(primary)
     mkdir -p "$root/.claude/worktrees"
+    # keep the worktrees out of the primary checkout's git status
+    run git -C "$root" check-ignore -q .claude/worktrees ||
+      echo ".claude/worktrees/" >> "$(run git rev-parse --path-format=absolute --git-common-dir)/info/exclude"
     for _ in 1 2 3 4 5; do
       sfx=$(od -An -N3 -tx1 /dev/urandom | tr -d ' \n')
       wt="$root/.claude/worktrees/$name-$sfx"
