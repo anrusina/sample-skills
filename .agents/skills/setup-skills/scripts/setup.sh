@@ -154,7 +154,7 @@ facts_block() {
     value=$(pget "$profile" "$key" facts)
     apply=$(printf '%s' "$rule" | sed -n 's/.*, or none\. \(.*\)$/\1/p')
     if [ -z "$value" ] || [ "$value" = none ]; then
-      tail=$(printf '%s' "$rule" | sed -n 's/.*or none (\([^)]*\)).*/ (\1)/p')
+      tail=$(printf '%s' "$rule" | sed -n 's/.*or none (\(.*\)).*/ (\1)/p')
       [ -n "$tail" ] || tail=$(printf '%s' "$rule" | sed -n 's/.*without that section, \(.*\)$/; \1/p')
       [ "$key" = wrapper ] && apply=
       echo "- **$name**: none$tail${apply:+. $apply}"
@@ -204,8 +204,9 @@ render_skill_md() {
       done
     done
     if [ -n "$wrapper" ]; then
+      w=$(printf '%s' "$wrapper" | sed 's/[\/&]/\\&/g')   # a path's / would end the s command
       for t in $tools; do
-        sed -n '/^allowed-tools:/,/^[^ ]/p' "$current" | sed -n "s/^  - Bash($t \(.*\))\$/  - Bash($wrapper $t \1)/p"
+        sed -n '/^allowed-tools:/,/^[^ ]/p' "$current" | sed -n "s/^  - Bash($t \(.*\))\$/  - Bash($w $t \1)/p"
       done
     fi
   )
