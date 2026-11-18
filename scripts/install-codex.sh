@@ -6,7 +6,9 @@
 # under a prefixed folder AND a prefixed frontmatter name
 # (commit -> sample-skills-commit), which can't clash with a project's own
 # `commit`. ${CLAUDE_SKILL_DIR}, which Claude Code fills in itself, is
-# replaced by the installed folder's path.
+# replaced by the installed folder's path. The _shared folder (files the
+# skills share) is installed as sample-skills-_shared, and the skills'
+# ../_shared paths point there.
 #
 # Not installed: setup-skills (it is the Claude Code plugin's installer) and
 # the coordinator roles coding-master and managerial (they need the Claude
@@ -80,14 +82,14 @@ for skill in "$SRC"/*/; do
   cp -R "$skill" "$work"
   # Rename the skill in its frontmatter: only the first `name:` line, and only
   # inside the leading --- block.
-  awk -v new="$PREFIX$name" '
+  [ ! -f "$skill/SKILL.md" ] || awk -v new="$PREFIX$name" '
     NR == 1 && $0 == "---" { infm = 1; print; next }
     infm && $0 == "---"    { infm = 0; print; next }
     infm && !done && /^name:/ { print "name: " new; done = 1; next }
     { print }
   ' "$skill/SKILL.md" > "$work/SKILL.md"
   find "$work" -name '*.md' -type f | while IFS= read -r f; do
-    sed "s|\${CLAUDE_SKILL_DIR}|$target|g" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+    sed -e "s|\.\./_shared/|../${PREFIX}_shared/|g" -e "s|\${CLAUDE_SKILL_DIR}|$target|g" "$f" > "$f.tmp" && mv "$f.tmp" "$f"
   done
   : > "$work/$MARKER"
   rm -rf "$target"

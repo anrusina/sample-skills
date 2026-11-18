@@ -12,7 +12,9 @@
 #   render <profile> <skills> <skill>
 #       write .agents/skills/<skill>/ from <skills>/<skill>/, deleting the old
 #       folder first: the connected assets only, the facts block rendered,
-#       the description's generic sentence removed, allowed-tools adapted
+#       the description's generic sentence removed, allowed-tools adapted.
+#       Also writes .agents/skills/_shared/ (the files every skill reads)
+#       when it is missing; update keeps it current after that
 #   render-file <profile> <skill> <upstream-file> <rel-path>
 #       print one upstream file as render would write it (rel-path is its
 #       path inside the skill, e.g. SKILL.md or assets/index.md)
@@ -60,6 +62,17 @@ die() { echo "setup.sh: $*" >&2; exit 1; }
 
 DEST=.agents/skills
 LOCK=.agents/skills-lock.json
+SHARED=_shared   # not a skill: the files skills share, installed with any of them
+
+# installed_dirs <profile> <skills>: the folders a managed copy tracks, the
+# skills not kept plus _shared.
+installed_dirs() {
+  local kept s
+  kept=$(pget "$1" kept)
+  for s in $(pget "$1" skills) "$SHARED"; do
+    has_line "$kept" "$s" || { [ -d "$2/$s" ] && echo "$s"; }
+  done
+}
 
 # --- profile -----------------------------------------------------------------
 
@@ -231,7 +244,8 @@ render_index() {
   local keep
   keep=$(present_assets "$1" "$2" | paste -sd'|' -)
   awk -v keep="^(${keep:-.^})\$" '
-    /^\| (stack|field) \| `/ { id = $0; sub(/^\| (stack|field) \| `/, "", id); sub(/`.*/, "", id); if (id !~ keep) next }
+    /^\| (stack|field) \| \[?`/ { id = $0; sub(/^\| (stack|field) \| \[?`/, "", id); sub(/`.*/, "", id); if (id !~ keep) next }
+    /^\| `(stack|field)\/[^`]*\.md`/ { id = $0; sub(/^\| `(stack|field)\//, "", id); sub(/\.md`.*/, "", id); if (id !~ keep) next }
     { print }' "$3"
 }
 
@@ -262,16 +276,22 @@ render_file() {
 }
 
 render_skill() {
-  local profile=$1 skills=$2 skill=$3 src="$2/$3" rel
+  local profile=$1 skills=$2 skill=$3 src="$2/$3"
   [ -f "$src/SKILL.md" ] || die "no upstream skill $skill in $skills"
   [ "$skill" != setup-skills ] || die "setup-skills is never copied into a project"
-  rm -rf "${DEST:?}/$skill"
+  write_dir "$profile" "$src" "$skill"
+  [ -d "$DEST/$SHARED" ] || [ ! -d "$skills/$SHARED" ] || write_dir "$profile" "$skills/$SHARED" "$SHARED"
+}
+
+write_dir() {
+  local profile=$1 src=$2 name=$3 rel
+  rm -rf "${DEST:?}/$name"
   wanted "$profile" "$src" | while IFS= read -r rel; do
-    mkdir -p "$DEST/$skill/$(dirname "$rel")"
-    render_file "$profile" "$skill" "$src/$rel" "$rel" "$src" > "$DEST/$skill/$rel"
-    [ ! -x "$src/$rel" ] || chmod +x "$DEST/$skill/$rel"
+    mkdir -p "$DEST/$name/$(dirname "$rel")"
+    render_file "$profile" "$name" "$src/$rel" "$rel" "$src" > "$DEST/$name/$rel"
+    [ ! -x "$src/$rel" ] || chmod +x "$DEST/$name/$rel"
   done
-  echo "rendered $DEST/$skill"
+  echo "rendered $DEST/$name"
 }
 
 # rerender_one: re-render an installed SKILL.md in place. The installed block
@@ -289,8 +309,8 @@ lock_files() { [ -f "$LOCK" ] && sed -n 's/^    "\(.*\)": "\([0-9a-f]*\)",\{0,1\
 lock_hash() { lock_files | awk -v p="$1" '$1 == p { print $2 }'; }
 
 write_lock() {
-  local profile=$1 skills=$2 commit=$3 source ref kept first=1 s rel h
-  source=$(pget "$profile" source); ref=$(pget "$profile" ref); kept=$(pget "$profile" kept)
+  local profile=$1 skills=$2 commit=$3 source ref first=1 s rel h
+  source=$(pget "$profile" source); ref=$(pget "$profile" ref)
   [ -d "$skills" ] || die "no upstream skills folder $skills"
   {
     echo "{"
@@ -298,9 +318,7 @@ write_lock() {
     echo "  \"ref\": \"${ref}\","
     echo "  \"commit\": \"$commit\","
     echo "  \"files\": {"
-    for s in $(pget "$profile" skills); do
-      has_line "$kept" "$s" && continue
-      [ -d "$skills/$s" ] || continue
+    for s in $(installed_dirs "$profile" "$skills"); do
       wanted "$profile" "$skills/$s" | while IFS= read -r rel; do
         h=$(render_file "$profile" "$s" "$skills/$s/$rel" "$rel" "$skills/$s" | run git hash-object --stdin)
         printf '%s\t%s\n' "$DEST/$s/$rel" "$h"
@@ -318,15 +336,13 @@ write_lock() {
 # --- update --------------------------------------------------------------------
 
 plan() {
-  local profile=$1 clone=$2 old=$3 new=$4 kept skills tmp s rel p h ours_h
-  kept=$(pget "$profile" kept); skills=$(pget "$profile" skills)
+  local profile=$1 clone=$2 old=$3 new=$4 kept tmp s rel p h ours_h
+  kept=$(pget "$profile" kept)
   tmp=$(mktemp -d)
   run git -C "$clone" worktree add -q --detach "$tmp/new" "$new" >/dev/null
   {
     lock_files | awk '{ print $1 }'
-    for s in $skills; do
-      has_line "$kept" "$s" && continue
-      [ -d "$tmp/new/.agents/skills/$s" ] || continue
+    for s in $(installed_dirs "$profile" "$tmp/new/.agents/skills"); do
       wanted "$profile" "$tmp/new/.agents/skills/$s" | sed "s|^|$DEST/$s/|"
     done
   } | sort -u | while IFS= read -r p; do
@@ -408,9 +424,8 @@ update() {
 
 assets() {
   local profile=$1 skills=$2 s f id present
-  for s in $(pget "$profile" skills); do
+  for s in $(installed_dirs "$profile" "$skills"); do
     [ -d "$DEST/$s" ] || continue
-    has_line "$(pget "$profile" kept)" "$s" && continue
     present=$(present_assets "$profile" "$skills/$s")
     for f in "$skills/$s"/assets/stack/*.md "$skills/$s"/assets/field/*.md; do
       [ -f "$f" ] || continue
@@ -432,7 +447,7 @@ assets() {
       rm -f "$DEST/$s/assets/index.md"
     fi
     rmdir "$DEST/$s/assets/stack" "$DEST/$s/assets/field" "$DEST/$s/assets" 2>/dev/null || true
-    rerender_one "$profile" "$s" "$skills/$s/SKILL.md"
+    [ "$s" = "$SHARED" ] || rerender_one "$profile" "$s" "$skills/$s/SKILL.md"
   done
 }
 
