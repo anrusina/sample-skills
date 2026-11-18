@@ -58,7 +58,7 @@ No arguments → run every flag in order except `--fix-skills`, which runs only 
 
 ## --review
 
-Same as `/doc-audit`: follow its `--review` steps, with its assets (its `SKILL.md` sits beside this skill's folder, at `${CLAUDE_SKILL_DIR}/../doc-audit/SKILL.md`, or `sample-skills-doc-audit` in a Codex install). Always run first in every invocation.
+Same as `/doc-audit`: follow its `--review` steps, with its assets (its `SKILL.md` sits beside this skill's folder, at `${CLAUDE_SKILL_DIR}/../doc-audit/SKILL.md`, or `sample-skills-doc-audit` in a Codex install); run its `spec-ids.sh` commands with this skill's own copy, `${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh`. Always run first in every invocation.
 
 ## --fix-comments
 
@@ -81,7 +81,7 @@ Same as `/doc-audit`: follow its `--review` steps, with its assets (its `SKILL.m
 4. For each LLD with stale flow: update the affected sections only. Do not rewrite prose that is still accurate.
 5. Only when AGENTS.md defines telemetry signals for LLDs: for each LLD that documents log events with product intelligence but has no `## Telemetry signals` section: draft and add the section in the rate-pair format — a table with columns Signal, Level, Emitted when, Product intelligence, Pairs with; the denominator event (the happy-path event confirming normal completion) first, then each failure signal naming that denominator in "Pairs with". If the `/design-docs` skill is available, follow its LLD template's *Telemetry signals* section instead. Populate signal rows from observable log calls in the subsystem code. Mark intent-dependent fields `[NEEDS HUMAN INPUT]`.
 6. For each HLD gap: add the missing subsystem entry or update the stale one. Describe what exists — do not invent architecture.
-7. For each LLD that pins a look-and-feel value (a raw color, a literal size, a font, an icon glyph, an animation value or exact string wording): replace the value with the design-system token it stands for, or remove it when the sentence carries no behaviour without it. If no token exists for the value, do not invent one: list it as a gap for the developer. AGENTS.md's LLD-altitude rule, if it has one, is the canonical rule.
+7. For each LLD that pins a look-and-feel value (a raw color, a literal size, a font, an icon glyph, an animation value or exact string wording): replace the value with the design-system token it stands for (a color or size token, a named text style, an animation constant, a localization key) or a plain description ("a check icon"), or remove it when the sentence carries no behaviour without it. If no token exists for the value, do not invent one: list it as a gap for the developer. AGENTS.md's LLD-altitude rule, if it has one, is the canonical rule.
 8. Apply the *Fix docs* section of each loaded asset.
 
 ### Bootstrap path — code exists with no upstream docs

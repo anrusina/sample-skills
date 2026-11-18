@@ -138,7 +138,8 @@ same formatter without its check flag); `/commit` uses it to fix formatting
 and re-run the gate.}
 
 {If tools must run through a wrapper — a version manager's exec command, a
-container — say so here; the skills then prefix every tool command with it.}
+container — say so here; the skills run the gates and the tools it provides
+through it, and everything else bare.}
 
 ### Worktree setup (optional)
 
