@@ -69,7 +69,7 @@ record it in.
   chains too: in `[15 -> 16, 13]`, #16 follows #15 while #13 runs alongside.
 - `,` outside brackets separates tracks, which run side by side.
 - A track pasted from `/managerial`'s progress doc reads the same way, with
-  ` · ` for side by side; skip struck-out (done) issues, ignore markers and
+  ` · ` joining the items of one step, as `[a, b]` does; skip struck-out (done) issues, ignore markers and
   labels, and treat `⏸ Wait for #N` as a hold until #N merges, never as a
   step that starts #N.
 
