@@ -70,7 +70,7 @@ installed_dirs() {
   local kept s
   kept=$(pget "$1" kept)
   for s in $(pget "$1" skills) "$SHARED"; do
-    has_line "$kept" "$s" || { [ -d "$2/$s" ] && echo "$s"; }
+    if ! has_line "$kept" "$s" && [ -d "$2/$s" ]; then echo "$s"; fi
   done
 }
 
@@ -258,8 +258,8 @@ wanted() {
     case "$f" in
       assets/stack/*|assets/field/*)
         id=$(basename "$f" .md)
-        has_line "$present" "$id" && echo "$f" ;;
-      assets/index.md) [ -n "$present" ] && echo "$f" ;;
+        if has_line "$present" "$id"; then echo "$f"; fi ;;
+      assets/index.md) if [ -n "$present" ]; then echo "$f"; fi ;;
       *) echo "$f" ;;
     esac
   done
