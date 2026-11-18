@@ -1,11 +1,8 @@
 # Project pre-merge checks (phase 1b)
 
-Read this only when the *pre-merge checks* fact is set. Run every check it
-lists, in its order, on the rebased branch, and put each one's result in the
-phase 5 summary.
-
-Every command below runs from the worktree; `<base>`, `<N>` and the
-wrapper are the values the skill already worked out.
+Run every check the *pre-merge checks* fact lists, in its order, on the
+rebased branch, from the worktree, and put each one's result in the phase 5
+summary.
 
 ## Conditional checks
 
@@ -16,9 +13,9 @@ build after a toolchain change, say) runs only when one of them changed:
 git diff --name-only origin/<base>...HEAD
 ```
 
-For a file where only some lines count (a manifest whose version line the
-bump below changes, say), look at which lines changed in the branch diff. If
-nothing on the list is touched, say so in one line.
+Where only some lines of a file count (say, not the version line the bump
+writes), look at which lines the branch changed. If nothing on the list is
+touched, say so in one line.
 
 ## Local suites
 
@@ -35,8 +32,8 @@ If the primary checkout lacks a fixture folder, stop and name it. The merge
 waits for a run where the fixtures are, unless the developer says in chat to
 merge without them; then record `<suite>: not run (no <folder> on this
 machine)` in the PR description and in the summary. Remove each link
-(`rm <folder>`, no trailing slash) once the suite has run: a link left
-behind blocks the worktree cleanup after the merge.
+(`rm <folder>`, no trailing slash) once the suite has run, or it blocks the
+worktree cleanup.
 
 ## Checks the developer runs by hand
 
@@ -74,20 +71,16 @@ MSG_EOF
 fi
 ```
 
-Run again on the same default branch, it computes the same version and finds
-nothing to commit; run after the default branch moved, it bumps from the new
-version. A rebase conflict on the version was already settled in phase 1a.
 Phase 2 folds this commit into the implementation commit.
 
 ## Other checks that change files
 
-Release notes, a status table: commit them on the branch, the same way, so
-phase 2 sorts them into its buckets.
+Release notes, a status table: commit them on the branch the same way.
 
 ## CI-equivalent run
 
-A workflow that runs the gates on a clean checkout must run on the history
-phase 2 pushes, so phase 2 starts it after its push, not now:
+A workflow that runs the gates on a clean checkout runs on the history
+phase 2 pushes, so phase 2 starts it after its push:
 
 1. If every changed path is Markdown, or under `docs/`, `.agents/` or
    `.claude/`, and none is a build input by the *build-input docs* fact,
@@ -97,10 +90,10 @@ phase 2 pushes, so phase 2 starts it after its push, not now:
    prints `run=` and `conclusion=` (with the failing steps' log on any
    conclusion but `success`).
 3. Only `success` lets the merge go on.
-   - `cancelled`: a newer run may have replaced it, or someone cancelled it.
-     Run the script again, which takes the newest run on the head commit; if
-     that one was cancelled too, run it once more with `--new`. If the run
-     it started is cancelled as well, **stop** and ask the developer.
+   - `cancelled`: run the script again (it takes the newest run on the head
+     commit); if that one was cancelled too, run it once more with `--new`.
+     If the run it started is cancelled as well, **stop** and ask the
+     developer.
    - Anything else (`failure`, `timed_out`, `startup_failure`,
      `action_required`, …): show the log tail it printed and **stop**. Fix
      it on the branch and re-run `/pre-merge`.

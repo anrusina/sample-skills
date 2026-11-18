@@ -27,9 +27,9 @@ allowed-tools:
   - Bash(curl -s https://rubygems.org/*)
 ---
 
-You are a git workflow assistant for this project. You inspect changes, run quality gates, produce a clear commit message, commit, and push — without requiring the developer to write boilerplate.
+You inspect changes, run quality gates, write the commit message, commit, and push.
 
-**Invoking `/commit` is the approval.** The developer reviews changes in the pull request, not in the staging area or in chat. Do not ask them to stage files, confirm the file list, or approve the commit message. Stop only for a real blocker: a failed quality gate, an Arrow of Intent contradiction, a dependency that fails the security policy, or a destructive action (force-push). `git commit` and `git push` stay out of `allowed-tools` on purpose: unless the session already allows them, their permission prompt is where the developer says yes.
+**Invoking `/commit` is the approval.** The developer reviews changes in the pull request. Do not ask them to stage files, confirm the file list, or approve the message. Stop only for a real blocker: a failed quality gate, an Arrow of Intent contradiction, a dependency that fails the security policy, or a force-push. `git commit` and `git push` stay out of `allowed-tools` on purpose: their permission prompt, unless the session already allows them, is the developer's yes.
 
 ## Project facts
 
@@ -67,7 +67,7 @@ its section. With none loaded, the steps' generic text applies.
 
 ## input
 
-`$ARGUMENTS`: a commit hash (analyse that commit only — report and stop), `--squash` to fold the branch's unpushed commits into one (off by default — see step 10), `--no-push` to commit without pushing, or empty for the full workflow. `--push` is accepted and ignored — pushing is the default.
+`$ARGUMENTS`: a commit hash (analyse that commit only), `--squash` to fold the branch's unpushed commits into one (step 10), `--no-push` to commit without pushing, or empty for the full workflow. `--push` is accepted and ignored: pushing is the default.
 
 ## step 1 — inspect changes
 
@@ -83,14 +83,12 @@ git diff
 If nothing is staged or unstaged, stop:
 > "nothing to commit — working tree is clean."
 
-If something is already staged, commit exactly what is staged — the developer chose it — and leave unstaged changes alone.
+If something is already staged, commit exactly what is staged and leave unstaged changes alone.
 
-If nothing is staged, stage the changes yourself with `git add <path>...`, naming each path (never `git add -A` or `git add .`). Include every modified or new file that belongs to the work being committed. Leave out, and name in the final report:
+If nothing is staged, stage every modified or new file that belongs to this work with `git add <path>...`, naming each path (never `git add -A` or `git add .`). Leave out, and name in the final report:
 - untracked tooling or scratch paths — `.worktrees/`, `.claude/worktrees/`, build output, editor files, and the paths in the *Scratch paths* section of each loaded stack asset
 - anything that looks like a secret (`.env`, credentials, keys) — check its contents before deciding
-- changes that clearly belong to different work than this commit (another issue, another session)
-
-Do not ask which files to include.
+- changes that clearly belong to different work (another issue, another session)
 
 Then apply the *Staging* section of each loaded asset.
 
@@ -102,22 +100,22 @@ git rev-parse --abbrev-ref HEAD
 
 Note the branch name it prints: step 10 writes it in as `<branch>`.
 
-**On the default branch (`<base>`), or detached (it prints `HEAD`)** — committing here is not allowed. Suggest a branch:
+**On the default branch (`<base>`), or detached (it prints `HEAD`)** — never commit here. Suggest a branch:
 ```
 feature-<N>/<3-5-word-slug>   # new functionality
 fix-<N>/<3-5-word-slug>        # bug fixes
 spike-<N>/<3-5-word-slug>      # research / investigation
 docs-<N>/<3-5-word-slug>       # documentation only
 ```
-plus any prefix the *Commit message* section of a loaded asset adds. Every branch must carry a GitHub issue number. If none is determinable from context, ask the developer — this is the one question this step may ask.
+plus any prefix the *Commit message* section of a loaded asset adds. Every branch carries a GitHub issue number; if context gives none, ask the developer (the one question this step may ask).
 
-Once the issue number is known, create the branch without asking: `git checkout -b <name>` (use the branch name passed in by the caller, if any), then continue.
+Then create the branch without asking: `git checkout -b <name>` (the caller's branch name, if one was passed in), and continue.
 
 **On any other branch** — check for an open PR:
 ```bash
 gh pr view --json number,url,state 2>/dev/null
 ```
-- Open PR found (`state` is `OPEN`; a closed or merged one counts as none) → add a **new** commit (continue to step 3). Reviewed history is never rewritten, so do not ask. Amend only when the invocation explicitly says to amend:
+- Open PR found (`state` is `OPEN`; a closed or merged one counts as none) → add a **new** commit (continue to step 3), without asking: reviewed history is never rewritten. Amend only when the invocation explicitly says to:
   - amend: run quality gates (step 5). Then check whether the staged diff touches paths covered by steps 6–7:
     ```bash
     git diff --staged --name-only | grep -E '^docs/(design|specs)/'
@@ -126,7 +124,7 @@ gh pr view --json number,url,state 2>/dev/null
     - Any `docs/design/` or `docs/specs/` files staged → run step 6 (Arrow consistency check).
     - Any `@spec` tags in the staged diff → run step 7 (@spec tag check).
     Then `git commit --amend --no-edit`. Skip steps 8–9, go to step 10.
-- No open PR (or command fails) → continue to step 3. No branch suggestion needed.
+- No open PR (or command fails) → continue to step 3.
 
 ## step 3 — split check
 
@@ -145,17 +143,15 @@ If splitting is needed, identify file groupings and suggest one message per grou
 
 ## step 4 — dependency check
 
-Only when a package manifest is in the diff (the manifest the *Dependency registry* section of the loaded stack asset names, or whichever manifest the project uses) and new packages have been added to it. The project's dependency policy (the `dependency policy` fact) requires the checks below to be **done**, not merely deferred, before the package is committed — do not stage a dependency addition on the strength of the age check alone.
+Only when a package manifest in the diff (the one the loaded stack asset's *Dependency registry* section names, or whichever the project uses) adds new packages. Every check below must be **done**, not deferred, before the package is committed; the age check alone is not enough. The `dependency policy` fact sets the rules; with none, the generic default applies (14 days, a repository check, the record).
 
-If the project has no dependency policy, apply the generic default: the specific version being added was published at least 14 days ago, its source repository shows no unusual recent activity, and the check is recorded next to the dependency.
-
-How to find the publish date and the source repository, assess the repository, and record the check is in [references/dependency-check.md](references/dependency-check.md); the registry commands, the record's form and any policy the stack applies are in the *Dependency registry* section of the loaded stack asset.
+How to find the publish date and the source repository, assess the repository, and record the check is in [references/dependency-check.md](references/dependency-check.md); registry commands, the record's form and any stack policy are in the loaded stack asset's *Dependency registry* section.
 
 1. List each newly added package name and pinned version.
-2. Check the publish date of that exact version. Published **less than 14 days ago** (or under the policy's own threshold, if it sets a longer one) → stop. The security policy forbids adding it; report the date. Do not commit.
-3. Check the package's source repository for unusual recent commits, new maintainers, or an activity spike. If the repository can't be located, or its history can't be assessed, stop and report that rather than committing anyway.
-4. Record the check next to the dependency — e.g. `Checked <today>: published <publish date>, active maintenance, no unusual activity` — as the reference and the stack asset describe, and stage that edit together with the dependency change.
-5. If either check fails, or either can't be completed, stop. Do not commit the dependency change; report what's missing so the developer can complete it.
+2. Check the publish date of that exact version. Published **less than 14 days ago** (or under the policy's longer threshold) → stop and report the date.
+3. Check the package's source repository for unusual recent commits, new maintainers, or an activity spike.
+4. Record the check next to the dependency — e.g. `Checked <today>: published <publish date>, active maintenance, no unusual activity` — and stage that edit with the dependency change.
+5. If either check fails, or can't be completed (no repository found, history can't be assessed), stop. Do not commit the dependency change; report what's missing.
 
 ## step 5 — quality gates
 
@@ -163,17 +159,13 @@ How to find the publish date and the source repository, assess the repository, a
 ```bash
 git diff --cached --name-only; git diff --name-only
 ```
-If **every** changed path is Markdown or under `docs/` (no source file, manifest, lockfile, config, or other build input), and none of them is under the `build-input docs` paths (or counts as a build input by the *Quality gates* section of the loaded stack asset), the change set is **documentation-only** — skip the gates entirely and continue to step 6. Markdown the build reads is a build input like any source file. No formatter, linter or test suite can be affected by other Markdown, so running them is pure waste. Any non-doc file in the set makes it non-docs-only, so the gates still run whenever code is present; doc consistency stays guarded by step 6 (`/arrow-check`).
+If **every** changed path is Markdown or under `docs/` (no source file, manifest, lockfile, config, or other build input), and none is a build input by the `build-input docs` fact or the loaded stack asset's *Quality gates* section, the change set is **documentation-only**: skip the gates and continue to step 6.
 
-Otherwise, apply the *Before the gates* section of each loaded asset, then run the gates, each in the order listed; if the build section names one command that runs them all, run that. Never guess the commands: if AGENTS.md lists none, ask the developer once, as *Project facts* says.
+Otherwise, apply the *Before the gates* section of each loaded asset, then run the gates in order (or the one command that runs them all). Never guess the commands: if AGENTS.md lists none, ask once, as *Project facts* says.
 
-- If a format gate rewrites files, re-stage the files it changed (`git add <path>...`) before continuing. If it only checks and fails, run the format fix (the *Quality gates* section of the loaded stack asset names the usual write-mode command), re-stage the files it changed, and run the gates again.
-- Any lint/analyze finding the gate reports → show full output, stop. If AGENTS.md says warnings or infos block, they block exactly as errors do.
-  Default to fixing the code. Do not add a rule exclusion or an inline suppression comment (the stack asset's *Quality gates* section lists the forms it takes) on
-  your own initiative — silencing a rule is a decision about the rule itself,
-  not a way past this gate. If an exclusion looks genuinely warranted, stop and
-  put the case to the developer with the pros and cons of excluding versus
-  fixing, then wait for approval.
+- If a format gate rewrites files, re-stage them (`git add <path>...`). If it only checks and fails, run the format fix (the loaded stack asset's *Quality gates* section names the usual one), re-stage, and run the gates again.
+- Any lint/analyze finding → show full output, stop. If AGENTS.md says warnings or infos block, they block exactly as errors do.
+  Fix the code. Never add a rule exclusion or inline suppression (the stack asset's *Quality gates* section lists the forms) on your own initiative: that is a decision about the rule, not a way past the gate. If one looks genuinely warranted, stop, put the case for excluding versus fixing to the developer, and wait for approval.
 - Any test failure → show full output, stop.
 - Apply the *Gate results* section of each loaded asset.
 
@@ -185,7 +177,7 @@ Run `/arrow-check`. If it reports any **Contradictions**, **Orphans** or **Broke
 
 ## step 7 — @spec tag check
 
-Scan changed source and test files for `@spec SUBSYSTEM-NNN` tags, in whatever comment syntax the language uses (`// @spec AUTH-001`, `# @spec AUTH-001`). For each tag found, verify the spec ID exists in `docs/specs/EARS-<subsystem>.md`. Flag any tags pointing to missing specs — do not block.
+Scan changed source and test files for `@spec SUBSYSTEM-NNN` tags, in any comment syntax (`// @spec AUTH-001`, `# @spec AUTH-001`). Verify each ID exists in `docs/specs/EARS-<subsystem>.md`. Flag tags pointing to missing specs; do not block.
 
 ## step 8 — write commit message
 
@@ -218,11 +210,11 @@ Work done:
 - Add `LoginFormTest` covering rejected submit and retry  // @spec AUTH-002
 ```
 
-**Multiple issues** — if step 3 produced separate commits (one per logical unit), each commit carries its own `[#N]` from context (the issue the change belongs to, not just the branch issue). When the branch itself covers multiple issues and a single commit cannot be avoided, list all numbers: `[#12][#13] feat: ...`.
+**Multiple issues** — if step 3 split the work, each commit carries the `[#N]` of the issue its change belongs to, not just the branch issue. When one commit unavoidably covers several issues, list them all: `[#12][#13] feat: ...`.
 
 ## step 9 — commit
 
-Don't ask for approval in chat. Write the message into a `mktemp` file with a quoted heredoc and commit from it, in one call: inside `git commit -m "…"` the shell would run every backticked identifier in the message.
+Write the message into a `mktemp` file with a quoted heredoc and commit from it, in one call (inside `git commit -m "…"` the shell would run every backticked identifier).
 
 ```bash
 msg=$(mktemp)
@@ -232,11 +224,11 @@ MSG_EOF
 git commit -q -F "$msg"; rc=$?; rm -f "$msg"; exit $rc
 ```
 
-No AI attribution trailer (`Co-Authored-By:` or similar) unless AGENTS.md asks for one. Report the short SHA and show the message in a fenced code block, so the developer can see it; they reword it in the PR if needed.
+No AI attribution trailer (`Co-Authored-By:` or similar) unless AGENTS.md asks for one. Report the short SHA and show the message in a fenced code block.
 
 ## step 10 — push (squash only when asked)
 
-List the unpushed commits, writing in `<branch>` (the name noted in step 2) and `<base>`. If the branch has a remote, this diffs against it; otherwise against the default branch:
+List the unpushed commits (against the remote branch if there is one, else the default branch):
 
 ```bash
 git rev-parse --verify origin/<branch> 2>/dev/null \
@@ -244,17 +236,14 @@ git rev-parse --verify origin/<branch> 2>/dev/null \
   || git log origin/<base>..HEAD --oneline
 ```
 
-**Do not squash** unless `--squash` is passed — `/pre-merge` rebuilds the
-branch's history at merge time.
-
-**Squash — only when `--squash` is in `$ARGUMENTS`**, and only when there is
-more than one unpushed commit:
+**Squash only when `--squash` is in `$ARGUMENTS`** (`/pre-merge` rebuilds the
+history at merge time), and only with more than one unpushed commit:
 - Branch has remote tracking: `git reset --soft origin/<branch>`
 - No remote yet: `git reset --soft "$(git merge-base HEAD origin/<base>)"`
 
-Compose a combined message: subject from the most recent commit, `Work done:` synthesised across all squashed commits (group by concern, include `@spec` IDs). Commit it the same way as step 9, then show the message.
+Compose a combined message: subject from the most recent commit, `Work done:` synthesised across all squashed commits (group by concern, include `@spec` IDs). Commit it as in step 9 and show the message.
 
-**Push** — push automatically, with no prompt, unless `--no-push` is in `$ARGUMENTS`.
+**Push** without a prompt, unless `--no-push` is in `$ARGUMENTS`.
 - New branch (no remote tracking): `git push -u origin <branch>`
-- Existing remote branch: `git push origin <branch>`, a normal, non-forced push. A new commit sits on top of the remote tip, and so does a squash: it reset onto `origin/<branch>` before committing, so it folded only unpushed commits. A rejected push means the remote moved, or this run amended a commit that was already pushed; investigate, never force past it.
-- If the push is rejected: stop and ask whether to `git push --force-with-lease`. Never force-push without explicit confirmation — this is the one push-time question the skill still asks, since force-push is a destructive, hard-to-reverse action.
+- Existing remote branch: `git push origin <branch>`, never forced (a new commit or a squash sits on the remote tip).
+- If the push is rejected (the remote moved, or this run amended a pushed commit): stop, investigate, and ask whether to `git push --force-with-lease`. Never force-push without explicit confirmation.

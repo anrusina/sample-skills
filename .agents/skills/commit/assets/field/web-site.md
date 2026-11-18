@@ -2,8 +2,7 @@
 
 ## Commit message
 
-Adds a type and branch prefix for site content, when AGENTS.md's git section
-uses them:
+Use this type and branch prefix when AGENTS.md's git section does:
 
 | Type | Branch prefix | When |
 |---|---|---|

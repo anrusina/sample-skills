@@ -10,14 +10,11 @@
   lockfile (`pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`), reinstall
   with the frozen form the *setup* fact uses: `pnpm install
   --frozen-lockfile`, `npm ci`, or `yarn install --immutable`. Never drop the
-  frozen flag to make an install pass; a mismatch means the lockfile and
-  manifest disagree, and that is a conflict to resolve.
+  frozen flag to make an install pass: a mismatch is a lockfile/manifest
+  conflict to resolve.
 
 ## Rebuild
 
-A dependency record that lives under `docs/` (a table of dependencies with
-the date each version was checked, kept there because JSON manifests cannot
-hold comments) rides with its manifest: when `package.json` changed, the
-record's file goes in the implementation bucket with the manifest and
-lockfile, not in the docs commit: pass it to `rebuild.sh` as
-`--to-impl <file>`.
+A dependency record under `docs/` (the table of checked dependency
+versions) rides with its manifest: when `package.json` changed, pass the
+record's file to `rebuild.sh` as `--to-impl <file>`.

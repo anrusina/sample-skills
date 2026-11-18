@@ -18,6 +18,6 @@ Never staged: `node_modules/`, `.pnpm-store/`, `coverage/`, and framework build 
 
 A lockfile change alone (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`) with no `package.json` change is not a new dependency; a new direct dependency always shows in `package.json`.
 
-Record: `package.json` cannot hold comments, so the record goes where the dependency policy says (a table such as `docs/dependencies.md` is common); if it says nothing, ask once, as the reference describes.
+Record: `package.json` cannot hold comments, so the record goes where the dependency policy says; if it says nothing, ask once, as the reference describes.
 
-Project policy this asset applies **only when the dependency policy says so**: versions are exact. Under that rule a range in the new entry (`^`, `~`, `*`, `latest`, `x`) is a blocker; the package manager's save-prefix setting (for example `savePrefix: ''` in `pnpm-workspace.yaml`, or `save-exact=true` in `.npmrc`) is how the project keeps them exact.
+**Only when the dependency policy says versions are exact:** a range in the new entry (`^`, `~`, `*`, `latest`, `x`) is a blocker; the package manager's save-prefix setting (for example `savePrefix: ''` in `pnpm-workspace.yaml`, or `save-exact=true` in `.npmrc`) keeps them exact.

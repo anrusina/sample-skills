@@ -8,9 +8,8 @@ moves this branch's glyph.
 
 ## Unique identifiers
 
-Code points are a registry of permanent public identifiers: apps that use
-the font address glyphs by code point, so a change breaks them silently.
-Check the branch against `origin/<base>` with the project's code point check
+Code points are permanent public identifiers: a change silently breaks
+apps that use the font. Check the branch against `origin/<base>` with the project's code point check
 when AGENTS.md names one, otherwise by comparing each manifest's code
 points on both sides (`git show origin/<base>:<manifest>`):
 
@@ -22,8 +21,7 @@ points on both sides (`git show origin/<base>:<manifest>`):
   the same drawing? (yes / no)". Yes: continue and list the rename in the
   summary. No: stop; restore the old glyph at its code point and give the
   new one the next free code point, or have the developer accept the break.
-- **A code point is used twice in one font.** The default branch took it
-  first, so this branch moves: give its glyph the next free code point,
+- **A code point is used twice in one font.** This branch moves: give its glyph the next free code point,
   never one on the default branch, regenerate, commit, and list the move in
   the summary and the PR description.
 
