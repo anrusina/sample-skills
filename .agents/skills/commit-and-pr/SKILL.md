@@ -23,9 +23,8 @@ shell variable.
 | skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
 <!-- facts:end -->
 
-If `/commit` or `/pr` does not load, read its `SKILL.md` from the folder
-beside this skill's own (`${CLAUDE_SKILL_DIR}/../commit/SKILL.md`, or
-`../sample-skills-commit/` in a Codex install) and follow it.
+If `/commit` or `/pr` does not load in the form the *skill names* row gives,
+run the plugin's (`/sample-skills:commit`, `/sample-skills:pr`).
 
 ## invocation
 

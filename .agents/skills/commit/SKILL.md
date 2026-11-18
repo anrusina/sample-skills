@@ -100,14 +100,7 @@ git rev-parse --abbrev-ref HEAD
 
 Note the branch name it prints: step 10 writes it in as `<branch>`.
 
-**On the default branch (`<base>`), or detached (it prints `HEAD`)** — never commit here. Suggest a branch:
-```
-feature-<N>/<3-5-word-slug>   # new functionality
-fix-<N>/<3-5-word-slug>        # bug fixes
-spike-<N>/<3-5-word-slug>      # research / investigation
-docs-<N>/<3-5-word-slug>       # documentation only
-```
-plus any prefix the *Commit message* section of a loaded asset adds. Every branch carries a GitHub issue number; if context gives none, ask the developer (the one question this step may ask).
+**On the default branch (`<base>`), or detached (it prints `HEAD`)** — never commit here. Suggest a branch named as [../_shared/git-conventions.md](../_shared/git-conventions.md) says. If context gives no issue number, ask the developer (the one question this step may ask).
 
 Then create the branch without asking: `git checkout -b <name>` (the caller's branch name, if one was passed in), and continue.
 
@@ -181,50 +174,13 @@ Scan changed source and test files for `@spec SUBSYSTEM-NNN` tags, in any commen
 
 ## step 8 — write commit message
 
-**Subject prefix** — extract issue number from the branch name:
-- Pattern `<prefix>-42/...` (`feature-42/...`, `docs-42/...`, any prefix) → prefix `[#42]`
-- No recognisable number → omit prefix
+Write it as [../_shared/git-conventions.md](../_shared/git-conventions.md) says, and apply the *Commit message* section of each loaded asset.
 
-**Conventional type** — choose one, from this table plus any type the *Commit message* section of a loaded asset adds:
-
-| Type | When |
-|---|---|
-| `feat` | New functionality |
-| `fix` | Bug fix |
-| `docs` | Documentation or spec only |
-| `chore` | Tooling, config, dependencies |
-| `test` | Tests only |
-| `refactor` | Refactor without behaviour change |
-
-**Subject:** `[#N] type: imperative mood, ~72 chars, describes *what* changed.`
-
-**Body:** `Work done:` followed by 1–5 bullets. Imperative, backtick identifiers, explain what and why — not how. Apply the *Commit message* section of each loaded asset.
-
-```
-# Good — issue prefix, conventional type, imperative, @spec tagged
-[#12] feat: clear the password field on invalid credentials
-
-Work done:
-- Reset `LoginForm.password` when the auth service rejects the credentials  // @spec AUTH-001
-- Show the invalid-credentials error inline, next to the form
-- Add `LoginFormTest` covering rejected submit and retry  // @spec AUTH-002
-```
-
-**Multiple issues** — if step 3 split the work, each commit carries the `[#N]` of the issue its change belongs to, not just the branch issue. When one commit unavoidably covers several issues, list them all: `[#12][#13] feat: ...`.
+**Multiple issues** — if step 3 split the work, each commit carries the `[#N]` of the issue its change belongs to, not just the branch issue.
 
 ## step 9 — commit
 
-Write the message into a `mktemp` file with a quoted heredoc and commit from it, in one call (inside `git commit -m "…"` the shell would run every backticked identifier).
-
-```bash
-msg=$(mktemp)
-cat > "$msg" <<'MSG_EOF'
-<message>
-MSG_EOF
-git commit -q -F "$msg"; rc=$?; rm -f "$msg"; exit $rc
-```
-
-No AI attribution trailer (`Co-Authored-By:` or similar) unless AGENTS.md asks for one. Report the short SHA and show the message in a fenced code block.
+Commit with the `mktemp` heredoc in [../_shared/git-conventions.md](../_shared/git-conventions.md). Report the short SHA and show the message in a fenced code block.
 
 ## step 10 — push (squash only when asked)
 

@@ -26,8 +26,8 @@ allowed-tools:
   - Bash(gh repo view *)
   - Agent
   - Bash(${CLAUDE_SKILL_DIR}/scripts/review-round.sh *)
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/review-threads.sh *)
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/worktree.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/review-threads.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/worktree.sh *)
 ---
 
 Review a GitHub PR: a summary comment, inline comments, severity-ranked findings, and a "Prompt for AI" for each finding. `/fix-pr-findings` applies the fixes; review comments from any author (another AI model, the developer) are valid input.
@@ -116,7 +116,7 @@ checkout's `.claude/worktrees/`, never inside another worktree.
 created `<wt>` for this PR, move it to the new head:
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' move <wt> <head-sha>
+${CLAUDE_SKILL_DIR}/../_shared/scripts/worktree.sh --wrap '<wrapper>' move <wt> <head-sha>
 ```
 
 It prints `previous=<sha>` (`<prev-sha>`). The worktree setup below
@@ -131,7 +131,7 @@ Otherwise make a new one, pinned to `<head-sha>` rather than the moving
 branch:
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' add review-<number> <head-sha> --pr <number>
+${CLAUDE_SKILL_DIR}/../_shared/scripts/worktree.sh --wrap '<wrapper>' add review-<number> <head-sha> --pr <number>
 ```
 
 It prints `primary=<path>` (`<primary-checkout>`) and `worktree=<path>`
@@ -182,7 +182,7 @@ those tests run rather than skip silently; record any skips in Verification.
 
 4. **Fetch existing feedback** — conversation comments via `gh pr view <number> --comments`, and **every** review thread, resolved or not (one JSON object per thread), to avoid duplicating prior feedback and to re-check previous findings in step 9:
    ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/review-threads.sh --wrap '<wrapper>' <number> --all
+   ${CLAUDE_SKILL_DIR}/../_shared/scripts/review-threads.sh --wrap '<wrapper>' <number> --all
    ```
 
 5. **Fetch linked issues for conformance checking.** Extract every `Closes #N` / `Fixes #N` / `Resolves #N` (and `Ref #N`) reference from the PR body. For each, fetch the issue body and all its comments:
@@ -217,7 +217,7 @@ those tests run rather than skip silently; record any skips in Verification.
    - **Component catalog coverage** — only if `AGENTS.md` names a component catalog: screens and reusable components have entries covering their named states, taken from the LLD that documents UI states (`AGENTS.md` or the HLD says which). Pure business-logic LLDs define no UI states, so need no coverage.
    - **Test coverage** — missing edge cases, state transitions not covered, assertions that verify nothing
    - **Test tiers** — only if AGENTS.md's testing section defines tiers: each new test file's tier fits the project's guide for choosing one (a tier guard only checks one exists); a test raised above its file clears the higher bar; a file carries any extra tag `AGENTS.md` requires (e.g. on tests that read git-ignored fixtures). An existing file's tier lowered with no reason in the PR description is **Medium**; a tier that looks wrong for the guide is **Low**.
-   - **Documentation** — for any changed `docs/specs/` or `docs/design/` file, and the whole review on the documentation-only fast path, apply `/doc-audit`'s LLD, HLD and Mermaid-diagram checks and the `AGENTS.md` Arrow of Intent rules: an LLD or HLD citing individual EARS IDs; look-and-feel values pinned in an LLD, including a token that restates its literal value; a `> Note:` that narrates another subsystem's internals; a renumbered stable ID (OQ-N, spec IDs); an LLD with log events but no `## Telemetry signals` section. For a changed `.agents/skills/` file, apply `/doc-audit`'s skill-file audit.
+   - **Documentation** — for any changed `docs/specs/` or `docs/design/` file, and the whole review on the documentation-only fast path, check the [design-doc rules](../_shared/design-doc-rules.md), that the HLD still names the subsystems the code has, and that Mermaid diagrams in `docs/` match current names in the code. For a changed `.agents/skills/` file, check it against [../_shared/agentskills-best-practices.md](../_shared/agentskills-best-practices.md).
 
    **6a. Deep lenses (`--deep` only).** Run these three as parallel sub-agents, each given the PR number, `<head-sha>`, the changed-file list and `<wt>`, and each returning candidate findings with file, line and the evidence behind them:
    - **History** — `git log` and `git blame` of the changed lines: does the change undo an earlier fix, reintroduce a reverted approach, or break an invariant a past commit message explains?
@@ -282,11 +282,11 @@ those tests run rather than skip silently; record any skips in Verification.
    | unresolved, with a `Left as-is:` reply | — | reply `Accepted as left`, then resolve: the developer decided |
    | anything else | — | no action |
 
-   Always reply before changing state — every agent posts as the same account, so the reply is the only record of who decided what. `<sha>` is the commit that carries the fix.
+   Reply before changing state ([../_shared/review-replies.md](../_shared/review-replies.md) has the forms and commands). `<sha>` is the commit that carries the fix.
 
    **The verdict comes from the code at `<head-sha>`, and nothing else** — not the fixer's `Addressed in <sha>` reply, and not what an earlier round in this conversation concluded. When a reply cites a commit, check it is on the branch (`git merge-base --is-ancestor <sha> <head-sha>`) and that it changes the thread's file or a file the finding's Suggestion/Prompt for AI names (`git show --name-only <sha>`). If either check fails, judge the thread on the code alone and say in the reply that the cited commit did not hold up.
 
-   **Outside-diff findings** have no thread. Re-check each one that a PR conversation comment from step 4 names as `outside-diff finding #<N>` (an `Addressed in`, `Tracked in`, `Captured as` or `Left as-is:` reply), judged from the code at `<head-sha>` by the matching row above. Post that row's reply as a PR conversation comment naming the finding, with no state change: e.g. `Verified fixed in <sha> — outside-diff finding #<N>: <what>` or `Reopened: outside-diff finding #<N> — <what is still wrong>`.
+   **Outside-diff findings** have no thread. Re-check each one that a PR conversation comment from step 4 names as `outside-diff finding #<N>` (an `Addressed in`, `Tracked in`, `Captured as` or `Left as-is:` reply), judged from the code at `<head-sha>` by the matching row above, and post that row's reply as a PR comment naming the finding.
 
 ## phase 3 — present findings for approval
 
@@ -315,15 +315,7 @@ those tests run rather than skip silently; record any skips in Verification.
     ```
     Use `"event": "COMMENT"` and `"commit_id": "<head-sha>"`, so inline comments anchor to the lines that were actually reviewed. If the call fails, fix the cause, write a fresh file and submit again.
 
-    Then carry out the step 9 thread actions — the reply first, then the state change:
-    ```bash
-    gh api repos/{owner}/{repo}/pulls/<number>/comments/<comment databaseId>/replies -f body='<reply>'
-    gh api graphql -f id=<thread id> -f query='mutation($id: ID!) { resolveReviewThread(input: {threadId: $id}) { thread { isResolved } } }'
-    ```
-    For a reopen, use `unresolveReviewThread` in place of `resolveReviewThread`. For an outside-diff finding, post the verdict as a conversation comment instead — no state change follows:
-    ```bash
-    gh pr comment <number> --body '<verdict>'
-    ```
+    Then carry out the step 9 thread actions, the reply first, then the state change, with the commands in [../_shared/review-replies.md](../_shared/review-replies.md).
 
 14. **Report back:** review URL, findings count by severity, how many of them are unsure, which are merge-blocking, and threads resolved / reopened.
 

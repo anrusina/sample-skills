@@ -11,7 +11,7 @@ allowed-tools:
   - Bash(gh label list *)
   - Bash(gh workflow *)
   - Bash(gh run *)
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/worktree.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/worktree.sh *)
 ---
 
 From now on this session is the **coordinator**. It does no task work: no
@@ -249,7 +249,7 @@ Verify the merge first (`gh pr view <P> --json state,mergeCommit` shows
 
    ```bash
    git worktree list                      # review-<P>-* paths, anything left behind
-   ${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' remove <path> [<branch>]
+   ${CLAUDE_SKILL_DIR}/../_shared/scripts/worktree.sh --wrap '<wrapper>' remove <path> [<branch>]
    git fetch --prune origin               # drop tracking refs of merged branches
    ```
 

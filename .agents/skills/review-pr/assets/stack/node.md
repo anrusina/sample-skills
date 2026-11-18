@@ -2,8 +2,7 @@
 
 ## Worktree setup
 
-- Install dependencies with the lockfile frozen, in the package manager the lockfile belongs to: `pnpm install --frozen-lockfile`, `npm ci` or `yarn install --immutable`. Never drop the frozen flag: a review must build what the PR pins.
-- On a reused worktree, re-install only if `git diff --name-only <prev-sha>..<head-sha>` touches `package.json` or the lockfile.
+The *Setup* and *Re-run* sections of [../../../_shared/assets/stack/node.md](../../../_shared/assets/stack/node.md), with `<prev-sha>` and `<head-sha>` for a reused worktree: a review must build what the PR pins.
 
 ## Gates
 

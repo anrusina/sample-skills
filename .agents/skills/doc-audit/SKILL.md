@@ -2,7 +2,7 @@
 name: doc-audit
 description: "Audit the current branch's documentation against its changes, report only: orphaned or deprecated @spec tags, specs with no tests, LLDs, HLD and Mermaid diagrams that no longer match the code, stale READMEs, and the skill files it changed. Edits nothing. Use before opening or merging a PR that touches code or docs, or when asked whether the docs are still accurate. Not for fixing what it finds (/doc-audit-full) or checking the design docs against each other (/arrow-check). Generic copy: if a project skill named `doc-audit` is also listed, use that one instead."
 allowed-tools:
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh *)
 ---
 
 You audit docs for accuracy against the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) and report broken, stale and missing documentation.
@@ -52,7 +52,7 @@ its section. With none loaded, the steps' generic text applies.
 2. **For each changed source or test file** (the source and test trees AGENTS.md's project-structure section names; without one, every changed file that is not Markdown or under `docs/`):
    - Find the tags whose ID is undefined or deprecated, reading both EARS forms (table row and `ID: When …` line):
      ```bash
-     ${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh --wrap '<wrapper>' orphans <the changed source and test files>
+     ${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh --wrap '<wrapper>' orphans <the changed source and test files>
      ```
      Each line is `file:line`, the ID, and `undefined` (an orphaned tag) or `deprecated` (a deprecated spec still cited).
    - Flag tests that appear to cover spec behaviour but have no `@spec` tag.
@@ -61,9 +61,7 @@ its section. With none loaded, the steps' generic text applies.
 3. **LLD checks.** For each changed subsystem:
    - Does `docs/specs/LLD-<subsystem>.md` exist?
    - Does it still accurately describe the current data flow and component boundaries?
-   - **Telemetry signals** (only when AGENTS.md defines telemetry signals for LLDs): an LLD that documents log events with product intelligence but has no `## Telemetry signals` section is **Missing**; a failure signal row with no denominator event in "Pairs with" is **Broken**.
-   - **Known failures** (only when AGENTS.md has error-handling rules for LLDs): Does each error-handling row name a typed outcome or a user-visible presentation with recovery actions, rather than "throws" or "shows an error"? Does a presented failure link to its raising LLD instead of restating it? Where AGENTS.md's error-handling rules name a fixed set of surfaces a failure may show on, does the row name one, or say why none fits? Flag gaps as **Broken**.
-   - **UI altitude:** flag as **Broken** an LLD that *pins* look-and-feel **values**: raw colors (hex or named), literal pixel or point sizes, font names or weights, icon glyphs, animation curves or durations, or exact user-visible wording. A named design-system token (`color.primary`, `spacing.md`, a theme constant), a named text style, an animation constant, a localization key or a plain description ("the cancel label", "a check icon") is *not* drift, unless it also restates its literal value. Content marked `<!-- UI concern -->` is a note, not broken. An LLD-altitude rule in AGENTS.md (a section such as *LLD altitude*) is canonical.
+   - Check it against the [design-doc rules](../_shared/design-doc-rules.md): rules 1, 2 and 3 always; rule 4 only when AGENTS.md defines telemetry signals for LLDs, and rule 5 only when it has error-handling rules for LLDs. A breach is **Broken**, except a missing `## Telemetry signals` section, which is **Missing**.
    - Apply the *LLD checks* section of each loaded asset.
 
 4. **Check `docs/specs/HLD.md`:**
@@ -78,7 +76,7 @@ its section. With none loaded, the steps' generic text applies.
 
 7. **Docs checks.** Apply the *Docs checks* section of each loaded asset to the changed files. With none loaded, skip this step.
 
-8. **Audit the skill files this branch changed** (under `.agents/skills/`; skip this step when it changed none) — load [references/agentskills-best-practices.md](references/agentskills-best-practices.md) and evaluate each changed `SKILL.md` against it. If one names labels, fetch the label set (`gh label list`). Check each for:
+8. **Audit the skill files this branch changed** (under `.agents/skills/`; skip this step when it changed none) — load [../_shared/agentskills-best-practices.md](../_shared/agentskills-best-practices.md) and evaluate each changed `SKILL.md` against it. If one names labels, fetch the label set (`gh label list`). Check each for:
    - Labels referenced in the skill that no longer exist in the repo
    - Branch naming patterns that differ from the convention in the `commit` skill
    - Hardcoded values (project board number, owner, repo name) that have changed
@@ -94,7 +92,7 @@ its section. With none loaded, the steps' generic text applies.
 
 ## conventions
 
-Load [references/code-doc-conventions.md](references/code-doc-conventions.md) when a finding concerns documentation style or a Mermaid diagram (step 5) — it holds the documentation style, doc comment rules, anti-patterns, and Mermaid diagram conventions. For doc-comment syntax and an example, apply the *Doc comments* section of the loaded stack asset.
+Load [../_shared/code-doc-conventions.md](../_shared/code-doc-conventions.md) when a finding concerns documentation style or a Mermaid diagram (step 5) — it holds the documentation style, doc comment rules, anti-patterns, and Mermaid diagram conventions. For doc-comment syntax and an example, apply the *Doc comments* section of the loaded stack asset.
 
 ## rules
 

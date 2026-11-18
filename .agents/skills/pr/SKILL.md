@@ -17,7 +17,7 @@ allowed-tools:
   - Bash(gh repo *)
   - Bash(cat *)
   - Bash(mktemp *)
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh *)
 ---
 
 You synthesise this branch's commits into a clear pull request, so the developer writes no boilerplate.
@@ -119,7 +119,7 @@ If the file exists and has content, use it as the PR body template in step 7 ins
    - **No source or test changes** (tooling, docs, config only) → omit this section entirely.
    - **Source or test changes present** → find the spec IDs the branch tags, from the diff itself, and HLD references in the commit bodies:
      ```bash
-     ${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh --wrap '<wrapper>' added origin/<base>
+     ${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh --wrap '<wrapper>' added origin/<base>
      ```
      It prints each ID tagged on a line the branch adds, outside docs, skills and Markdown (pass the source and test dirs as arguments to narrow it).
      - If it prints at least one ID, list all spec IDs covered and the HLD section.

@@ -2,8 +2,7 @@
 
 ## Worktree setup
 
-- Generated code (`build_runner` output, `flutter gen-l10n` output) is usually git-ignored: run the *setup* steps before `dart analyze`. Analyzer errors from unresolved generated files are a setup gap, not findings.
-- On a reused worktree, re-run code generation only if `git diff --name-only <prev-sha>..<head-sha>` touches `pubspec.yaml`, `pubspec.lock` or a `.dart` file with a `part '….g.dart'` directive; re-run localisation generation only if it touches a `.arb` file. Re-run `flutter pub get` when the pubspec or lockfile changed.
+The *Setup* and *Re-run* sections of [../../../_shared/assets/stack/flutter.md](../../../_shared/assets/stack/flutter.md), with `<prev-sha>` and `<head-sha>` for a reused worktree.
 
 ## Gates
 

@@ -2,7 +2,7 @@
 name: doc-audit-full
 description: "Bring the documentation back in line with the code: doc comments on public API, stale spec tags and LLD or HLD sections, READMEs and guides, Mermaid diagrams, and, only with --fix-skills, the skill files. Edits files across the repository but never commits. Use when the docs have drifted, after an audit, or when part of the codebase needs its docs written. Not for a report only (/doc-audit) or new design work (/design-docs). Generic copy: if a project skill named `doc-audit-full` is also listed, use that one instead."
 allowed-tools:
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh *)
 ---
 
 You fix doc comments, update design docs, repair Mermaid diagrams, and keep the Arrow of Intent chain (HLD → LLDs → EARS specs → Tests → Code) accurate. Every run starts with the `/doc-audit` audit, then applies the requested fixes.
@@ -54,11 +54,11 @@ No arguments → run every flag in order except `--fix-skills`, which runs only 
 
 ## --review
 
-Same as `/doc-audit`: follow its `--review` steps, with its assets (its `SKILL.md` sits beside this skill's folder, at `${CLAUDE_SKILL_DIR}/../doc-audit/SKILL.md`, or `sample-skills-doc-audit` in a Codex install); run its `spec-ids.sh` commands with this skill's own copy, `${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh`.
+Run `/doc-audit` (its `--review`) and report its findings; it loads its own assets.
 
 ## --fix-comments
 
-1. Load [references/code-doc-conventions.md](references/code-doc-conventions.md); take the syntax from the *Doc comments* section of the loaded stack asset.
+1. Load [../_shared/code-doc-conventions.md](../_shared/code-doc-conventions.md); take the syntax from the *Doc comments* section of the loaded stack asset.
 2. Add or update doc comments only on public API where the contract is non-obvious:
    - Imperative summary sentence.
    - Document parameters and return values as short fragments.
@@ -77,7 +77,7 @@ Same as `/doc-audit`: follow its `--review` steps, with its assets (its `SKILL.m
 4. For each LLD with stale flow: update the affected sections only, leaving accurate prose alone.
 5. Only when AGENTS.md defines telemetry signals for LLDs: for each LLD that documents log events with product intelligence but has no `## Telemetry signals` section, add one in the rate-pair format — columns Signal, Level, Emitted when, Product intelligence, Pairs with; the denominator (happy-path) event first, then each failure signal naming it in "Pairs with". If `/design-docs` is available, follow its LLD template's *Telemetry signals* section instead. Fill rows from the subsystem's log calls; mark intent-dependent fields `[NEEDS HUMAN INPUT]`.
 6. For each HLD gap: add the missing subsystem entry or update the stale one. Describe what exists — do not invent architecture.
-7. For each LLD that pins a look-and-feel value (a raw color, a literal size, a font, an icon glyph, an animation value or exact string wording): replace it with the design-system token it stands for (a color or size token, a named text style, an animation constant, a localization key) or a plain description ("a check icon"), or remove it when the sentence carries no behaviour without it. If no token exists, do not invent one: list it as a gap. AGENTS.md's LLD-altitude rule, if it has one, is canonical.
+7. For each LLD that breaks [design-doc rule 2](../_shared/design-doc-rules.md) (a pinned look-and-feel value): replace the value with the design-system token it stands for or a plain description, or remove it when the sentence carries no behaviour without it. If no token exists, do not invent one: list it as a gap.
 8. Apply the *Fix docs* section of each loaded asset.
 
 ### Bootstrap path — code exists with no upstream docs
@@ -126,7 +126,7 @@ When a subsystem has code but no HLD entry, LLD, or EARS specs, generate draft s
 
 ## --fix-skills
 
-Load [references/agentskills-best-practices.md](references/agentskills-best-practices.md) before starting.
+Load [../_shared/agentskills-best-practices.md](../_shared/agentskills-best-practices.md) before starting.
 
 For each `SKILL.md` in `.agents/skills/`, leaving every facts block (`<!-- facts:begin -->` … `<!-- facts:end -->`) untouched, since `/setup-skills` writes it:
 
@@ -146,7 +146,7 @@ After all edits, print a summary: one bullet per skill file changed, with the ca
 
 ## conventions
 
-Load [references/code-doc-conventions.md](references/code-doc-conventions.md) for `--fix-comments` and `--diagrams` — documentation style, doc comment rules, anti-patterns, and Mermaid conventions.
+Load [../_shared/code-doc-conventions.md](../_shared/code-doc-conventions.md) for `--fix-comments` and `--diagrams` — documentation style, doc comment rules, anti-patterns, and Mermaid conventions.
 
 ## rules
 

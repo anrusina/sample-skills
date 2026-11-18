@@ -2,11 +2,11 @@
 name: pre-merge
 description: "The last step before merging a pull request: classifies every review item, blocks on anything still fixable or unanswered, rebases onto the latest default branch, keeps EARS IDs unique, runs the gates and the project's pre-merge checks, rebuilds the history as docs then code, files follow-up issues, replies to threads, and merges after asking. Runs only on the developer's explicit OK for that PR, given here or relayed quoting their words ('/pre-merge [PR]', 'merge PR 12'), never because a PR looks ready. Not for fixing findings (/fix-pr-findings) or reviewing (/review-pr). Generic copy: if a project skill named `pre-merge` is also listed, use that one instead."
 allowed-tools:
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/review-threads.sh *)
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/review-threads.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh *)
   - Bash(${CLAUDE_SKILL_DIR}/scripts/rebuild.sh *)
   - Bash(${CLAUDE_SKILL_DIR}/scripts/ci-run.sh *)
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/worktree.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/worktree.sh *)
 ---
 
 ## step 0 — explicit OK check
@@ -89,14 +89,14 @@ answer. If there is none, ask for a PR number.
    ```bash
    gh api repos/{owner}/{repo}/issues/<N>/comments --paginate
    gh api repos/{owner}/{repo}/pulls/<N>/reviews --paginate
-   ${CLAUDE_SKILL_DIR}/scripts/review-threads.sh --wrap '<wrapper>' <N>
+   ${CLAUDE_SKILL_DIR}/../_shared/scripts/review-threads.sh --wrap '<wrapper>' <N>
    ```
 
 2. Collect every review item: each unresolved thread, plus each finding in a review or conversation body that has no thread (*Outside the diff* findings, follow-ups or suggestions listed in prose). Give each a severity (Critical / High / Medium / Low) if the reviewer did not, then classify it:
 
    | Class | Signals | Meaning |
    |---|---|---|
-   | `ADDRESSED` | Code changed since the comment, or a pipeline reply exists (one starting `Addressed in`, `Verified fixed in`, `Tracked in`, `Captured as` or `Left as-is:`), unless the latest pipeline reply starts `Reopened:`, `Not tracked:` or `Not fixed:` | Can be closed |
+   | `ADDRESSED` | Code changed since the comment, or a pipeline reply exists ([../_shared/review-replies.md](../_shared/review-replies.md)), unless the latest one starts `Reopened:`, `Not tracked:` or `Not fixed:` | Can be closed |
    | `QUESTION` | Asks for clarification without prescribing a change, and has no answer yet | Needs an answer before merge |
    | `FIX HERE` | Any unaddressed finding, at any severity, that can be fixed on this branch — the default | Must be fixed before merge |
    | `FOLLOW-UP` | Unaddressed, and fixing it here is blocked by a stated reason: a product or design decision not yet made, another subsystem or open issue (name it), or a change too big for this PR (say why) | Becomes a tracked issue before merge |
@@ -175,7 +175,7 @@ runs on the code that will reach the default branch.
 4. **Check that no EARS spec ID is defined twice.** Two branches that each
    took "the next free number" collide here, often without a merge conflict:
    ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh --wrap '<wrapper>' dupes
+   ${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh --wrap '<wrapper>' dupes
    ```
    It prints each ID defined more than once, in either the table or the
    `ID: When …` form. Exit 3 means it found no ID at all: if the project has
@@ -234,15 +234,13 @@ If the branch already has that shape (one docs commit then one
 implementation commit, or just the one its buckets call for), skip the
 rebuild and push as below.
 
-Otherwise compose one message per non-empty bucket:
-
-- **Subject:** `[#<issue>] docs: <what the specs now say>` and
-  `[#<issue>] fix|feat|chore: <what the code now does>`, at most 72 chars.
-- **Body:** `Work done:` and 1–5 bullets synthesised across the commits
-  folded in, grouped by concern. Backtick identifiers; put `@spec` IDs on
-  the implementation commit, each renumbered identifier in its own bullet,
-  and apply any message rule in a loaded asset's *Rebuild* section.
-- No AI attribution trailer, unless `AGENTS.md` asks for one.
+Otherwise compose one message per non-empty bucket, in the format of
+[../_shared/git-conventions.md](../_shared/git-conventions.md): type `docs` for the docs commit (its subject says what the specs now
+say) and `fix`, `feat` or `chore` for the implementation commit (what the
+code now does). Synthesise the bullets across the commits folded in, grouped
+by concern; put `@spec` IDs on the implementation commit, each renumbered
+identifier in its own bullet, and apply any message rule in a loaded asset's
+*Rebuild* section.
 
 Invoking `/pre-merge` approves the wording; show each message in the
 report, and reword before merging if the developer asks. Rebuild in one
@@ -291,24 +289,6 @@ origin`, then `git merge-base --is-ancestor origin/<base> HEAD` fails), go
 back to phase 1a: the ID checks and a version bump hold only against the
 default branch they ran on.
 
-Example pair:
-```
-[#12] docs: spec sign-in error feedback and lockout
-
-Work done:
-- Add LLD §4.2 covering invalid-credential feedback and account lockout
-- Add AUTH-001/AUTH-002 for the error state and the lockout threshold
-- Add `errorFieldColor` to the auth form's token list
-```
-```
-[#12] feat: show sign-in errors and lock out after repeated failures
-
-Work done:
-- Show the error and clear the password field on invalid credentials  // @spec AUTH-001
-- Lock the account after the configured number of failed attempts  // @spec AUTH-002
-- Add `LoginFormTest` covering error display, field reset, and lockout
-```
-
 ## phase 3 — reply to addressed threads
 
 For each `ADDRESSED` item fixed on this branch, and each `QUESTION` the
@@ -322,12 +302,8 @@ developer gave an answer for (an item whose latest reply is `Tracked in`,
   in their own words: their answer stands. A pipeline reply (`Addressed in
   <sha>` from `/fix-pr-findings`) is not such an answer: its SHA was
   replaced, so post the surviving one.
-  ```bash
-  gh api repos/{owner}/{repo}/pulls/<N>/comments/<comment_id>/replies \
-    -X POST -f body="Addressed in <short-sha> — <description>."
-  ```
-  For an item with no thread: `gh pr comment <N> --body "Addressed in <short-sha> — <description>."`.
-  A `QUESTION` gets the developer's answer instead. One sentence at most.
+  `Addressed in <short-sha> — <description>.`, posted as
+  [../_shared/review-replies.md](../_shared/review-replies.md) says. A `QUESTION` gets the developer's answer instead. One sentence at most.
 
 ## phase 4 — create issues for FOLLOW-UP items
 
@@ -376,7 +352,7 @@ On **yes**: `gh pr merge <N> --rebase --match-head-commit <pushed-sha>`.
 Then, when this ran in a linked worktree, remove it and its branch:
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' remove-merged <N> <base>
+${CLAUDE_SKILL_DIR}/../_shared/scripts/worktree.sh --wrap '<wrapper>' remove-merged <N> <base>
 ```
 
 It removes nothing unless the PR shows `MERGED` and this is a linked

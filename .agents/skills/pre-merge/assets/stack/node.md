@@ -6,12 +6,10 @@
   `package.json` first, take either side of the lockfile, and regenerate it
   with the package manager's install once the rebase finishes; stage the
   result in the commit that resolves the conflict.
-- **Re-run trigger.** When the files phase 1a step 3 listed include the
-  lockfile (`pnpm-lock.yaml`, `package-lock.json`, `yarn.lock`), reinstall
-  with the frozen form the *setup* fact uses: `pnpm install
-  --frozen-lockfile`, `npm ci`, or `yarn install --immutable`. Never drop the
-  frozen flag to make an install pass: a mismatch is a lockfile/manifest
-  conflict to resolve.
+- **Re-run.** Run what the *Re-run* section of
+  [../../../_shared/assets/stack/node.md](../../../_shared/assets/stack/node.md)
+  says for the files phase 1a step 3 listed, in its *Setup* form. A
+  frozen-install mismatch is a lockfile/manifest conflict to resolve.
 
 ## Rebuild
 

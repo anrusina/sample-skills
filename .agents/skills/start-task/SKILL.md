@@ -17,8 +17,8 @@ allowed-tools:
   - Bash(gh api *)
   - Bash(gh issue *)
   - Bash(gh repo *)
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/worktree.sh *)
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/worktree.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh *)
   - Bash(find *)
   - Bash(grep *)
 ---
@@ -94,7 +94,7 @@ The spec checks below read the working tree, so a branch that predates a spec me
 **Work in a new worktree by default**, leaving the primary checkout (which often holds another task's uncommitted work) untouched:
 
 ```bash
-${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' add task-<N> origin/<base>
+${CLAUDE_SKILL_DIR}/../_shared/scripts/worktree.sh --wrap '<wrapper>' add task-<N> origin/<base>
 ```
 
 It fetches, adds a detached worktree at the latest default branch directly
@@ -176,7 +176,7 @@ If the spec file exists, search for keywords from the issue title:
 grep -i "<keyword>" docs/specs/EARS-<subsystem>.md
 ```
 
-If the issue names spec IDs, look each one up across all `docs/specs/EARS-*.md` files, and check which already have tagged tests: `${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh --wrap '<wrapper>' tags` lists every `@spec` tag outside `docs/`, `.agents/`, `.claude/` and Markdown as `file:line` and ID (pass the source and test folders AGENTS.md names, when it names them).
+If the issue names spec IDs, look each one up across all `docs/specs/EARS-*.md` files, and check which already have tagged tests: `${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh --wrap '<wrapper>' tags` lists every `@spec` tag outside `docs/`, `.agents/`, `.claude/` and Markdown as `file:line` and ID (pass the source and test folders AGENTS.md names, when it names them).
 
 **Presenting the specs.** Show the matching specs under a `### Specs to confirm` heading as one table, one row per ID, in the order the EARS files list them:
 
@@ -201,12 +201,7 @@ Steps 4–6 never stop on their own: each gap is recorded and the run goes on, s
 
 ## step 7 — suggest branch name
 
-```
-feature-<N>/<3-5-word-slug>   # new functionality
-fix-<N>/<3-5-word-slug>        # bug fixes
-spike-<N>/<3-5-word-slug>      # research / investigation
-docs-<N>/<3-5-word-slug>       # documentation only
-```
+Name it as [../_shared/git-conventions.md](../_shared/git-conventions.md) says.
 
 ## step 8 — output the readiness report
 

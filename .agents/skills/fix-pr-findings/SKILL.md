@@ -2,7 +2,7 @@
 name: fix-pr-findings
 description: "Triage a pull request's review findings, then fix the ones the developer picks: verifies each against the source, recommends fix, defer or leave-as-is with a rationale, and stops for the selection; then sub-agents commit and push one fix at a time, each thread gets an 'Addressed in' reply (never a resolve), and deferrals become issues. Use for '/fix-pr-findings [PR]', 'address the review comments', 'fix the findings on PR 12', or a coordinator relaying that request. Not for reviewing a PR (/review-pr) or the final merge cleanup (/pre-merge). Generic copy: if a project skill named `fix-pr-findings` is also listed, use that one instead."
 allowed-tools:
-  - Bash(${CLAUDE_SKILL_DIR}/scripts/review-threads.sh *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/review-threads.sh *)
 ---
 
 Orchestrate fixes for GitHub PR review findings from any reviewer (a second AI model, the developer, or `/review-pr`): fetch them, triage them for selection, and spawn sub-agents to apply each fix as its own commit.
@@ -67,7 +67,7 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
 
    Unresolved inline review threads, one JSON object each:
    ```bash
-   ${CLAUDE_SKILL_DIR}/scripts/review-threads.sh --wrap '<wrapper>' <number>
+   ${CLAUDE_SKILL_DIR}/../_shared/scripts/review-threads.sh --wrap '<wrapper>' <number>
    ```
 
    Merge both sources, deduplicating by discussion URL (an inline comment also summarised in a review body appears once).
@@ -129,18 +129,13 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
 
 ## phase 3 — report
 
-8. **Reply on each fixed thread — never resolve it.** Resolving is the next `/review-pr`'s call, once it has verified the fix:
-   ```bash
-   gh api repos/{owner}/{repo}/pulls/<number>/comments/<first comment databaseId>/replies -f body='Addressed in <short-sha> — <what changed>.'
-   ```
-   `gh` fills `{owner}` and `{repo}` itself. An outside-diff finding has no thread — post a PR conversation comment instead:
-   ```bash
-   gh pr comment <number> --body 'Addressed in <short-sha> — outside-diff finding #<N>: <what changed>.'
-   ```
+Replies take the forms and commands in [../_shared/review-replies.md](../_shared/review-replies.md), on the thread or, for an outside-diff finding, in a PR comment that names it. Never resolve a thread: the next `/review-pr` does, once it has checked.
 
-8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — <reason it can't be fixed here>.`; otherwise create the proposed issue (labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — <reason it can't be fixed here>.` — on the thread, or for an outside-diff finding in a PR comment that names it (`Tracked in #<N> — outside-diff finding #<F>: <reason>.`). Never resolve the thread; the next `/review-pr` does. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
+8. **Reply on each fixed finding:** `Addressed in <short-sha> — <what changed>.`
 
-8c. **Reply on each finding the developer chose to leave as-is:** `Left as-is: <reason>.` on the thread (for an outside-diff finding, a PR comment: `Left as-is: outside-diff finding #<F> — <reason>.`), never resolving it; the next `/review-pr` does.
+8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — …`; otherwise create the proposed issue (labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — …`. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
+
+8c. **Reply on each finding the developer chose to leave as-is:** `Left as-is: <reason>.`
 
 9. After all agents complete:
    - Table of findings fixed with commit hashes, and deferred findings with their issue numbers
