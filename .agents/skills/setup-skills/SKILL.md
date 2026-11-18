@@ -16,6 +16,7 @@ allowed-tools:
   - Bash(mktemp *)
   - Bash(mkdir -p .claude)
   - Bash(ln -s ../.agents/skills .claude/skills)
+  - Bash(ln -s ../../.agents/skills/*)
   - Bash(ls *)
   - Bash(${CLAUDE_SKILL_DIR}/scripts/setup.sh *)
 ---
@@ -198,8 +199,11 @@ remove the clone, and stop.
    pattern.
 3. **Claude Code discovery.** If `.claude/skills` doesn't exist:
    `mkdir -p .claude` then `ln -s ../.agents/skills .claude/skills`. If it
-   already links there, leave it. If it is a real folder, don't touch it:
-   name the skills it holds that are now shadowed or duplicated.
+   already links there, leave it. If it is a real folder, Claude Code reads
+   only that folder: link each rendered skill into it
+   (`ln -s ../../.agents/skills/<skill> .claude/skills/<skill>`) unless the
+   name is taken there, and name the taken ones (the folder's own skill
+   wins).
 4. **Managed only:** write the lock:
    ```bash
    ${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <tmp>/.agents/skills <new>
@@ -328,7 +332,8 @@ line.
 `add <skill>` (managed): when the project already has that skill (a kept
 one), first summarise what its copy has that upstream's lacks and ask before
 replacing it. Add it to the profile's `skills` (and take it out of
-`kept`), `render` it with the clone at the lock's commit, then rerender every
+`kept`), `render` it with the clone at the lock's commit (and link it as in
+install step 4.3), then rerender every
 other installed skill, so their skill-names rows name it as `/<skill>`, and
 write the lock:
 
@@ -339,7 +344,8 @@ ${CLAUDE_SKILL_DIR}/scripts/setup.sh lock .agents/skills-profile.md <tmp>/.agent
 ```
 
 `remove <skill>`: show the edits the project made to it (files whose hash
-differs from the lock), then delete `.agents/skills/<skill>/`, take it out of
+differs from the lock), then delete `.agents/skills/<skill>/` (and its link
+in a real `.claude/skills/` folder), take it out of
 the profile, rerender the others (their rows now name it
 `/sample-skills:<skill>`) and write the lock. Name each installed skill that
 calls the removed one. Detached: render or delete the skill the same way,
