@@ -126,7 +126,7 @@ facts_block() {
   echo
 
   # rows: "<fact name><TAB><rule>" between the markers
-  awk '/<!-- facts:begin -->/ { on = 1; next } /<!-- facts:end -->/ { on = 0 }
+  awk '/^<!-- facts:begin -->$/ { on = 1; next } /^<!-- facts:end -->$/ { on = 0 }
        on && /^\| / && !/^\| Fact \|/ && !/^\|---/ {
          gsub(/\\\|/, "\001")
          n = split($0, c, "|"); name = c[2]; rule = c[3]
@@ -193,7 +193,7 @@ render_skill_md() {
   wrapper=$(pget "$profile" wrapper facts); [ "$wrapper" = none ] && wrapper=
   tools=$(pget "$profile" wrapped-tools)
   adds=$(
-    rows=$(awk '/<!-- facts:begin -->/{on=1} /<!-- facts:end -->/{on=0} on' "$generic")
+    rows=$(awk '/^<!-- facts:begin -->$/{on=1} /^<!-- facts:end -->$/{on=0} on' "$generic")
     for key in gates format-fix setup; do
       label=$(printf '%s' "$key" | tr '-' ' ')
       [ "${rows#*"| $label |"}" != "$rows" ] || continue
@@ -217,8 +217,8 @@ render_skill_md() {
     fm && inat && /^  - / { seen[$0] = 1; print; next }
     fm && inat { flush(); inat = 0; done = 1 }
     fm && $0 == "---" { if (!done && n > 0 && add[1] != "") { print "allowed-tools:"; flush() } fm = 0; print; next }
-    /<!-- facts:begin -->/ { print; print block; skip = 1; next }
-    /<!-- facts:end -->/ { skip = 0 }
+    /^<!-- facts:begin -->$/ { print; print block; skip = 1; next }
+    /^<!-- facts:end -->$/ { skip = 0 }
     !skip { print }
     function flush(  i) { for (i = 1; i <= n; i++) if (add[i] != "" && !seen[add[i]]) { print add[i]; seen[add[i]] = 1 } }
   ' "$current"
