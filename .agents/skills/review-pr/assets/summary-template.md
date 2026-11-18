@@ -1,6 +1,6 @@
 # Review summary format
 
-Use the full structure below for a full review, and the *Follow-up round* variant at the end for a follow-up round. Both end with the `review-pr: reviewed` marker — the next round finds the last reviewed commit from it, so never omit it. `/fix-pr-findings` is written in the form the *skill names* fact gives.
+Use the full structure below for a full review, and the *Follow-up round* variant at the end for a follow-up round. Both end with the `review-pr: reviewed` marker; never omit it, as the next round finds the last reviewed commit from it. Write `/fix-pr-findings` in the form the *skill names* fact gives.
 
 ---
 
@@ -64,7 +64,7 @@ Run the project's quality gates after all changes.   ← plus any closing line a
 
 ---
 
-<Closing: how many findings are to be fixed in this PR, and each follow-up with its reason and suggested issue title. Every finding is one or the other — none is optional.>
+<Closing: how many findings are to be fixed in this PR, and each follow-up with its reason and suggested issue title. Every finding is one or the other.>
 
 <!-- review-pr: reviewed <full 40-char head-sha> -->
 

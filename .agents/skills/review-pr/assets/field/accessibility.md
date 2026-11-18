@@ -2,7 +2,7 @@
 
 ## Review checks
 
-- Apply every rule in AGENTS.md's accessibility section, then every item of the accessibility checklist it names (a review checklist file, for example), and the accessibility standard and level it names where both are silent. AGENTS.md and the checklist are the lists: apply them, do not restate them here.
+- Apply every rule in AGENTS.md's accessibility section, then every item of the accessibility checklist it names (a review checklist file, for example), and the accessibility standard and level it names where both are silent.
 - Look beyond what the automated checks (an axe run, a jsx-a11y lint) can see: focus order and a visible focus indicator, keyboard operation of every control, names announced for icon-only controls, state changes announced, contrast in every theme the project has, motion that respects reduced-motion settings.
 - Severity floors: any failure at the level the project's standard sets is at least **High**; one that blocks a task (a control a keyboard or screen-reader user cannot reach or operate) is **Critical**.
 - Every accessibility finding cites the criterion of the project's standard it breaks, or the AGENTS.md rule or checklist item.

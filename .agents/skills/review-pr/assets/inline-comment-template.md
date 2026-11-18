@@ -1,8 +1,6 @@
 # Inline comment format
 
-Use this structure for each inline comment body. Apply the *Inline comments* section of each loaded asset: the stack asset names the snippet language, and a field asset may add a closing line for the prompt or blast-radius examples.
-
-`/fix-pr-findings` below is written in the form the *skill names* fact gives.
+Use this structure for each inline comment body, applying the *Inline comments* section of each loaded asset (snippet language, a closing line for the prompt, blast-radius examples). Write `/fix-pr-findings` in the form the *skill names* fact gives.
 
 ---
 
@@ -32,7 +30,7 @@ Use this structure for each inline comment body. Apply the *Inline comments* sec
 
 ## Unspecced-behaviour variant (step 6c)
 
-Use this structure instead for a finding from the step 6c check: behaviour the code has and no EARS spec states. The labelled lines replace the free description, so every such finding reaches `/fix-pr-findings` in the same shape.
+Use this structure instead for a step 6c finding (behaviour the code has and no EARS spec states). The labelled lines replace the free description.
 
 ---
 

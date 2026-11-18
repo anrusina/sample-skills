@@ -2,13 +2,13 @@
 
 ## Worktree setup
 
-- Generated code (code generation such as `build_runner`, localisation output from `flutter gen-l10n`) is usually git-ignored, so a fresh worktree needs the *setup* steps before `dart analyze` means anything. Analyzer errors from unresolved generated files are a setup gap, not findings.
+- Generated code (`build_runner` output, `flutter gen-l10n` output) is usually git-ignored: run the *setup* steps before `dart analyze`. Analyzer errors from unresolved generated files are a setup gap, not findings.
 - On a reused worktree, re-run code generation only if `git diff --name-only <prev-sha>..<head-sha>` touches `pubspec.yaml`, `pubspec.lock` or a `.dart` file with a `part '….g.dart'` directive; re-run localisation generation only if it touches a `.arb` file. Re-run `flutter pub get` when the pubspec or lockfile changed.
 
 ## Gates
 
 - Formatter in check mode: `dart format --output=none --set-exit-if-changed .`
-- The analyzer gate is `dart analyze`, not `flutter analyze`: only `dart analyze` runs analyzer plugins (custom lint rules such as `riverpod_lint`), so `flutter analyze` can pass on code the real gate rejects. Use the flags the *gates* fact gives (`--fatal-infos`, for example).
+- The analyzer gate is `dart analyze`, not `flutter analyze`: only `dart analyze` runs analyzer plugins (custom lint rules such as `riverpod_lint`). Use the flags the *gates* fact gives (`--fatal-infos`, for example).
 
 ## Review checks
 

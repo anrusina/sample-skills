@@ -30,11 +30,9 @@ allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/worktree.sh *)
 ---
 
-Perform a comprehensive code review on a GitHub PR. Produces a structured review with a summary comment, inline comments on specific lines, severity-ranked findings, and "Prompt for AI" sections for each finding.
+Review a GitHub PR: a summary comment, inline comments, severity-ranked findings, and a "Prompt for AI" for each finding. `/fix-pr-findings` applies the fixes; review comments from any author (another AI model, the developer) are valid input.
 
-This skill is used in a multi-reviewer pipeline: a second AI model or the developer leaves review comments on GitHub, then `/fix-pr-findings` applies the fixes. Reviews from any author are valid input.
-
-**Stance.** Assume each change fails until the source shows it does not — the job is to find why this code would break in production, not to confirm that it works. No praise: the review carries findings, fixes and the gate results, nothing else.
+**Stance.** Assume each change fails until the source shows it does not: find why this code would break in production, not confirm that it works. No praise: the review carries findings, fixes and gate results, nothing else.
 
 ## Project facts
 
@@ -96,21 +94,19 @@ gh pr diff <number> --name-only
 
 The script prints `key=value` lines; write each value in literally from here
 on: `head` is `<head-branch>`, `head_sha` is `<head-sha>` (the exact commit
-this review covers: every finding, the review's `commit_id` and the step 13
-check depend on it), `base` is `<base>`, and `last_sha` is `<last-sha>`.
+this review covers, used for every finding, the review's `commit_id` and the
+step 13 check), `base` is `<base>`, and `last_sha` is `<last-sha>`.
 
-**Eligibility.** If `state` is `CLOSED` or `MERGED`, stop and report that:
-there is nothing to review. If `draft` is `true`, say so and ask whether to
-review anyway.
+**Eligibility.** If `state` is `CLOSED` or `MERGED`, stop and report there is
+nothing to review. If `draft` is `true`, say so and ask whether to review
+anyway.
 
 **Follow-up round.** Every posted summary ends with a
-`review-pr: reviewed <sha>` marker. When the script prints
-`round=follow-up`, the gates and step 9 still cover the whole PR, but new
-findings are sought only in `git diff <last-sha>..<head-sha>` (step 6b).
-Code the last round already passed is not re-reviewed for fresh nits; that
-is what keeps a reviewer and a fixer from trading Low findings indefinitely.
-A Critical defect anywhere is still reported. On `round=full`, say why in
-the summary: the script's `reason=` line gives it.
+`review-pr: reviewed <sha>` marker. On `round=follow-up`, the gates and
+step 9 still cover the whole PR, but new findings are sought only in
+`git diff <last-sha>..<head-sha>` (step 6b): code the last round passed is
+not re-reviewed for fresh nits. A Critical defect anywhere is still
+reported. On `round=full`, give the script's `reason=` in the summary.
 
 **Never review in the primary checkout**: it routinely holds uncommitted
 work. The review worktree, `<wt>` below, sits directly under the primary
@@ -123,9 +119,8 @@ created `<wt>` for this PR, move it to the new head:
 ${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' move <wt> <head-sha>
 ```
 
-It prints `previous=<sha>`, the commit the worktree was on (`<prev-sha>`).
-The worktree setup below (installed dependencies, generated code, linked
-fixtures, local tool trust) survives the move; re-run a setup step only if
+It prints `previous=<sha>` (`<prev-sha>`). The worktree setup below
+survives the move; re-run a setup step only if
 `git diff --name-only <prev-sha>..<head-sha>` touches its inputs (a
 dependency manifest or lockfile for an install, a code-generation source for
 code generation; each loaded asset's *Worktree setup* section names its
@@ -139,61 +134,53 @@ branch:
 ${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' add review-<number> <head-sha> --pr <number>
 ```
 
-It prints `primary=<path>` (`<primary-checkout>`, used for the fixture link
-below) and `worktree=<path>` (`<wt>`), and prints neither if git fails, so a
-failed add never leaves you with a path that doesn't exist. Every temp file
-this review writes (the saved diff, the review JSON) is made with
+It prints `primary=<path>` (`<primary-checkout>`) and `worktree=<path>`
+(`<wt>`); neither when the add failed. Every temp file this review writes
+(the saved diff, the review JSON) is made with
 `mktemp "${TMPDIR:-/tmp}/review-<number>-XXXXXX"`, never a fixed name, so
-concurrent reviews never overwrite each other's files.
+concurrent reviews don't collide.
 
 `<wt>` is the working directory for everything below: run commands there
-(`git -C <wt> …`, or the tool's own directory flag) rather than issuing a
-`cd`, which nothing in the allowlist covers. Leave it in place when the
-review ends; whoever coordinates the PR removes review worktrees after the
-merge, and without a coordinator the developer does.
+(`git -C <wt> …`, or the tool's own directory flag), never with `cd`, which
+the allowlist doesn't cover. Leave it in place when the review ends; whoever
+coordinates the PR (otherwise the developer) removes it after the merge.
 
-**Set the worktree up before any gate.** A fresh worktree has none of the
-git-ignored files the build needs — installed dependencies, generated code,
-a version manager's trust for the directory — so a gate run there can report
-hundreds of phantom missing-file errors that say nothing about the PR. Run
+**Set the worktree up before any gate.** A fresh worktree lacks the
+git-ignored files the build needs (dependencies, generated code, a version
+manager's trust), so gates there report phantom missing-file errors. Run
 the *setup* steps in `<wt>` first, and apply the *Worktree setup* section of
 each loaded asset. If *setup* is none and a gate then fails on missing
 generated files or dependencies, ask the developer once for the setup
 commands, use them, and tell them to record them in AGENTS.md *Worktree setup*.
 
 **Documentation-only fast path.** If every changed path is Markdown or under
-`docs/`, and none falls under a *build-input docs* path (Markdown the build
-reads is a build input, not documentation), skip the setup, the gates and the
-fixture link. Record each gate in Verification as
-`not run — documentation-only change set`. Skipping the gates does not shrink
-the review: step 6 applies the documentation categories in place of the code
-ones.
+`docs/`, and none falls under a *build-input docs* path, skip the setup, the
+gates and the fixture link. Record each gate in Verification as
+`not run — documentation-only change set`. The review does not shrink:
+step 6 applies the documentation categories in place of the code ones.
 
-Otherwise the gates are now meaningful. Run every *gates* command, in order,
-in `<wt>`. Use a gate's check-only mode wherever it would otherwise rewrite
-files (a formatter's check or dry-run flag; the *Gates* section of the loaded
-stack asset names it): the review never changes the PR's files. Also run any
-guard script AGENTS.md lists among its checks — guards catch project rules the
-analyzer has no rule for.
+Otherwise run every *gates* command, in order, in `<wt>`, in check-only mode
+wherever a gate would otherwise rewrite files (the loaded stack asset's
+*Gates* section names it): the review never changes the PR's files. Also run
+any guard script AGENTS.md lists among its checks.
 
 Each gate's real result goes in the **Verification** section (step 11).
 Errors from unresolved generated files or missing dependencies are a setup
 gap, not findings.
 
 If *fixtures* names any, link them into `<wt>` the way AGENTS.md describes
-(typically `ln -sfn <primary-checkout>/<fixture-dir> <wt>/<fixture-dir>`, with `<primary-checkout>` from the worktree script's `primary=` line) so
-those tests run rather than skip. Without it they skip silently — record
-skips in Verification.
+(typically `ln -sfn <primary-checkout>/<fixture-dir> <wt>/<fixture-dir>`) so
+those tests run rather than skip silently; record any skips in Verification.
 
 ## phase 1 — gather context
 
 1. **Repo, PR number, metadata and body** are already resolved in phase 0: reuse them rather than re-fetching.
 
-2. **Fetch the full diff** via `gh pr diff <number>`. If >50KB, save it to a file made with `mktemp` as phase 0 describes. Phase 0 fetched only the file *names*, for the fast-path decision; this is the diff content itself.
+2. **Fetch the full diff** via `gh pr diff <number>`. If >50KB, save it to a `mktemp` file (phase 0).
 
 3. **Read `AGENTS.md`** — project constraints and Arrow of Intent requirements override any default review guidance.
 
-4. **Fetch existing feedback** — conversation comments via `gh pr view <number> --comments`, and **every** review thread, resolved or not, with the script below (one JSON object per thread). Used to avoid duplicating prior feedback and to re-check previous findings in step 9:
+4. **Fetch existing feedback** — conversation comments via `gh pr view <number> --comments`, and **every** review thread, resolved or not (one JSON object per thread), to avoid duplicating prior feedback and to re-check previous findings in step 9:
    ```bash
    ${CLAUDE_SKILL_DIR}/scripts/review-threads.sh --wrap '<wrapper>' <number> --all
    ```
@@ -203,9 +190,9 @@ skips in Verification.
    gh api repos/{owner}/{repo}/issues/<N> --jq '{title, body, state}'
    gh api repos/{owner}/{repo}/issues/<N>/comments --paginate --jq '.[] | .body + "\n---"'
    ```
-   Extract acceptance criteria from both body **and all comments** — `- [ ]` task-list items and content under "Acceptance criteria", "Done when", or "Requirements" headers. Comments may contain requirements or edge cases added after the issue was written; treat them equally. These are the ticket requirements the diff must satisfy. Skip if the PR body has no issue references.
+   Extract acceptance criteria from the body **and every comment** equally (comments often add requirements or edge cases later): `- [ ]` task-list items and content under "Acceptance criteria", "Done when", or "Requirements" headers. These are the ticket requirements the diff must satisfy. Skip if the PR body has no issue references.
 
-   **5a. Read the contracts the diff touches.** Most real bugs are a mismatch between changed code and the contract it must honour, and that contract is rarely in the changed file. Before analysing, for every changed public symbol (class, function, method, interface, state holder, repository, database table or schema), read in the worktree:
+   **5a. Read the contracts the diff touches** — they are rarely in the changed file. Before analysing, for every changed public symbol (class, function, method, interface, state holder, repository, database table or schema), read in the worktree:
    - its declaration and the interface or abstract type it implements
    - its callers — `git -C <wt> grep -n '<symbol>'` — enough to know what they pass in and rely on coming back
    - the LLD section and the `docs/specs/EARS-<subsystem>.md` specs for the subsystem it belongs to
@@ -216,20 +203,20 @@ skips in Verification.
 
 6. Analyse across these categories:
 
-   - **Ticket conformance** — for each issue fetched in step 5, check the diff against every acceptance criterion. Flag any criterion with no corresponding change as a gap: the PR claims to `Closes #N` but does not fully satisfy the ticket. If the LLD/spec the diff implements appears to have itself drifted from the ticket's requirements, flag that too. Treat an unaddressed criterion on a `Closes #N` PR as at least **High** severity.
+   - **Ticket conformance** — for each issue fetched in step 5, check the diff against every acceptance criterion; a criterion with no corresponding change is a gap, at least **High** on a `Closes #N` PR. If the LLD/spec the diff implements has itself drifted from the ticket's requirements, flag that too.
    - **Arrow of Intent** — code changes without an upstream spec or LLD; `@spec` tags pointing to missing specs; tests that implement spec behaviour but carry no `@spec` tag; HLD or LLD not updated to reflect the change
    - **Correctness** — wrong state transitions, inverted conditions, unhandled null or absent values, off-by-one errors, race conditions in async or concurrent code
    - **Async error handling** — an async operation neither awaited nor given an error path, so its failure vanishes; an awaited call outside any `try`/`catch` (or the language's equivalent) whose failure leaves state half-written (a partial storage write, a state holder stuck in a loading state); a `catch` that swallows the error without logging or surfacing it
    - **Cost on realistic input sizes** — the largest inputs the HLD, the LLDs or `AGENTS.md` describe for the subsystem: nested loops over those inputs, a repeated full scan where a lookup map would do, a per-item database query, allocation inside a render path or another hot loop
-   - **Language and framework checks** — load [references/review-categories.md](references/review-categories.md) and apply every check in it to the changed code, then the *Review checks* section of the loaded stack asset (skip both on the documentation-only fast path). The references file holds the failure classes every stack shares; the stack asset adds its framework's own.
+   - **Language and framework checks** — load [references/review-categories.md](references/review-categories.md) and apply every check in it to the changed code, then the *Review checks* section of the loaded stack asset (skip both on the documentation-only fast path).
    - **Field checks** — the *Review checks* section of each loaded field asset, with the severity floors it sets. A field asset points at the project's own rule lists (an AGENTS.md section, a checklist file it names); apply every rule there.
    - **Code quality** — dead code, magic numbers, duplicated logic
    - **Architecture** — every layer rule in `AGENTS.md` (read in step 3), and `docs/dev/architecture.md` if the project has one
-   - **Project rules no tool checks** — every rule `AGENTS.md` (or a `docs/dev/` guide it links) states that the gates cannot catch, checked explicitly on every changed file: its logging and telemetry rules, its dependency policy (when it has one: the check recorded next to each added or bumped dependency), its component-catalog rules, its error-handling rules (no exception text in user-visible output, known failures caught by type), its limits on non-null assertions, and any other rule of that kind. Apply the rule as `AGENTS.md` words it; a rule the project doesn't state is not a finding here.
+   - **Project rules no tool checks** — every rule `AGENTS.md` (or a `docs/dev/` guide it links) states that the gates cannot catch, checked on every changed file: logging and telemetry, the dependency policy (the check recorded next to each added or bumped dependency), component-catalog rules, error handling (no exception text in user-visible output, known failures caught by type), limits on non-null assertions, and any other rule of that kind. Apply each as `AGENTS.md` words it; a rule the project doesn't state is not a finding here.
    - **Configuration** — hardcoded values that belong in constants, unsafe defaults
-   - **Component catalog coverage** — only if `AGENTS.md` names a component catalog: screens and reusable components have entries covering their named states. State names come from the LLD that documents UI states (`AGENTS.md` or the HLD says which). LLDs that are pure business logic define no UI states — coverage is not required from their specs.
+   - **Component catalog coverage** — only if `AGENTS.md` names a component catalog: screens and reusable components have entries covering their named states, taken from the LLD that documents UI states (`AGENTS.md` or the HLD says which). Pure business-logic LLDs define no UI states, so need no coverage.
    - **Test coverage** — missing edge cases, state transitions not covered, assertions that verify nothing
-   - **Test tiers** — only if AGENTS.md's testing section defines tiers: each new test file's tier fits the project's guide for choosing one; a test raised above its file clears the higher bar; a file carries any extra tag `AGENTS.md` requires (e.g. on tests that read git-ignored fixtures). An existing file whose tier was lowered with no reason in the PR description is a **Medium** finding; a tier that looks wrong for the guide is **Low**. A tier guard only checks that a tier exists, not that it is the right one.
+   - **Test tiers** — only if AGENTS.md's testing section defines tiers: each new test file's tier fits the project's guide for choosing one (a tier guard only checks one exists); a test raised above its file clears the higher bar; a file carries any extra tag `AGENTS.md` requires (e.g. on tests that read git-ignored fixtures). An existing file's tier lowered with no reason in the PR description is **Medium**; a tier that looks wrong for the guide is **Low**.
    - **Documentation** — for any changed `docs/specs/` or `docs/design/` file, and the whole review on the documentation-only fast path, apply `/doc-audit`'s LLD, HLD and Mermaid-diagram checks and the `AGENTS.md` Arrow of Intent rules: an LLD or HLD citing individual EARS IDs; look-and-feel values pinned in an LLD, including a token that restates its literal value; a `> Note:` that narrates another subsystem's internals; a renumbered stable ID (OQ-N, spec IDs); an LLD with log events but no `## Telemetry signals` section. For a changed `.agents/skills/` file, apply `/doc-audit`'s skill-file audit.
 
    **6a. Deep lenses (`--deep` only).** Run these three as parallel sub-agents, each given the PR number, `<head-sha>`, the changed-file list and `<wt>`, and each returning candidate findings with file, line and the evidence behind them:
@@ -239,11 +226,11 @@ skips in Verification.
 
    Their candidates join yours and go through step 7 like any other.
 
-   **6b. Follow-up round scope.** On a follow-up round (phase 0), apply the step 6 categories to `git diff <last-sha>..<head-sha>` only, and add one check on those commits — **weakened tests**. A fix can make a finding disappear by changing the test instead of the code. Flag any test in the range that lost an assertion, had an expected value changed to match new output, gained a skip marker, or was deleted along with its `@spec` tag, unless the commit's own change to the spec or LLD explains why.
+   **6b. Follow-up round scope.** On a follow-up round, apply the step 6 categories to `git diff <last-sha>..<head-sha>` only, and add one check on those commits — **weakened tests**: flag any test in the range that lost an assertion, had an expected value changed to match new output, gained a skip marker, or was deleted along with its `@spec` tag, unless the commit's own change to the spec or LLD explains why.
 
-   **6c. Unspecced behaviour.** Run on every round that changes production source code (the source tree AGENTS.md's project-structure section names — not tests, docs or configuration alone) — the whole diff on a full review, `git diff <last-sha>..<head-sha>` on a follow-up round. Skip it on the documentation-only fast path. The Arrow of Intent category above catches code with no spec at all; this check catches the quieter case, where a PR's main behaviour is specced and a decision made along the way is not. It reads code rather than the diff's intent, so it may run as its own sub-agent in parallel with step 6, given the PR number, `<head-sha>`, the changed source files and `<wt>`, and returning candidates with file, line and evidence.
+   **6c. Unspecced behaviour.** Run on every round that changes production source code (the source tree AGENTS.md's project-structure section names — not tests, docs or configuration alone): the whole diff on a full review, `git diff <last-sha>..<head-sha>` on a follow-up round. Skip it on the documentation-only fast path. Where the Arrow of Intent category catches code with no spec at all, this catches a specced PR's unspecced decisions along the way. It may run as its own sub-agent in parallel with step 6, given the PR number, `<head-sha>`, the changed source files and `<wt>`, and returning candidates with file, line and evidence.
 
-   For each behaviour the range adds or changes, find the EARS spec whose condition and action state it. Look for decisions a reader could not recover from the specs: a fallback or default, a guard that skips work, what is kept or reset when something reloads, a retry, an ordering or wait between two operations, a timing rule, a limit. A behaviour is specced when a spec describes it — a `@spec` tag on a nearby test or method does not make it so.
+   For each behaviour the range adds or changes, find the EARS spec whose condition and action state it. Look for decisions a reader could not recover from the specs: a fallback or default, a guard that skips work, what is kept or reset on reload, a retry, an ordering or wait between two operations, a timing rule, a limit. A `@spec` tag on a nearby test or method does not make a behaviour specced; only a spec that describes it does.
 
    These are not candidates:
    - A refactor, a private helper, or a change with no observable behaviour
@@ -252,27 +239,22 @@ skips in Verification.
    - A branch that is only the limit case of an existing spec — name that spec in the summary's *Checked* line instead
    - Developer-only code under a recorded exception (`AGENTS.md`)
 
-   Each candidate that survives becomes a finding and goes through steps 7 and 8 like any other. Its body uses the *Unspecced-behaviour variant* of [assets/inline-comment-template.md](assets/inline-comment-template.md), which has a labelled line for each of these:
-   - **The behaviour** — what the code does, at which file and line
-   - **The suggested addition** — the spec written out in EARS form with a suggested ID (the next free one in the subsystem's namespace on the default branch; a clash with another open PR is settled by `/pre-merge` when one of them merges), or the reworded text when an existing spec should be tightened instead of a new one added
-   - **The LLD sentence it needs first** — which LLD section must state the behaviour before the spec can be derived from it; a spec with no backing LLD text is itself an Arrow of Intent violation
-   - **Why speccing it helps** — what could change or regress unnoticed without it, or what a later reader or reviewer could not tell is intended
-   - **Test status** — whether a test already exercises the behaviour, and under which `@spec` tag
+   Each surviving candidate is a finding and goes through steps 7 and 8 like any other. Its body uses the *Unspecced-behaviour variant* of [assets/inline-comment-template.md](assets/inline-comment-template.md): the behaviour, why speccing it helps, the test status, and a suggestion giving the LLD sentence first, then the spec, then any test. A suggested spec ID is the next free one in the namespace on the default branch; `/pre-merge` settles a clash with another open PR.
 
    Untested as well as unspecced is usually **Medium**; tested but unstated is usually **Low**. The fix-in default is this PR, docs before tests.
 
-   **Not findings.** Drop these before step 7 — they cost the reader attention and cost `/fix-pr-findings` a triage each:
-   - Anything the gates report — it is already in Verification
+   **Not findings.** Drop these before step 7:
+   - Anything a gate (formatter, analyzer, linter, guard) reports — it belongs in Verification
    - A rule deliberately silenced in the code (a lint-suppression comment in the syntax the loaded stack asset's *Review checks* names, an exemption marker `AGENTS.md` defines) where the silencing comment gives a reason
    - A behaviour change that is clearly the point of the PR or follows directly from it
    - Pedantic nits a senior engineer would not raise
    - Restatements of existing feedback — match by file and symptom, not by line number; if an open thread already covers it, mention the thread in the summary rather than re-raising it
 
-   A problem the PR did not cause — a pre-existing defect on lines it did not change, or a consequence the PR makes visible (a stale name next to one it renamed) — **is** a finding when worth raising: it goes through step 7 like any other, usually in *Outside the diff*. There is no unnumbered "follow-ups" list; anything worth mentioning gets a number, a severity and a step 8 fix-in decision.
+   A problem the PR did not cause — a pre-existing defect on lines it did not change, or a consequence the PR makes visible (a stale name next to one it renamed) — **is** a finding when worth raising, usually in *Outside the diff*. There is no unnumbered "follow-ups" list; anything worth mentioning gets a number, a severity and a step 8 fix-in decision.
 
-7. **Verify every finding** against the actual source files — do not report from the diff alone. Anything a gate (formatter, analyzer, linter, guard) reports belongs in Verification, not in findings — the gates already surface it.
+7. **Verify every finding** against the actual source files, not the diff alone.
 
-   For each finding, write its concrete failure scenario — the input or state that leads to the wrong behaviour. If you confirmed that scenario in the source, the finding is **confirmed**. If you could not — the scenario depends on runtime data, a caller you could not trace, or intent you could not establish — the finding is **unsure**: keep it, and record in one line what you could not verify. Unsure findings are reported and posted like any other, tagged so the reader knows where to look harder.
+   For each finding, write its concrete failure scenario — the input or state that leads to the wrong behaviour. Confirmed in the source, the finding is **confirmed**. If not — it depends on runtime data, a caller you could not trace, or intent you could not establish — it is **unsure**: keep it, record in one line what you could not verify, and report and post it like any other, tagged **Unsure**. Never drop it silently or present it as confirmed.
 
 8. **Classify each finding** — confirmed and unsure alike, by the impact it would have if real:
    - **Critical** — Must fix before merge. Silent failures, broken spec contract, data loss.
@@ -285,8 +267,6 @@ skips in Verification.
    Severity says how bad it is, not whether it gets fixed. **Every finding, Low included, also gets a fix-in decision:**
    - **This PR** — the default. Fixed on this branch before merge.
    - **Follow-up issue — <reason>** — only when the reason is one of: it needs a product or design decision not yet made; it belongs to another subsystem or another open issue (name it); or the change is too big for this PR (say what makes it big). Suggest the issue's title. "Low severity" or "out of scope" alone is not a reason.
-
-   No finding is optional: each one ends either fixed in this PR or tracked as an issue.
 
 9. **Re-check previous findings.** Verify every thread from step 4 against the current source — including ones already marked `Verified fixed in`, since a later commit can reintroduce the defect — and decide:
 
@@ -302,11 +282,11 @@ skips in Verification.
    | unresolved, with a `Left as-is:` reply | — | reply `Accepted as left`, then resolve: the developer decided |
    | anything else | — | no action |
 
-   Always reply before changing state — every agent posts as the same account, so the reply is the only record of who decided what. `<sha>` is the commit that carries the fix. The "reply only" row stops two reviewers flipping one thread back and forth.
+   Always reply before changing state — every agent posts as the same account, so the reply is the only record of who decided what. `<sha>` is the commit that carries the fix.
 
-   **The verdict comes from the code at `<head-sha>`, and nothing else.** Not the fixer's `Addressed in <sha>` reply, and not what an earlier round in this conversation concluded — a long review session remembers its own judgments, and a fixer's reply is a claim to verify. When a reply cites a commit, check it is on the branch (`git merge-base --is-ancestor <sha> <head-sha>`) and that it changes the thread's file or a file the finding's Suggestion/Prompt for AI names (`git show --name-only <sha>`). A citation that fails either check proves nothing: judge the thread on the code alone and say in the reply that the cited commit did not hold up.
+   **The verdict comes from the code at `<head-sha>`, and nothing else** — not the fixer's `Addressed in <sha>` reply, and not what an earlier round in this conversation concluded. When a reply cites a commit, check it is on the branch (`git merge-base --is-ancestor <sha> <head-sha>`) and that it changes the thread's file or a file the finding's Suggestion/Prompt for AI names (`git show --name-only <sha>`). If either check fails, judge the thread on the code alone and say in the reply that the cited commit did not hold up.
 
-   **Outside-diff findings** have no thread. Re-check each one that a PR conversation comment from step 4 names as `outside-diff finding #<N>` (an `Addressed in`, `Tracked in`, `Captured as` or `Left as-is:` reply), judged from the code at `<head-sha>` by the matching row above. Post that row's reply as a PR conversation comment naming the finding — there is no thread to resolve or unresolve: e.g. `Verified fixed in <sha> — outside-diff finding #<N>: <what>` or `Reopened: outside-diff finding #<N> — <what is still wrong>`.
+   **Outside-diff findings** have no thread. Re-check each one that a PR conversation comment from step 4 names as `outside-diff finding #<N>` (an `Addressed in`, `Tracked in`, `Captured as` or `Left as-is:` reply), judged from the code at `<head-sha>` by the matching row above. Post that row's reply as a PR conversation comment naming the finding, with no state change: e.g. `Verified fixed in <sha> — outside-diff finding #<N>: <what>` or `Reopened: outside-diff finding #<N> — <what is still wrong>`.
 
 ## phase 3 — present findings for approval
 
@@ -314,9 +294,14 @@ skips in Verification.
 
     GitHub accepts inline comments only on lines inside the diff's hunks, and one rejected comment fails the whole review call. A finding whose line falls outside every hunk — a caller of the changed code, a stale doc elsewhere — gets no inline comment: it goes in the summary's *Outside the diff* section, in the same comment format, linked by permalink `https://github.com/<repo>/blob/<head-sha>/<path>#L<start>-L<end>` with one line of context either side.
 
-11. **Review summary body:** load [assets/summary-template.md](assets/summary-template.md) for the full structure — the full template for a full review, its *Follow-up round* variant for a follow-up round — and add the rows the *Verification* section of each loaded asset names. Both end with the `review-pr: reviewed <head-sha>` marker the next round looks for. The **Verification** section is mandatory and is filled from the phase 0 gate run — a review that reports findings without saying what was actually run leaves the reader unable to weigh them.
+11. **Review summary body:** load [assets/summary-template.md](assets/summary-template.md) — the full template for a full review, its *Follow-up round* variant for a follow-up round — and add the rows the *Verification* section of each loaded asset names. Both end with the `review-pr: reviewed <head-sha>` marker the next round looks for. The **Verification** section, filled from the phase 0 gate run, is mandatory.
 
-12. **Show findings to the user before posting.** Output the full findings list (severity-ranked, one entry per finding), then the unsure findings as their own section — each with its severity and the one line on what could not be verified — marking any finding that will post outside the diff (step 10) and each finding's fix-in decision (step 8), followed by the step 9 thread actions (resolve / reopen / reply-only, each with its reply), in the conversation and ask: "Ready to post this review to GitHub? (yes / edit first / cancel)". Do NOT submit to GitHub yet. With `--post`, show the list but don't ask: go straight to step 13.
+12. **Show findings to the user before posting.** In the conversation, output:
+    - the findings, severity-ranked, one entry each, with its fix-in decision (step 8) and a mark on any that will post outside the diff (step 10)
+    - the unsure findings as their own section, each with its severity and the line on what could not be verified
+    - the step 9 thread actions (resolve / reopen / reply-only), each with its reply
+
+    Then ask: "Ready to post this review to GitHub? (yes / edit first / cancel)". Do NOT submit to GitHub yet. With `--post`, show the list but don't ask: go straight to step 13.
 
 13. **On approval, or with `--post`**, first re-check the PR is unchanged since phase 0:
     ```bash
@@ -344,6 +329,5 @@ skips in Verification.
 
 ## rules
 
-- Review against the default branch only. Never read other open PRs or branches, not for spec IDs and not for conflicts: `/pre-merge` settles those against the default branch as it stands when the PR merges, and a review that chases moving targets can't be reproduced.
-- A finding you could not confirm is posted tagged **Unsure** with what was not verified: never dropped silently, never presented as confirmed.
+- Review against the default branch only. Never read other open PRs or branches, not for spec IDs and not for conflicts: `/pre-merge` settles those when the PR merges.
 - After posting, remind the developer they can use `/fix-pr-findings` to address the findings.

@@ -3,7 +3,7 @@
 ## Worktree setup
 
 - Dependencies live in a virtual environment the build creates from `requirements*.txt` or `pyproject.toml` (for example `python3 -m venv .venv && .venv/bin/pip install -r requirements.txt`, or the first gate run creates it). An install failure is a setup gap, not a finding.
-- The virtual environment survives a checkout. On a reused worktree, re-install only if `git diff --name-only <prev-sha>..<head-sha>` touches `requirements*.txt`, `pyproject.toml` or a lockfile.
+- On a reused worktree, re-install only if `git diff --name-only <prev-sha>..<head-sha>` touches `requirements*.txt`, `pyproject.toml` or a lockfile.
 
 ## Gates
 
