@@ -1,6 +1,6 @@
 ---
 name: setup-skills
-description: "Copy the sample-skills into the current project and tailor them: write the project's facts into each skill, keep only the stack and field assets it uses, and later update the copy from upstream, connect or disconnect an asset, or add or remove a skill. Clones the upstream repository, writes only under .agents/ plus the .claude/skills link, and never commits. Trigger: /setup-skills [install|update|connect <id>|disconnect <id>|add <skill>|remove <skill>] [--dry-run] [--source <owner/repo>[@<ref>]]."
+description: "Copy the sample-skills into the current project and tailor them: write the project's facts into each skill, keep only the stack and field assets it uses, and later update the copy from upstream, connect or disconnect an asset, or add or remove a skill. Clones the upstream repository, writes only under .agents/ plus the .claude/skills link, and never commits. Trigger: /setup-skills [install|update|connect ID|disconnect ID|add SKILL|remove SKILL] [--dry-run] [--source OWNER/REPO[@REF]]."
 disable-model-invocation: true
 allowed-tools:
   - Bash(git clone *)
@@ -289,8 +289,9 @@ project added itself, is never touched. Per file:
 ones, so a profile edit never passes for an upstream change. A conflict is
 left untouched: the script prints the rendered base and upstream versions
 and its conflict-marked attempt. Show the developer each conflict and each
-`ask-*` file, write what they choose, then write the lock with the `lock`
-command the script printed last. The script writes the lock itself only when
+`ask-*` file, write what they choose, `rerender` each skill whose SKILL.md
+they resolved (a conflict keeps the old facts block), then write the lock
+with the `lock` command the script printed last. The script writes the lock itself only when
 nothing is left to decide.
 
 A new upstream skill is offered (`add <skill>`), not added; a new upstream
@@ -299,8 +300,9 @@ asset id is listed, not connected. With no upstream change (`<new>` equals
 the profile and running `update` is how a fact changes.
 
 **Detached copy.** There is no base to merge from. Read the facts back from
-the facts blocks into a temporary profile, render each upstream skill with it
-into a temporary folder, and show `git diff --no-index <project skill>
+the facts blocks into a temporary profile, print each upstream file with
+`setup.sh render-file` into a `mktemp -d` folder (never `render`, which
+replaces `.agents/skills/<skill>/` itself), and show `git diff --no-index <project skill>
 <rendered skill>` skill by skill, summarising what upstream changed. Apply
 only what the developer picks, by editing the project's file; never overwrite
 it whole.
@@ -323,7 +325,9 @@ line.
 
 ## add, remove
 
-`add <skill>` (managed): add it to the profile's `skills` (and take it out of
+`add <skill>` (managed): when the project already has that skill (a kept
+one), first summarise what its copy has that upstream's lacks and ask before
+replacing it. Add it to the profile's `skills` (and take it out of
 `kept`), `render` it with the clone at the lock's commit, then rerender every
 other installed skill, so their skill-names rows name it as `/<skill>`, and
 write the lock:
