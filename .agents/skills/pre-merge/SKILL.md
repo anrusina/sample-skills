@@ -207,7 +207,9 @@ The *After rebase* section of each loaded asset applies to steps 2 and 3.
    one line, only when every changed path (`git diff --name-only
    origin/<base>...HEAD`) is Markdown or under `docs/` and none is a build
    input by the *build-input docs* fact. A failure stops the merge: fix it
-   on the branch and re-run this phase.
+   on the branch, commit, and re-run this phase from step 2's rebase,
+   keeping the `<pre-rebase-sha>` already noted: it is still the PR's head,
+   which phase 2's push leases against.
 
 Do not push yet: phase 2 pushes the rebased branch.
 
