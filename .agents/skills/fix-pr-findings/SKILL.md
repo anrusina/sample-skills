@@ -144,9 +144,9 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
    gh pr comment <number> --body 'Addressed in <short-sha> — outside-diff finding #<N>: <what changed>.'
    ```
 
-8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — <reason it can't be fixed here>.`; otherwise create the proposed issue (as `/pre-merge` does for its follow-up items — labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — <reason it can't be fixed here>.` — on the thread, or in a PR comment for an outside-diff finding. Never resolve the thread: the next `/review-pr` resolves it once it has checked that the issue covers whatever this PR leaves unfixed. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
+8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — <reason it can't be fixed here>.`; otherwise create the proposed issue (as `/pre-merge` does for its follow-up items — labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — <reason it can't be fixed here>.` — on the thread, or for an outside-diff finding in a PR comment that names it (`Tracked in #<N> — outside-diff finding #<F>: <reason>.`). Never resolve the thread: the next `/review-pr` resolves it once it has checked that the issue covers whatever this PR leaves unfixed. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
 
-8c. **Reply on each finding the developer chose to leave as-is:** `Left as-is: <reason>.` on the thread (a PR comment for an outside-diff finding), never resolving it; the next `/review-pr` does.
+8c. **Reply on each finding the developer chose to leave as-is:** `Left as-is: <reason>.` on the thread (for an outside-diff finding, a PR comment: `Left as-is: outside-diff finding #<F> — <reason>.`), never resolving it; the next `/review-pr` does.
 
 9. After all agents complete:
    - Table of findings fixed with commit hashes, and deferred findings with their issue numbers

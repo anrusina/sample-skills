@@ -306,7 +306,7 @@ skips in Verification.
 
    **The verdict comes from the code at `<head-sha>`, and nothing else.** Not the fixer's `Addressed in <sha>` reply, and not what an earlier round in this conversation concluded — a long review session remembers its own judgments, and a fixer's reply is a claim to verify. When a reply cites a commit, check it is on the branch (`git merge-base --is-ancestor <sha> <head-sha>`) and that it changes the thread's file or a file the finding's Suggestion/Prompt for AI names (`git show --name-only <sha>`). A citation that fails either check proves nothing: judge the thread on the code alone and say in the reply that the cited commit did not hold up.
 
-   **Outside-diff findings** have no thread. Re-check each one that a PR conversation comment from step 4 marks `Addressed in <sha> — outside-diff finding #<N>`, judged from the code at `<head-sha>` exactly as above. Post the verdict as a PR conversation comment — there is no thread to resolve or unresolve: `Verified fixed in <sha> — outside-diff finding #<N>: <what>` or `Reopened: outside-diff finding #<N> — <what is still wrong>`.
+   **Outside-diff findings** have no thread. Re-check each one that a PR conversation comment from step 4 names as `outside-diff finding #<N>` (an `Addressed in`, `Tracked in`, `Captured as` or `Left as-is:` reply), judged from the code at `<head-sha>` by the matching row above. Post that row's reply as a PR conversation comment naming the finding — there is no thread to resolve or unresolve: e.g. `Verified fixed in <sha> — outside-diff finding #<N>: <what>` or `Reopened: outside-diff finding #<N> — <what is still wrong>`.
 
 ## phase 3 — present findings for approval
 
