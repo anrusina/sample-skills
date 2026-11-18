@@ -298,6 +298,8 @@ skips in Verification.
    | resolved | fixed | no action — no reply either |
    | unresolved, deferred with a `Tracked in #N` or `Captured as #N` reply | #N is open, and the code at `<head-sha>` and #N's body together cover everything the finding raised | reply `Verified tracked in #N`, then resolve: a later session fixes the rest there |
    | unresolved, deferred the same way | #N is closed, or part of the finding is neither fixed nor in #N | reply `Not tracked: <what is left uncovered>` — leave it unresolved |
+   | unresolved, with an `Addressed in` reply | not fixed | reply `Not fixed: <what is still wrong>` — leave it unresolved |
+   | unresolved, with a `Left as-is:` reply | — | reply `Accepted as left`, then resolve: the developer decided |
    | anything else | — | no action |
 
    Always reply before changing state — every agent posts as the same account, so the reply is the only record of who decided what. `<sha>` is the commit that carries the fix. The "reply only" row stops two reviewers flipping one thread back and forth.

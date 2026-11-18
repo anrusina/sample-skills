@@ -34,9 +34,9 @@ root=$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")
 If the primary checkout lacks a fixture folder, stop and name it. The merge
 waits for a run where the fixtures are, unless the developer says in chat to
 merge without them; then record `<suite>: not run (no <folder> on this
-machine)` in the PR description and in the summary. The links are untracked
-files; `rebuild.sh` commits only files the branch changed, so they never
-reach a commit.
+machine)` in the PR description and in the summary. Remove each link
+(`rm <folder>`, no trailing slash) once the suite has run: a link left
+behind blocks the worktree cleanup after the merge.
 
 ## Checks the developer runs by hand
 

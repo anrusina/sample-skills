@@ -100,7 +100,7 @@ the answer. If there is none, ask for a PR number. The confirmed number is
 
    | Class | Signals | Meaning |
    |---|---|---|
-   | `ADDRESSED` | Code changed since the comment, or a pipeline reply exists (one starting `Addressed in`, `Verified fixed in`, `Tracked in` or `Captured as`) | Can be closed |
+   | `ADDRESSED` | Code changed since the comment, or a pipeline reply exists (one starting `Addressed in`, `Verified fixed in`, `Tracked in`, `Captured as` or `Left as-is:`), unless the latest pipeline reply starts `Reopened:`, `Not tracked:` or `Not fixed:` | Can be closed |
    | `QUESTION` | Asks for clarification without prescribing a change, and has no answer yet | Needs an answer before merge |
    | `FIX HERE` | Any unaddressed finding, at any severity, that can be fixed on this branch — the default | Must be fixed before merge |
    | `FOLLOW-UP` | Unaddressed, and fixing it here is blocked by a stated reason: a product or design decision not yet made, another subsystem or open issue (name it), or a change too big for this PR (say why) | Becomes a tracked issue before merge |
@@ -146,7 +146,10 @@ default branch, so it is never skipped because the branch "looks current".
 The *After rebase* section of each loaded asset applies to steps 2 and 3.
 
 1. Stop if the working tree is not clean (`git status --short`). Never stash
-   or discard the changes; report them and let the developer decide.
+   or discard the changes; report them and let the developer decide. Stop
+   too unless `gh pr view <N> --json headRefName,headRefOid` names the
+   current branch and `HEAD`: otherwise this is not PR #<N>'s checkout, or
+   it and the PR have each other's unseen commits.
 
 2. Note the current commit as `<pre-rebase-sha>` (`git rev-parse HEAD`),
    then rebase:
@@ -280,10 +283,11 @@ anything else: nothing was pushed.
 Then push:
 
 ```bash
-git push --force-with-lease
+git push --force-with-lease=<head branch>:<pre-rebase-sha>
 ```
 
-If that fails, the remote has commits this checkout lacks: stop and report;
+Note the pushed `HEAD` as `<pushed-sha>`. If the push fails, the remote has
+commits this checkout lacks: stop and report;
 never force past it without the developer's say. Then start phase 1b's
 CI-equivalent run, if the fact lists one and the reference doesn't skip it,
 in the background where the shell limits long commands:
@@ -293,6 +297,11 @@ ${CLAUDE_SKILL_DIR}/scripts/ci-run.sh --wrap '<wrapper>' <workflow file>
 ```
 
 and judge its conclusion as the reference says.
+
+Last, before any reply: if the default branch has moved (`git fetch
+origin`, then `git merge-base --is-ancestor origin/<base> HEAD` fails), go
+back to phase 1a: the ID checks and a version bump hold only against the
+default branch they ran on.
 
 Example pair:
 ```
@@ -315,8 +324,9 @@ Work done:
 ## phase 3 — reply to addressed threads
 
 The branch now carries its final commits, so every SHA cited here survives
-the merge. For each `ADDRESSED` item, and each `QUESTION` the developer gave
-an answer for:
+the merge. For each `ADDRESSED` item fixed on this branch, and each
+`QUESTION` the developer gave an answer for (an item whose latest reply is
+`Tracked in`, `Captured as` or `Left as-is:` keeps it):
 
 - **Find the commit that carries the fix**: ask git, don't guess from the
   path (files a *Rebuild* section assigned to the docs commit ride with it):
@@ -353,10 +363,8 @@ For every `FOLLOW-UP` item the developer confirmed in phase 1:
 
 ## phase 5 — merge
 
-If the default branch has moved since phase 1a (`git fetch origin`, then
-`git merge-base --is-ancestor origin/<base> HEAD` fails), go back to phase
-1a: the ID checks and a version bump are valid only against the default
-branch they ran on. Otherwise print:
+If the default branch has moved again since phase 2 (the same check), stop
+and report: re-run `/pre-merge`. Otherwise print:
 
 ```
 PR #<N> is ready to merge.
@@ -372,12 +380,13 @@ Version:              <old> → <new> (<level>) | no version bump recorded
 ```
 
 Never merge while a gate or a pre-merge check is failing, or, when the fact
-lists a CI-equivalent run, without a `success` on the head commit for a
-change beyond docs. Then ask:
+lists a CI-equivalent run, without a `success` on the head commit unless
+the reference skipped the run. Then ask:
 
 > Rebase and Merge PR #<N> into `<base>` now? (yes / no)
 
-On **yes**: `gh pr merge <N> --rebase`. Then, when this ran in a linked
+On **yes**: `gh pr merge <N> --rebase --match-head-commit <pushed-sha>`.
+Then, when this ran in a linked
 worktree, remove it and its branch:
 
 ```bash
@@ -388,6 +397,6 @@ It removes nothing unless the PR shows `MERGED` and this is a linked
 worktree, and stops if git refuses (uncommitted changes). Apply each loaded
 asset's *Worktree cleanup* section.
 
-On **no**: "When ready: `gh pr merge <N> --rebase`".
+On **no**: "When ready: `gh pr merge <N> --rebase --match-head-commit <pushed-sha>`".
 
 No reply or issue body carries AI attribution.
