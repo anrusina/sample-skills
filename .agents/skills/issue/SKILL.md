@@ -4,7 +4,7 @@ description: "File a GitHub issue that traces back through the Arrow of Intent: 
 model: haiku
 ---
 
-You are a GitHub issue assistant for this project. Issues must trace back through the Arrow of Intent chain (HLD → LLDs → EARS Specs → Tests → Code). Every issue you create should either reference existing upstream artifacts or block until they exist.
+You file GitHub issues for this project. Every issue traces back through the Arrow of Intent chain (HLD → LLDs → EARS Specs → Tests → Code): it references existing upstream artifacts or names what must be written first.
 
 ## Project facts
 
@@ -58,13 +58,12 @@ Infer type if no flag:
 2. **Locate upstream** — find the relevant HLD section. List `docs/specs/LLD-*.md` and match the HLD's subsystem name to find the LLD covering this subsystem (if AGENTS.md has a keyword-to-LLD table, use it). Check `docs/specs/EARS-<subsystem>.md` for related EARS spec IDs.
 
    These feed two sections. **Upstream** records traceability, including spec
-   IDs. **Read first** names the *documents* to read before implementing — not
-   spec IDs, which go stale while an issue sits in the backlog — and only ones
-   that already exist (anything still to be written goes in Upstream).
-   `/start-task` reads exactly this list as the scope boundary, so list what
-   bears on the work and nothing more. Always keep the `AGENTS.md` row.
+   IDs and anything still to be written. **Read first** names only existing
+   *documents* (not spec IDs, which go stale) that bear on the work, and
+   nothing more: `/start-task` reads exactly this list as the scope boundary.
+   Always keep the `AGENTS.md` row.
 
-3. **For `bug` and `feature`** — read the referenced source file(s). Extract a 5–20 line snippet where relevant. Never write a bug issue without reading the source first. Apply the *Current code* section of each loaded field asset.
+3. **For `bug` and `feature`** — read the referenced source file(s) first, always for a bug. Extract a 5–20 line snippet where relevant. Apply the *Current code* section of each loaded field asset.
 
 4. **Duplicates** — `gh issue list --search "<keyword>" --state open --json number,title --limit 10`. If a match exists, report and stop.
 
@@ -72,8 +71,7 @@ Infer type if no flag:
 
 6. **Title** — imperative verb phrase for `feature`/`bug`/`design`; question or noun phrase for `spike`. Max ~80 chars.
 
-7. **Labels and milestone** — fetch current values (the first command is the
-   labels fact; labels change, so it is read on every run):
+7. **Labels and milestone** — fetch current values on every run:
    ```bash
    gh label list --limit 200
    gh api 'repos/{owner}/{repo}/milestones' --jq '.[] | {title, description, due_on}'
@@ -92,21 +90,16 @@ Infer type if no flag:
      work needs little input from the owner and a session can run it end to end;
      `curated` when the owner's input is needed before it can properly start (an
      open design choice, a product call, a hand check that shapes the
-     approach). The coordinator (`/coding-master`) starts the two differently.
-     If it is unclear, leave it off and say so in the report.
+     approach). If it is unclear, leave it off and say so in the report.
    - **Milestone** — if the caller named one (`--milestone`, or in the
      description) and it exists and is open, use it. Otherwise, if an open
      milestone fits the issue scope (judge by its title, description and due
-     date), assign it without asking and name it in the report: a milestone is
-     cheap to move, and asking first costs more round-trips than a wrong guess
-     ever does. When the milestones fact gives a rule (which milestones are
-     active, which are backlog), follow it. If none fits, leave it off and say
-     so.
+     date), assign it without asking and name it in the report. When the
+     milestones fact gives a rule (which milestones are active, which are
+     backlog), follow it. If none fits, leave it off and say so.
 
-8. **Create** — always use `--body-file`, with a fresh file from `mktemp`
-   (a fixed path collides with another session's issue), written, used and
-   removed in one Bash call. The `trap` removes the file even when the create
-   fails:
+8. **Create** — always use `--body-file`, with a fresh `mktemp` file (never a
+   fixed path), written, used and removed in one Bash call:
    ```bash
    BODY=$(mktemp) && trap 'rm -f "$BODY"' EXIT
    cat > "$BODY" <<'ISSUE_BODY'
@@ -117,9 +110,8 @@ Infer type if no flag:
    Include `--milestone` only if one fitted in step 7. Print URL.
 
 9. **Project board** — only if the project board fact names the board's owner
-   and number; otherwise skip this step silently. If it says the board adds
-   new issues by itself, there is nothing to do.
-   Otherwise:
+   and number (otherwise skip silently) and the board does not add new issues
+   by itself:
    ```bash
    gh project item-add <number> --owner <owner> --url <issue-url>
    ```
@@ -128,7 +120,7 @@ Infer type if no flag:
 
 ## rules
 
-- Every `feature` issue has at least one EARS spec line in **Done when**. A spec that doesn't exist yet is written there with a provisional ID (the next free one in its namespace, marked *provisional*), and created in `docs/specs/` when the work starts (`/start-task`, `/design-docs`), not now. Filing an issue writes no file: the design docs change with the work that needs them, and a provisional ID may be renumbered by then.
+- Every `feature` issue has at least one EARS spec line in **Done when**. A spec that doesn't exist yet is written there with a provisional ID (the next free one in its namespace, marked *provisional*), and created in `docs/specs/` when the work starts (`/start-task`, `/design-docs`), not now: filing an issue writes no file.
 - Every `bug` issue names the EARS spec it violates in **Upstream**. When no spec covers the behaviour, say so there, as the Arrow of Intent's missing-intent case, and make writing that spec part of **Done when**.
 - Acceptance criteria are testable, not re-statements of the task: `/start-task` turns them into specs and tests.
 - Annotate problematic lines with `← comment` in code snippets.

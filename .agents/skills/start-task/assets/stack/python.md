@@ -9,6 +9,6 @@ python3 -m venv .venv
 .venv/bin/pip install -r requirements.txt
 ```
 
-Use each requirements file the build section's commands rely on; a project
-with several environments (one venv per requirements file, say) needs one
-venv per file. If the install fails, stop and report it as a setup gap.
+Use each requirements file the build section's commands rely on (one venv per
+file, when the project keeps separate environments). If the install fails,
+stop and report it as a setup gap.

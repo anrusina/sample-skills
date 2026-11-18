@@ -5,9 +5,7 @@ allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/review-threads.sh *)
 ---
 
-Orchestrate fixes for GitHub PR review findings. Fetches review comments, presents findings for selection, and spawns sub-agents to apply each fix in isolation with properly formatted commits.
-
-Findings may come from any reviewer — a second AI model, the developer, or `/review-pr`.
+Orchestrate fixes for GitHub PR review findings from any reviewer (a second AI model, the developer, or `/review-pr`): fetch them, triage them for selection, and spawn sub-agents to apply each fix as its own commit.
 
 ## Project facts
 
@@ -44,7 +42,7 @@ its section. With none loaded, the steps' generic text applies.
 
 Pass the wrapper on to every sub-agent, with the row's rule.
 
-A **documentation-only fix** is one whose changed files are all Markdown or under `docs/`, and none of them under a *build-input docs* path: Markdown the build reads is a build input, so a fix to it runs the gates like code.
+A **documentation-only fix** is one whose changed files are all Markdown or under `docs/`, and none of them under a *build-input docs* path.
 
 ## inputs
 
@@ -62,33 +60,29 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
 
 2. **Fetch review comments (two calls — both required):**
 
-   Top-level review bodies and conversation comments (`--comments` and `--json` cannot be combined; `--json comments` already includes them):
+   Top-level review bodies and conversation comments:
    ```bash
    gh pr view <number> --json comments,reviews
    ```
 
-   Unresolved inline review threads, one JSON object each (resolved threads are already handled and are skipped):
+   Unresolved inline review threads, one JSON object each:
    ```bash
    ${CLAUDE_SKILL_DIR}/scripts/review-threads.sh --wrap '<wrapper>' <number>
    ```
 
-   Merge both sources. Deduplicate by discussion URL — inline comments that are also summarised in a review body should appear once.
+   Merge both sources, deduplicating by discussion URL (an inline comment also summarised in a review body appears once).
 
-   For inline comments that **lack explicit severity or blast-radius metadata**, evaluate them before presenting:
-   - Assign severity (Critical / High / Medium / Low) based on: correctness impact, AGENTS.md rule violations, and blast radius.
-   - Note blast radius (Isolated / Localised / Cross-cutting).
+   Where a comment **lacks severity or blast radius**, assign them: severity (Critical / High / Medium / Low) from correctness impact, AGENTS.md rule violations and blast radius; blast radius (Isolated / Localised / Cross-cutting).
 
-   Extract each finding: number, severity, blast radius, title, description, file(s) and line(s), discussion URL.
+   Extract each finding: number, severity, blast radius, title, description, file(s) and line(s), discussion URL (for an outside-diff finding, the permalink in the review body).
 
-   An outside-diff finding has a permalink instead of a discussion URL — read it from the review body fetched by the first call.
-
-3. **Triage each finding — recommend before asking.** A reviewer (human or AI) can be wrong, out of scope, or contradicted by an upstream doc. Before presenting anything, verify each finding against the source file — and, for spec/doc findings, against the backing LLD and the Arrow of Intent — then assign exactly one recommendation:
+3. **Triage each finding — recommend before asking.** Never fix on the reviewer's say-so alone: a reviewer can be wrong, out of scope, or contradicted by an upstream doc. Before presenting anything, verify each finding against the source file — and, for spec/doc findings, against the backing LLD and the Arrow of Intent — then assign exactly one recommendation:
 
    - **Fix** — correct and in scope for *this* PR; apply now.
    - **Defer** — valid, but fixing it here is blocked by a stated reason: a product or design decision not yet made, another subsystem or open issue (name it), or a change too big for this PR (say why). Low severity alone is not a reason — a valid Low finding is **Fix**. A deferred finding is always tracked: name the open issue that already covers it, or propose a new issue (title + one-line scope) that phase 3 creates once the developer confirms. Never just a note.
    - **Leave as-is (by design)** — the current spec/code is intentional and the finding misreads intent. State the design reason.
 
-   Give a rationale and a proposed solution per finding (format in step 4). Never default to "fix all". Where a finding conflicts with another finding, the task brief, or an upstream doc (HLD/LLD/EARS), **surface the conflict and let the developer decide** — do not silently resolve it; consult before resolving any contradiction. A finding may also be **partially** fixed (e.g. apply the in-scope half, defer the rest) — say which half and why.
+   Never default to "fix all". Where a finding conflicts with another finding, the task brief, or an upstream doc (HLD/LLD/EARS), **surface the conflict and let the developer decide** — never resolve it silently. A finding may also be **partially** fixed (apply the in-scope half, defer the rest) — say which half and why.
 
    Apply the *Triage* section of each loaded asset.
 
@@ -114,24 +108,24 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
 
    Then ask which findings to fix, **defaulting to the Fix-recommended set**. Accept: specific numbers ("1, 3"), severity filter ("all criticals", "high and above"), "all", or "as recommended". The developer's choice always overrides the recommendation.
 
-   **Stop here until the developer answers.** Triage is the whole of this turn; no sub-agent starts before the selection.
+   **Stop here until the developer answers.** No sub-agent starts before the selection.
 
 ## phase 2 — fix via sub-agents
 
-5. **Check out the PR's branch, up to date.** Every sub-agent commits and pushes from this checkout, so it has to be the PR's head branch at the remote's tip, with nothing uncommitted:
+5. **Check out the PR's branch, up to date.** Every sub-agent commits and pushes from this checkout, so it must be the PR's head branch at the remote's tip, with nothing uncommitted:
    ```bash
    gh pr view <number> --json headRefName -q .headRefName
    git branch --show-current
    git fetch origin
    git status --short --branch
    ```
-   If the current branch is not the PR's head branch, or the tree has uncommitted changes, stop and say so: fixes committed here would land on the wrong branch, or carry someone else's work. If the branch is only behind `origin/<head>`, `git pull --ff-only`; if it has diverged, stop and report.
+   If the current branch is not the PR's head branch, or the tree has uncommitted changes, stop and say so. If the branch is only behind `origin/<head>`, `git pull --ff-only`; if it has diverged, stop and report.
 
-6. For each selected finding (or tightly coupled group of findings), spawn a sub-agent, **one after another**: start the next only when the previous one has reported back. Every sub-agent commits and pushes from the same checkout, so two at once would collide on git's index lock, commit each other's staged files, and race on the push. Order them so a finding that another depends on goes first.
+6. For each selected finding (or tightly coupled group of findings), spawn a sub-agent, **one after another**: start the next only when the previous one has reported back (they share one checkout, index and push). Order them so a finding that another depends on goes first.
 
 7. **Sub-agent prompt:** load [assets/subagent-prompt.md](assets/subagent-prompt.md) and substitute all `<...>` placeholders with the finding's specific values before spawning, including the *Fix* section of each loaded asset.
 
-   If a sub-agent reports a failure (a gate it cannot make pass, a rejected push), stop the remaining fixes and report: the next fix would build on a branch in an unknown state.
+   If a sub-agent reports a failure (a gate it cannot make pass, a rejected push), stop the remaining fixes and report.
 
 ## phase 3 — report
 
@@ -139,19 +133,19 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
    ```bash
    gh api repos/{owner}/{repo}/pulls/<number>/comments/<first comment databaseId>/replies -f body='Addressed in <short-sha> — <what changed>.'
    ```
-   `gh` fills `{owner}` and `{repo}` itself from the current checkout. An outside-diff finding has no thread — post a PR conversation comment instead:
+   `gh` fills `{owner}` and `{repo}` itself. An outside-diff finding has no thread — post a PR conversation comment instead:
    ```bash
    gh pr comment <number> --body 'Addressed in <short-sha> — outside-diff finding #<N>: <what changed>.'
    ```
 
-8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — <reason it can't be fixed here>.`; otherwise create the proposed issue (as `/pre-merge` does for its follow-up items — labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — <reason it can't be fixed here>.` — on the thread, or for an outside-diff finding in a PR comment that names it (`Tracked in #<N> — outside-diff finding #<F>: <reason>.`). Never resolve the thread: the next `/review-pr` resolves it once it has checked that the issue covers whatever this PR leaves unfixed. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
+8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — <reason it can't be fixed here>.`; otherwise create the proposed issue (labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — <reason it can't be fixed here>.` — on the thread, or for an outside-diff finding in a PR comment that names it (`Tracked in #<N> — outside-diff finding #<F>: <reason>.`). Never resolve the thread; the next `/review-pr` does. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
 
 8c. **Reply on each finding the developer chose to leave as-is:** `Left as-is: <reason>.` on the thread (for an outside-diff finding, a PR comment: `Left as-is: outside-diff finding #<F> — <reason>.`), never resolving it; the next `/review-pr` does.
 
 9. After all agents complete:
    - Table of findings fixed with commit hashes, and deferred findings with their issue numbers
    - Any findings that failed with the reason
-   - Reminder to run the project's quality gates (the *gates* fact) — unless every fix was documentation-only, in which case state that the gates were skipped because those files cannot affect them
+   - Reminder to run the project's quality gates (the *gates* fact) — unless every fix was documentation-only; then state that the gates were skipped
    - Anything the *Report* section of a loaded asset adds
 
 ## commit format
@@ -160,6 +154,4 @@ A **documentation-only fix** is one whose changed files are all Markdown or unde
 
 ## rules
 
-- Never fix on the reviewer's say-so alone: verify every finding against the source and present the triage first. A reviewer can be wrong, out of scope, or contradicted by an upstream doc.
-- Every fix is a new commit on top of the branch, never an amend: reviewers re-check each fix by its commit, and a rewritten history breaks their citations.
-- If there are no gates, ask the developer once for the commands, use them, and tell them to record them in AGENTS.md's build section.
+- Every fix is a new commit on top of the branch, never an amend: reviewers re-check each fix by its commit.

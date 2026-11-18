@@ -1,7 +1,6 @@
 # pr assets
 
-Load every asset whose condition holds at the start of the run (see the
-skill's *Project facts*). Each step names the asset section it applies.
+Load every asset whose condition holds at the start of the run.
 `testing-checklist.md` is the core template for the `## Testing:` section and
 always applies.
 

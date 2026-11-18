@@ -7,8 +7,7 @@ model: haiku
 Thin wrapper: run `/commit` then `/pr` in sequence.
 
 Run it only when the developer asked for it, or a brief this session was
-started with says to run it once the work is done. Finishing a change is not
-by itself a reason to open a PR.
+started with says to run it once the work is done.
 
 ## Project facts
 
@@ -36,7 +35,7 @@ beside this skill's own (`${CLAUDE_SKILL_DIR}/../commit/SKILL.md`, or
 
 ## steps
 
-1. Run `/commit` (plus `--squash` if it was passed to this skill). `/commit` pushes by default, and asks for nothing unless it hits a blocker.
+1. Run `/commit` (plus `--squash` if it was passed to this skill); it also pushes.
    - If `branch-name` was provided, pass it to `/commit` as the name for the new branch.
 
 2. After `/commit` completes successfully, run `/pr`.

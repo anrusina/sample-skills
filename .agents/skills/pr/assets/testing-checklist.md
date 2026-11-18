@@ -1,8 +1,7 @@
 # PR testing checklist
 
-Used by `/pr` step 6 to write the `## Testing:` section of the PR body. This
-is the core checklist; each loaded stack or field asset adds the lines in its
-*Testing checklist* section that apply to the diff.
+Used by `/pr` step 6 to write the `## Testing:` section of the PR body; each
+loaded asset adds its *Testing checklist* lines that apply to the diff.
 
 ## Default
 
@@ -30,11 +29,9 @@ section.
 
 - **Documentation-only PR** (every changed path is Markdown or under `docs/`,
   and none is under the `build-input docs` paths): replace the gate items with
-  `- [ ] Docs-only change — quality gates not run`. Markdown the build reads
-  is a build input: its PR keeps the gate items.
+  `- [ ] Docs-only change — quality gates not run`.
 - **Behaviour without an automated test** (a UI flow, an integration only
   testable by hand): add `- [ ] Manually checked: <what was exercised, and
   where>` and say why no automated test covers it.
 - **Extra pre-merge checks** (the `pre-merge checks` fact): add one unticked
-  item per check, marked `(runs at /pre-merge)`, so the reviewer knows they
-  are still to come.
+  item per check, marked `(runs at /pre-merge)`.

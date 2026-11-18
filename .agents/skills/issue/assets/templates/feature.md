@@ -7,9 +7,8 @@
 | `AGENTS.md` | Arrow of Intent, architecture and coding rules, build and test commands |
 | <`docs/specs/LLD-<subsystem>.md`> | <what in it bears on this work> |
 
-<One row per document that genuinely bears on this work. Name the document,
-not spec IDs — the whole document, or at least the whole section, is the unit
-to read. Only documents that already exist. See /issue step 2.>
+<One row per existing document (or section) that bears on this work, never
+spec IDs. See /issue step 2.>
 
 ## Goal
 
@@ -26,7 +25,7 @@ to read. Only documents that already exist. See /issue step 2.>
 ## Done when
 
 - SUBSYSTEM-NNN: When [condition], the system shall [action].
-- <One EARS spec line per acceptance condition. A spec that doesn't exist yet gets a provisional ID (the next free one), marked *provisional*; it is written into `docs/specs/EARS-<subsystem>.md` when the work starts.>
+- <One EARS spec line per acceptance condition. A spec that doesn't exist yet gets the next free ID, marked *provisional*.>
 
 ## Upstream
 

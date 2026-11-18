@@ -76,45 +76,37 @@ gh api 'repos/{owner}/{repo}/issues/<N>' --jq '{title, body, labels: [.labels[].
 gh api 'repos/{owner}/{repo}/issues/<N>/comments' --paginate --jq '.[] | .body + "\n---"'
 ```
 
-Extract from both the issue body **and all comments**:
-- Issue title and body
-- Task list items (`- [ ]` lines) — these are the acceptance criteria
-- Any content under headers named "Acceptance criteria", "Done when", or "Requirements"
+Read the body **and every comment**, and extract:
+- Title and body
+- Acceptance criteria: task list items (`- [ ]` lines), content under headers such as "Acceptance criteria", "Done when" or "Requirements", and any requirements, edge cases or clarifications added in comments
 - Milestone title (if any)
-- Comments may contain additional requirements, edge cases, or clarifications added after the issue was written — treat them as part of the acceptance criteria
 
-**Milestone check:** only when the milestones fact tells active delivery milestones apart from future/backlog ones. If the issue's milestone is a future/backlog one by that rule, emit a non-blocking warning in the report:
+Its **Read first** files are read in step 3, after step 2 updates the checkout.
+
+**Milestone check:** only when the milestones fact tells active delivery milestones apart from future/backlog ones (otherwise skip it). If the issue's milestone is a future/backlog one, put a non-blocking warning in the report and carry on:
 
 > "⚠ Milestone warning: this issue is tagged `<milestone>`, which is a future/backlog milestone. Confirm you intend to work on it now before branching."
 
-Do not stop — this is a warning only. When the milestones fact is none, skip the check and give no warning.
-
-Read the ticket in full: body and every comment. Its **Read first** files are
-read in step 3, once step 2 has brought the checkout up to date.
-
 ## step 2 — sync to the latest default branch, in a new worktree
 
-The HLD/LLD/EARS checks in the steps below read spec files from the working tree. If the current branch predates a spec update merged to the default branch (e.g. another CLI session added EARS specs for this issue), the checks will report false negatives. Sync to the latest default branch first so the readiness report reflects the current canonical state.
+The spec checks below read the working tree, so a branch that predates a spec merged to the default branch gives false negatives. **Always run this step**, even if a branch for this issue looks current, unless the invocation explicitly says otherwise (e.g. "don't switch branches", "check as-is", "stay on current branch", "skip main sync").
 
-**Skip this step only if the invocation explicitly says otherwise** (e.g. "don't switch branches", "check as-is", "stay on current branch", "skip main sync"). Otherwise always run it, even if a branch for this issue already looks current.
-
-**Work in a new worktree by default.** The primary checkout routinely holds uncommitted work from another task or session, so leave it untouched:
+**Work in a new worktree by default**, leaving the primary checkout (which often holds another task's uncommitted work) untouched:
 
 ```bash
 ${CLAUDE_SKILL_DIR}/scripts/worktree.sh --wrap '<wrapper>' add task-<N> origin/<base>
 ```
 
 It fetches, adds a detached worktree at the latest default branch directly
-under the primary checkout's `.claude/worktrees/` (with a random suffix, so
-two sessions starting the same issue get separate ones), and prints
-`worktree=<path>`, which is `<worktree>` from here on. It prints nothing if
-git fails.
+under the primary checkout's `.claude/worktrees/` (random suffix, so two
+sessions on the same issue get separate ones), and prints `worktree=<path>`
+(`<worktree>` from here on). It prints nothing if git fails.
 
-If the wrapper is a tool-version manager that must trust a new folder before its tools run there, trust `<worktree>` now; otherwise every wrapped command in it fails.
+If the wrapper is a tool-version manager that must trust a new folder before its tools run there, trust `<worktree>` now.
 
-From here on, `<worktree>` — always directly under the primary checkout's `.claude/worktrees/`, never inside another worktree — is the working directory for every step and for the coding that follows. Nothing in the primary checkout is touched, so there is no uncommitted-changes check. Continue to step 3.
+From here on, `<worktree>` — never a worktree nested inside another — is the working directory for every step and for the coding that follows. Continue to step 3.
 
-**Main-worktree mode.** Use the primary checkout instead only when the invocation says so: the developer wants to work in the main worktree (or main checkout), or wants to test the work in an editor that has the primary checkout open. Then run the steps below in the primary checkout.
+**Main-worktree mode.** Use the primary checkout instead only when the invocation says so: the developer wants to work in the main worktree (or main checkout), or to test in an editor that has the primary checkout open. Then, in the primary checkout:
 
 1. Check for uncommitted changes:
    ```bash
@@ -136,45 +128,42 @@ From here on, `<worktree>` — always directly under the primary checkout's `.cl
    ```bash
    git pull --ff-only origin <base>
    ```
-   If `--ff-only` fails (the local default branch has diverged), stop:
+   If `--ff-only` fails, stop:
    > "Cannot fast-forward `<base>` — local commits exist. Resolve manually before continuing."
-
-Continue to step 3 with the default branch checked out and current.
 
 ## step 3 — identify subsystem
 
-First read exactly the files the ticket names under **Read first** (its
-scope boundary), from the up-to-date checkout; if it names none, read those
-this step's mapping finds. Read them before proposing any plan.
+Before proposing any plan, read exactly the files the ticket names under
+**Read first** (its scope boundary); if it names none, read those this step's
+mapping finds.
 
 Map the issue scope to one or more HLD subsystems by reading `docs/specs/HLD.md`. Find the LLD for each at run time:
 
-1. If `AGENTS.md` has a keyword → LLD table, match its keywords against the issue title and body and use it.
-2. Otherwise list the LLDs and match against the HLD's subsystem names:
+1. If `AGENTS.md` has a keyword → LLD table, match its keywords against the issue title and body.
+2. Otherwise list the LLDs (`docs/specs/LLD-<subsystem>.md`, named after the HLD subsystem) and match the issue's title, body and named files against each subsystem's name and its HLD *Responsibility* line:
    ```bash
    find docs/specs -name 'LLD-*.md' | sort
    ```
-   An LLD is `docs/specs/LLD-<subsystem>.md`, named after the HLD subsystem. Match the issue's title, body and named files against each subsystem's name and its HLD *Responsibility* line.
 
-Match specific phrases (for example, "checkout payment") before broad words (for example, "payment"). If a single subsystem matches clearly, use it. If the issue matches **several** (e.g. "fix cart totals at checkout" hits both `cart` and `checkout`), check each LLD — read the relevant sections and include findings from each in the report. Only ask for clarification if the dominant subsystem is genuinely unclear after reading the LLDs.
+Match specific phrases (for example, "checkout payment") before broad words (for example, "payment"). If the issue matches **several** subsystems, read the relevant sections of each LLD and include findings from each in the report. Ask for clarification only if the dominant subsystem is still unclear after reading the LLDs.
 
 ## step 4 — check HLD coverage
 
 Verify `docs/specs/HLD.md` contains a section for the identified subsystem.
 
 - **Present** → continue
-- **Missing** → record "`<subsystem>` has no HLD section" and continue; the report ends with Stop.
+- **Missing** → record "`<subsystem>` has no HLD section" and continue.
 
 ## step 5 — check LLD existence
 
-Use the exact filename found in step 3 rather than a glob. For subsystems the HLD marks *scaffold only*, skip this step.
+Use the exact filename found in step 3. For subsystems the HLD marks *scaffold only*, skip this step.
 
 ```bash
 find docs/specs -iname "<exact-LLD-filename>"
 ```
 
 - **Found** → continue
-- **Missing** → record "`docs/specs/<exact-LLD-filename>` does not exist" and continue; the report ends with Stop.
+- **Missing** → record "`docs/specs/<exact-LLD-filename>` does not exist" and continue.
 
 ## step 6 — check EARS specs
 
@@ -187,7 +176,7 @@ If the spec file exists, search for keywords from the issue title:
 grep -i "<keyword>" docs/specs/EARS-<subsystem>.md
 ```
 
-If the issue names spec IDs, look each one up directly across all `docs/specs/EARS-*.md` files, and also check which already have tagged tests: `${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh --wrap '<wrapper>' tags` lists every `@spec` tag outside `docs/`, `.agents/`, `.claude/` and Markdown as `file:line` and ID (pass the source and test folders AGENTS.md names, when it names them).
+If the issue names spec IDs, look each one up across all `docs/specs/EARS-*.md` files, and check which already have tagged tests: `${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh --wrap '<wrapper>' tags` lists every `@spec` tag outside `docs/`, `.agents/`, `.claude/` and Markdown as `file:line` and ID (pass the source and test folders AGENTS.md names, when it names them).
 
 **Presenting the specs.** Show the matching specs under a `### Specs to confirm` heading as one table, one row per ID, in the order the EARS files list them:
 
@@ -195,10 +184,10 @@ If the issue names spec IDs, look each one up directly across all `docs/specs/EA
 |---|---|
 | CART-14 | When a user removes the last item, the cart shows its empty state, clears any applied coupon, zeroes the subtotal and the item count, and keeps the saved-for-later list. |
 
-- Each row is a short plain-words restatement of the spec, written as a complete sentence, so the developer can judge coverage without opening the file. Keep every condition and every outcome the spec states; shorten wording, never content.
-- Never invent or soften behaviour. Where the spec's own wording is unclear or reads oddly, quote it verbatim under the table instead of smoothing it over.
+- Each row restates the spec in plain words as a complete sentence, keeping every condition and outcome; shorten wording, never content.
+- Never invent or soften behaviour. Where the spec's wording is unclear or reads oddly, quote it verbatim under the table.
 - Above the table, name the EARS file each ID prefix comes from, and say which IDs already have tagged tests.
-- Below the table, list every gap: a requirement in the issue body or its comments that no listed spec covers, and any spec the issue names that does not exist. A gap is a question for the developer, not something to resolve silently.
+- Below the table, list every gap — a requirement in the issue or its comments that no listed spec covers, and any named spec that does not exist — as a question for the developer, never resolved silently.
 
 Report:
 - **Matching spec IDs found** → present them as above, then ask:
@@ -208,7 +197,7 @@ Report:
 - **Spec file exists, no match** → record "no EARS spec for this behaviour in `docs/specs/EARS-<subsystem>.md`" and continue.
 - **Spec file missing** → record "`docs/specs/EARS-<subsystem>.md` does not exist" and continue.
 
-Steps 4–6 never stop on their own: a gap is recorded and the run goes on, skipping only a check that needs a missing file, so step 8 reports every gap at once, the suggested branch and the worktree's path.
+Steps 4–6 never stop on their own: each gap is recorded and the run goes on, skipping only a check that needs a missing file, so step 8 reports every gap at once.
 
 ## step 7 — suggest branch name
 
@@ -264,20 +253,18 @@ End with exactly one of:
 - "Chain complete. Write a failing test tagged `// @spec <ID>` (in a test file that carries its tier, where the project uses tiers), then implement."
 - "Stop — <list what is missing>. Run `/design-docs` to create the missing artifacts first."
 
-If HLD, LLD, or EARS specs are missing: always output "Stop". Never suggest starting to code without HLD, LLD, and EARS specs. On a Stop, leave the step 2 worktree in place and name its path (`<worktree>`) — the `/design-docs` work for the missing artifacts happens there.
+If HLD, LLD, or EARS specs are missing, always output "Stop" — never suggest coding without them. On a Stop, leave the step 2 worktree in place and name its path (`<worktree>`): the `/design-docs` work happens there.
 
 ## step 9 — branch setup (chain complete only)
 
-Only run this step if step 8 ended with "Chain complete."
+Create the branch without asking, unless the invocation names another branch or says not to create one.
 
-Create the branch without asking, unless the invocation names another branch or says not to create one: the name follows the project's convention, and a coordinator's brief would otherwise stall on the question.
-
-1. Create and switch to the feature branch (step 2 already put you on the latest default branch — in `<worktree>`, or in the primary checkout in main-worktree mode). `<dir>` is `<worktree>`, or the primary checkout's path in main-worktree mode:
+1. Create and switch to the feature branch. `<dir>` is `<worktree>`, or the primary checkout's path in main-worktree mode:
    ```bash
    git -C <dir> checkout -b <branch-name>
    ```
 
-2. In a worktree, git-ignored files are absent: installed dependencies and any generated code. Before the first quality gate, run the setup fact's steps in `<worktree>`. When the setup fact is none because AGENTS.md says nothing needs setting up, there is nothing to run. When AGENTS.md has no *Worktree setup* at all, apply the *Setup* section of each loaded stack asset: show the developer the steps it suggests for this repository, ask whether to run them, and suggest recording the agreed steps in AGENTS.md *Worktree setup*. Never run them unasked on a guess. If a setup step fails, stop and report it; do not work around it.
+2. A worktree lacks git-ignored files (installed dependencies, generated code). Before the first quality gate, run the setup fact's steps in `<worktree>`; when AGENTS.md says nothing needs setting up, there is nothing to run. When AGENTS.md has no *Worktree setup* at all, apply the *Setup* section of each loaded stack asset: show the developer the steps it suggests for this repository, ask whether to run them, and suggest recording the agreed steps in AGENTS.md *Worktree setup*. Never run them unasked on a guess. If a setup step fails, stop and report it; do not work around it.
 
 3. Confirm:
    > "On `<branch-name>` at `<short-sha>` in `<worktree path, or 'the primary checkout'>`. Ready to code."

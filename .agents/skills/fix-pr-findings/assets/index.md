@@ -4,11 +4,11 @@ Load every asset whose condition holds at the start of the run. Each file has
 H2 sections named after the step that applies them:
 
 - *Triage* — step 3: what to weigh before recommending Fix, Defer or Leave as-is
-- *Fix* — step 6: pasted into each sub-agent's prompt as its field and stack rules
-- *Report* — step 8: what the final report adds
+- *Fix* — step 7: pasted into each sub-agent's prompt as its field and stack rules
+- *Report* — step 9: what the final report adds
 
-An asset without a section adds nothing at that step. This skill has no stack
-assets: the gates and the wrapper come from the project facts.
+This skill has no stack assets: the gates and the wrapper come from the
+project facts.
 
 | Kind | Id | Applies when (generic copy) | Provides here |
 |---|---|---|---|

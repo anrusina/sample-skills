@@ -20,7 +20,7 @@ allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh *)
 ---
 
-You are a GitHub PR assistant for this project. You synthesise commits into a clear pull request — without requiring the developer to write boilerplate.
+You synthesise this branch's commits into a clear pull request, so the developer writes no boilerplate.
 
 > After the PR is open, use `/review-pr` for code review and `/pre-merge` for thread triage before merging.
 
@@ -101,35 +101,34 @@ If the file exists and has content, use it as the PR body template in step 7 ins
    - `Ref #N` — related but not closed, including an issue with an unagreed, uncovered criterion (see 4.5)
    - Omit section if none
 
-4.5. **Issue-coverage check** — for each `Closes #N` found in step 4, fetch the issue body and all its comments (`gh` fills `{owner}` and `{repo}` from the checkout; write the issue number in):
+4.5. **Issue-coverage check** — skip it if the PR has no `Closes #N`. For each `Closes #N` from step 4, fetch the issue body and all its comments (`gh` fills `{owner}` and `{repo}`; write the issue number in):
    ```bash
    gh api repos/{owner}/{repo}/issues/<N> --jq '{title, body}'
    gh api repos/{owner}/{repo}/issues/<N>/comments --paginate --jq '.[] | .body + "\n---"'
    ```
-   Extract acceptance criteria from both body **and all comments** — `- [ ]` task list items and content under "Acceptance criteria", "Done when", or "Requirements" headers. Comments may contain requirements or edge cases added after the issue was written; treat them equally. Review the commit diff against each criterion. Do not stop to ask — the developer reviews coverage in the PR. List every item that appears unaddressed in a `### Out of scope` section of the PR body:
+   Extract acceptance criteria from the body **and every comment** (later requirements and edge cases count equally): `- [ ]` task list items and content under "Acceptance criteria", "Done when", or "Requirements" headers. Review the commit diff against each criterion. Do not stop to ask. List every item that appears unaddressed in a `### Out of scope` section of the PR body:
    - If the session already agreed the exclusion (e.g. work handed to another issue), say so, link where it went, and leave that issue's reference as `Closes #N`.
-   - Otherwise mark it `**Not covered — needs a decision**`, and change that issue's reference in `## Related issues:` from `Closes #N` to `Ref #N` — merging must never auto-close an issue that still has an undecided requirement.
+   - Otherwise mark it `**Not covered — needs a decision**`, and change that issue's reference in `## Related issues:` from `Closes #N` to `Ref #N`.
 
-   Name any downgraded or not-covered items in the final report next to the PR URL, so the developer can resolve the item or restore the closing reference deliberately. Skip this check if the PR references no issues with `Closes #N`.
+   Name any downgraded or not-covered items in the final report next to the PR URL.
 
 5. **`## Arrow of Intent:`** check whether the diff contains source or test files (the `source and test dirs` fact):
    ```bash
    git diff --name-only origin/<base>...HEAD
    ```
    - **No source or test changes** (tooling, docs, config only) → omit this section entirely.
-   - **Source or test changes present** → find the spec IDs the branch tags, from the diff itself (the tags live in code and tests, not necessarily in commit messages), and HLD references in the commit bodies:
+   - **Source or test changes present** → find the spec IDs the branch tags, from the diff itself, and HLD references in the commit bodies:
      ```bash
      ${CLAUDE_SKILL_DIR}/scripts/spec-ids.sh --wrap '<wrapper>' added origin/<base>
      ```
      It prints each ID tagged on a line the branch adds, outside docs, skills and Markdown (pass the source and test dirs as arguments to narrow it).
      - If it prints at least one ID, list all spec IDs covered and the HLD section.
-     - If **no ID and no HLD reference** are found — **stop and ask the developer:**
+     - If **no ID and no HLD reference** are found — **stop and ask the developer**, and do not create the PR until they supply it or confirm the omission is intentional:
        > "This PR touches source code but no `@spec` tags or HLD references were found in its changes. Please provide: the HLD section this change falls under, and the EARS spec IDs it implements (create them first if they don't exist yet)."
-     - Do not create the PR until the developer supplies this information or confirms the omission is intentional.
 
 6. **`## Testing:`** build this section as [assets/testing-checklist.md](assets/testing-checklist.md) describes, adding the *Testing checklist* lines of each loaded asset that apply to the diff.
 
-7. **Create** — write the body to a fresh scratch file from `mktemp` (never a fixed `/tmp` name, which two sessions can share) and create the PR in the same call, so the file is removed even when `gh` fails. Assignment happens in the same `gh pr create`, so it is atomic with PR creation:
+7. **Create** — write the body to a fresh `mktemp` file (never a fixed `/tmp` name) and create and assign the PR in the same call, so the file is removed even when `gh` fails:
    ```bash
    body=$(mktemp) && trap 'rm -f "$body"' EXIT
    cat > "$body" <<'PR_BODY'
@@ -159,5 +158,5 @@ If the file exists and has content, use it as the PR body template in step 7 ins
 
 ## rules
 
-- Do not close or resolve PR threads: resolving is the next review's call, once it has verified the fix.
+- Do not close or resolve PR threads: that is the next review's call.
 - No AI-attribution footers unless AGENTS.md asks for one.
