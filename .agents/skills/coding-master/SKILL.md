@@ -68,6 +68,10 @@ record it in.
   The step is finished once all of them have merged. A bracket may hold
   chains too: in `[15 -> 16, 13]`, #16 follows #15 while #13 runs alongside.
 - `,` outside brackets separates tracks, which run side by side.
+- A track pasted from `/managerial`'s progress doc reads the same way, with
+  ` · ` for side by side; skip struck-out (done) issues, ignore markers and
+  labels, and treat `⏸ Wait for #N` as a hold until #N merges, never as a
+  step that starts #N.
 
 Examples:
 
