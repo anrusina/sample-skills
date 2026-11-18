@@ -66,7 +66,7 @@ git branch --show-current
 
 Check for an existing open PR first — if one exists, report its URL and stop:
 ```bash
-gh pr view --json url -q '.url' 2>/dev/null
+gh pr view --json url,state -q 'select(.state == "OPEN") | .url' 2>/dev/null
 ```
 
 Check for a PR body template:

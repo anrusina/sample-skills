@@ -86,7 +86,7 @@ If nothing is staged or unstaged, stop:
 If something is already staged, commit exactly what is staged — the developer chose it — and leave unstaged changes alone.
 
 If nothing is staged, stage the changes yourself with `git add <path>...`, naming each path (never `git add -A` or `git add .`). Include every modified or new file that belongs to the work being committed. Leave out, and name in the final report:
-- untracked tooling or scratch paths — `.worktrees/`, build output, editor files, and the paths in the *Scratch paths* section of each loaded stack asset
+- untracked tooling or scratch paths — `.worktrees/`, `.claude/worktrees/`, build output, editor files, and the paths in the *Scratch paths* section of each loaded stack asset
 - anything that looks like a secret (`.env`, credentials, keys) — check its contents before deciding
 - changes that clearly belong to different work than this commit (another issue, another session)
 
@@ -115,9 +115,9 @@ Once the issue number is known, create the branch without asking: `git checkout 
 
 **On any other branch** — check for an open PR:
 ```bash
-gh pr view --json number,url 2>/dev/null
+gh pr view --json number,url,state 2>/dev/null
 ```
-- Open PR found → add a **new** commit (continue to step 3). Reviewed history is never rewritten, so do not ask. Amend only when the invocation explicitly says to amend:
+- Open PR found (`state` is `OPEN`; a closed or merged one counts as none) → add a **new** commit (continue to step 3). Reviewed history is never rewritten, so do not ask. Amend only when the invocation explicitly says to amend:
   - amend: run quality gates (step 5). Then check whether the staged diff touches paths covered by steps 6–7:
     ```bash
     git diff --staged --name-only | grep -E '^docs/(design|specs)/'
@@ -190,7 +190,7 @@ Scan changed source and test files for `@spec SUBSYSTEM-NNN` tags, in whatever c
 ## step 8 — write commit message
 
 **Subject prefix** — extract issue number from the branch name:
-- Pattern `feature-42/...` or `fix-42/...` → prefix `[#42]`
+- Pattern `<prefix>-42/...` (`feature-42/...`, `docs-42/...`, any prefix) → prefix `[#42]`
 - No recognisable number → omit prefix
 
 **Conventional type** — choose one, from this table plus any type the *Commit message* section of a loaded asset adds:
