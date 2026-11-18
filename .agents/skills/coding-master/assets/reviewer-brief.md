@@ -6,14 +6,12 @@ Leave only the session's own placeholders as they are: `<sha>`, `<n>`, `<r>`,
 `<repo>` and `<base>` facts, written in literally; `<review-pr>` is
 `review-pr`'s invocation form from the skill names fact (e.g. `/review-pr` or
 `/sample-skills:review-pr`). Give it nothing from the task session: no
-summary of the change, no reasons, no expected findings. An independent
-reader is the point of this session.
+summary of the change, no reasons, no expected findings.
 
 Only when the reviewer starts before the task session has reported
-`Ready for review`, put this line first, above the `<review-pr>` line. A
-prompt whose first line is a slash command runs it at once; this way the
-session waits for the coordinator's go, then loads `<review-pr>` itself (it
-is not gated).
+`Ready for review`, put this line first, above the `<review-pr>` line, so
+the session waits for the coordinator's go instead of running the command
+at once:
 
 ```text
 Before running <review-pr> below, wait for the coordinator's message "Go: review PR #<P> at <sha>". Do nothing until it arrives.
@@ -50,5 +48,5 @@ The coordinator receives your wrap-up recap (if you give one), then your
 closing message, the first 400 characters in all, and acts on the signal at
 its start. So begin both the recap and the closing message with
 `Review posted: PR #<P> at <sha>, <n> new findings (<count by severity>), <r> earlier threads reopened or still open`, where
-<sha> is the short SHA of the head you reviewed, then the review URL. Nothing more is needed.
+<sha> is the short SHA of the head you reviewed, then the review URL.
 ```

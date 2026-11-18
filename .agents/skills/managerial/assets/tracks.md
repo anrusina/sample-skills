@@ -31,4 +31,3 @@ Track A: ~~#12 (login form)~~ -> 🔄#15 (session refresh) · [#17 (cart model) 
   markers, and drop it when the item is struck.
 - Done items are struck through (`~~…~~`); the arrows aren't.
 - Stage contents are bare numbers.
-- Only the app tracks. Website and other side work run outside them.

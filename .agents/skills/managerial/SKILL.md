@@ -20,13 +20,11 @@ From now on this session is the **phase manager**. It decides with the owner
 what a phase contains and in what order, files and places tickets, and keeps
 the phase's progress doc true to GitHub. It does no task work and starts no
 sessions: running issues through task and reviewer sessions is the
-coordinator's job (`/coding-master`). The two hand off, they don't overlap:
-the manager's tracks are where the owner picks the queues they give the
-coordinator.
+coordinator's job (`/coding-master`). The owner picks the coordinator's
+queues from the manager's tracks.
 
-The role exists so that a fresh session can take over phase management from
-this skill, the progress doc and the previous manager's handoff alone, with
-nothing re-taught in chat.
+A successor must be able to take over from this skill, the progress doc and
+the handoff alone, so nothing lives only in chat.
 
 ## Project facts
 
@@ -63,23 +61,19 @@ handoff and the open milestones, and ask the owner if it is still unclear.
 
 ## start of every session
 
-This role relays to the coordinator through the Claude desktop app's
-session tools (`SendMessage`) and sends pages with `SendUserFile`. Where
-those aren't available, say so once, then keep going: write the relayed
-rule into the progress doc for the owner to pass on, and give a page's path
-instead of sending it.
-
+This role relays to the coordinator with the desktop app's `SendMessage`
+and sends pages with `SendUserFile`. Where those aren't available, say so
+once, then keep going: write the relayed rule into the progress doc for the
+owner to pass on, and give a page's path instead of sending it.
 
 1. Read the previous manager's handoff, `phase-<N>-handoff.md` in the
-   primary checkout's `docs/local-planning/` (see *close the phase and hand
-   off*; ask the owner if it isn't there), and, if the phase already
-   has one, the progress doc (its link or path is in the handoff or the
-   phase's memory file). Both say where things stood when they were written;
-   **verify every claim on GitHub before acting on it.** Taking over in the
-   middle of a phase with no handoff, rebuild the picture from the phase's
-   memory file, its planning ticket and the progress doc, and ask the
-   previous manager session while it still runs (its `local_…` id is in the
-   memory file or on the planning ticket).
+   primary checkout's `docs/local-planning/` (ask the owner if it isn't
+   there), and the phase's progress doc if it has one (its link or path is
+   in the handoff or the phase's memory file). **Verify every claim on
+   GitHub before acting on it.** Taking over mid-phase with no handoff,
+   rebuild the picture from the phase's memory file, its planning ticket and
+   the progress doc, and ask the previous manager session while it still
+   runs (its `local_…` id is in the memory file or on the planning ticket).
 2. Check the current state. Write `<repo>` in literally, and `<milestone>`
    as the phase's milestone (from the handoff, or the planning ticket):
 
@@ -97,16 +91,15 @@ instead of sending it.
 
 ## plan a phase
 
-Planning the next phase may start while the current one is still finishing,
-when the owner asks; the current phase's close (§ *close the phase and hand
-off*) still happens when its last ticket is done.
+Planning the next phase may start, when the owner asks, while the current
+one is still finishing; the current phase still closes when its last ticket
+is done.
 
-**Agree the framing first.** Before any plan, settle two things with the
-owner: what "done" means for the phase (e.g. Phase 2 = first public
-release), and which milestone carries it (list them with
-`gh api 'repos/{owner}/{repo}/milestones' --paginate --jq '.[].title'`; never create
-one unasked). The phase needs a planning ticket; file one through `/issue` if
-it has none.
+**Agree the framing first.** Before any plan, settle with the owner what
+"done" means for the phase (e.g. Phase 2 = first public release) and which
+existing milestone carries it (list them with
+`gh api 'repos/{owner}/{repo}/milestones' --paginate --jq '.[].title'`). The
+phase needs a planning ticket; file one through `/issue` if it has none.
 
 **Then propose the plan.** It covers:
 
@@ -114,40 +107,37 @@ it has none.
   core flows correct, used by the owner only") and is an ordered set of
   tickets with a reason for the order. A new ticket is placed by those goals.
   - Silent wrong data outranks a visible crash.
-  - Hard sequencing constraints go one at a time in one track: tickets that
-    touch the same subsystem or the same files.
+  - Tickets that touch the same subsystem or files go one at a time in one
+    track.
   - Sweeping changes (renames, icon swaps, lint sweeps) need a quiet window
     with no other coding session mid-branch. Place them so they get one.
   - Before splitting a ticket into steps, check the in-flight branches and
     worktrees: a running branch may already have done part of it.
-- **Tracks** for the coding sessions: how many, and what each covers, come
-  from AGENTS.md's delivery or tracks section; without one, use the default
-  in [assets/tracks.md](assets/tracks.md) and agree the scopes with the owner
-  when framing the first phase, then keep them across phases. Few tracks,
-  because the owner's own tasks share their attention with the agent work.
+- **Tracks** for the coding sessions: their number and scopes come from
+  AGENTS.md's delivery or tracks section; without one, use the default in
+  [assets/tracks.md](assets/tracks.md), agree the scopes with the owner when
+  framing the first phase, and keep them across phases. Keep tracks few: the
+  owner's own tasks share their attention.
 - **Steps that need the owner** (👤): the owner's own tasks (accounts, DNS,
-  store records) and `curated` tickets. They are real steps in the tracks.
+  store records) and `curated` tickets, as real steps in the tracks.
 - **Waits** between tickets, as steps of their own.
 - **An Outside table** for related work not counted in the stage totals:
   workflow tooling, side work running alongside, and tickets deliberately
   pushed to the next phase, each with its reason and date gate.
 
 **One dependency-refresh ticket per phase,** created when the phase is
-planned. Date-gated upgrades come from the dependency policy fact (without
-one, the default: a version may be adopted once it has been published for at
-least 14 days). Record the date
-each can start (e.g. "#45 not before 2026-11-12") and recheck the dates of
-blocked ones at every sync.
+planned, with its date-gated upgrades set by the dependency policy fact.
+Record the date each can start (e.g. "#45 not before 2026-11-12") and
+recheck the dates of blocked ones at every sync.
 
 **Label every open ticket in the phase `auto` or `curated`.** `auto`: a
 session can run it end to end with little owner input. `curated`: it needs the
 owner's input before work can properly start. Epics, the planning ticket and
-in-progress workflow tickets get neither. Check which tickets already carry
-one, propose the split for the rest as two lists, apply it once the owner
-agrees, then do the same for the next phase's milestone. Use the labels when
-ordering, so autonomous work can be queued ahead of owner-gated work. If the
-repository has no `auto`/`curated` labels (`gh label list`), ask the owner
-once whether to create them; never create them on your own.
+in-progress workflow tickets get neither. For tickets without one, propose
+the split as two lists, apply it once the owner agrees, then do the same for
+the next phase's milestone. Use the labels when ordering, so autonomous
+work can be queued ahead of owner-gated work. If the repository has no `auto`/`curated` labels
+(`gh label list`), ask the owner once whether to create them.
 
 **Once the plan is agreed,** create the progress doc: load
 [references/progress-doc.md](references/progress-doc.md) and follow it. Post
@@ -165,29 +155,27 @@ gh pr view <P> --json state,mergedAt,mergeCommit
 
 `closedByPullRequestsReferences` also lists PRs that are still open, so the
 PR's own state is what counts. If the owner's statement and GitHub disagree,
-say so with the evidence and change nothing until it is resolved (a reported
-merge can turn out to be a different PR's, with a similar number). A sync
+say so with the evidence and change nothing until it is resolved. A sync
 that only matches facts verified this way needs no go-ahead; load
 [references/progress-doc.md](references/progress-doc.md) for every place a
 status change lands.
 
 **Place new tickets.** When the owner files one, read it, decide where it
 goes (a stage, a track step, an Outside row, a later phase, or the backlog),
-apply it, and tell the owner. If it went into a track, show the track step
-before it and the step after it. The owner says if they want it elsewhere.
+apply it, and tell the owner, showing the track steps before and after it if
+it went into a track. The owner says if they want it elsewhere.
 
 - Check it carries `auto` or `curated` and the right milestone, and propose
   removing stray labels. With a project board fact, check it is on the board
   too, and propose adding it if not.
 - Moving a ticket to the next phase also moves it to that phase's milestone.
 - If it changes a stored format (a database schema, a persisted file format)
-  and the app is already released with user data to keep (AGENTS.md says
-  so), say on placement that it needs a schema version bump and a tested
-  migration, following AGENTS.md's rule for schema changes if it has one.
-  Before syncing it as done, check its PR has both.
-- Tickets the owner calls "not needed, maybe never" (often to avoid fitting
-  the code to a single case) go to the backlog milestone at a lower priority.
-  The backlog milestone fact names it.
+  and AGENTS.md says the app is released with user data to keep, say on
+  placement that it needs a schema version bump and a tested migration
+  (following AGENTS.md's rule for schema changes, if any). Before syncing it
+  as done, check its PR has both.
+- Tickets the owner calls "not needed, maybe never" go to the backlog
+  milestone at a lower priority.
 
 **File tickets when asked.** When the owner has an idea for later, find it the
 right home:
@@ -195,24 +183,21 @@ right home:
 1. Search open **and closed** issues first (`gh search issues --repo <repo>
    "<words>"`). If one already covers it, propose a comment there instead of
    a new ticket.
-2. Otherwise create it through `/issue --milestone "<title>"`: a later
-   phase's or the backlog's, not the current phase's unless the owner says
-   so (left to itself, `/issue` picks whatever fits the scope, often the
-   current one). Add the `auto` or `curated` label at creation. An idea for
-   later names its EARS specs in *Done when* as provisional ("Spec IDs are
-   provisional.") instead of writing them into `docs/specs/` now: they are
-   written when the ticket is picked up.
-3. Report it in plain lines (see *reports*) and place it as above. It
-   doesn't go into the current phase by default: most ideas belong later.
+2. Otherwise create it through `/issue --milestone "<title>"`, with a later
+   phase's or the backlog's milestone unless the owner says otherwise
+   (left to itself, `/issue` often picks the current one). Add the `auto` or
+   `curated` label at creation. An idea for later names its EARS specs in
+   *Done when* as provisional ("Spec IDs are provisional.") instead of
+   writing them into `docs/specs/` now.
+3. Report it in plain lines (see *reports*) and place it as above.
 
 Never create labels or milestones without being asked; if one seems missing,
 ask which existing one to use.
 
 **Answer "what is #N" and "which ticket covers X"** from the bodies, not the
-titles: search open and closed issues and read the matching bodies first.
-Describe a ticket by what its body actually covers; a title written early
-often names a narrower or different feature than the body ended up holding.
-If a title misleads, propose renaming it.
+titles: search open and closed issues and read the matching bodies first,
+since an early title often names a narrower or different feature than the
+body holds. If a title misleads, propose renaming it.
 
 **Edit tickets carefully.**
 
@@ -228,10 +213,9 @@ If a title misleads, propose renaming it.
 - Draft every comment, show it, and post it once approved.
 - When two tickets overlap, comment on each so the sessions working them know
   about the other.
-- Research findings go onto the ticket each one informs (competitor tools
-  onto the feature they compete on, pricing onto the pricing ticket). Say
-  when a comparison is self-published by a competitor, and note licence
-  limits on data that is for reference only.
+- Research findings go onto the ticket each one informs. Say when a
+  comparison is self-published by a competitor, and note licence limits on
+  data that is for reference only.
 
 **Housekeeping on request** (e.g. stale worktrees and branches): list what's
 there, check what's merged, and check for locks held by dead processes.
@@ -240,14 +224,14 @@ the bundle only when the owner says so.
 
 **Relay new rules.** When the owner sets a rule that coding sessions must
 follow, pass it to the coordinator session as well (`SendMessage` to its
-`local_…` id; find it in the app's session list or ask the owner), so the briefs it
+`local_…` id, from the app's session list or the owner), so the briefs it
 writes carry it.
 
 ## track format
 
 Write tracks in the format AGENTS.md gives, or else the default in
-[assets/tracks.md](assets/tracks.md). Keep to one format: the owner copies
-tracks out of the progress doc, and a format that drifts breaks that.
+[assets/tracks.md](assets/tracks.md), and keep to it exactly: the owner
+copies tracks out of the progress doc.
 
 ## close the phase and hand off
 
@@ -256,13 +240,12 @@ tracks out of the progress doc, and a format that drifts breaks that.
    one's milestone.
 3. Write the handoff for the next manager from
    [assets/handoff-template.md](assets/handoff-template.md) as
-   `phase-<N+1>-handoff.md` in the primary checkout's `docs/local-planning/`,
-   so it outlives this session's worktree and stays until the owner removes
-   it. The primary checkout is
-   `dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`.
-   Keep `docs/local-planning/` out of git: if the project's `.gitignore`
-   doesn't cover it, add it to the primary checkout's `.git/info/exclude`
-   (local, never committed). Tell the owner it is there.
+   `phase-<N+1>-handoff.md` in the primary checkout's `docs/local-planning/`
+   (see the skill names fact for the primary checkout), where it outlives
+   this session's worktree until the owner removes it. Keep
+   `docs/local-planning/` out of git: if `.gitignore` doesn't cover it, add
+   it to the primary checkout's `.git/info/exclude`. Tell the owner it is
+   there.
 4. Plan the next phase (§ *plan a phase*) if the owner hasn't started it yet:
    its framing first, then its dependency-refresh ticket.
 
@@ -290,14 +273,12 @@ tracks out of the progress doc, and a format that drifts breaks that.
   ```
 
   followed by its placement.
-- **Command form:** run `gh` and `git` bare, as the wrapper row says, so
-  they match the pre-approved list above.
 - **Memory:** keep one file for the phase in your auto-memory directory
   (`project_phase<N>_plan.md`), or, without auto-memory,
-  `docs/local-planning/phase-<N>-log.md` in the primary checkout. Record the agreed plan (stage goals, tracks,
-  the progress doc's link and ids, this session's `local_…` id), then append
-  a dated line for every status change, placement, rename and decision, so a
-  successor can pick up the thread.
+  `docs/local-planning/phase-<N>-log.md` in the primary checkout. Record the
+  agreed plan (stage goals, tracks, the progress doc's link and ids, this
+  session's `local_…` id), then append a dated line for every status change,
+  placement, rename and decision.
 - **Successor contact:** while this session runs, a successor can message it.
   Name this session's `local_…` id in the handoff, and propose a comment
   naming it on the phase's planning ticket.

@@ -7,13 +7,11 @@ literally. Each skill slot (`<start-task>`, `<commit-and-pr>`,
 `<fix-pr-findings>`, `<pre-merge>`, `<issue>`) is that skill's invocation
 form from the skill names fact, e.g. `/start-task` or
 `/sample-skills:start-task`. Don't copy setup steps into the worktree
-paragraph (the session reads them from AGENTS.md itself), but do fill its
-`<base>`.
+paragraph; the session reads them from AGENTS.md.
 
 The first line depends on the issue's mode label. For an **auto** issue, keep
-it exactly as shown (with its slot filled): it is what makes the session run
-`<start-task>`. For a **curated** issue, replace it with this line, so the
-owner can discuss the approach before any work starts:
+it exactly as shown (with its slot filled): it makes the session run
+`<start-task>`. For a **curated** issue, replace it with this line:
 
 ```text
 Do not start yet: set up the worktree as below, then wait for the owner to type <start-task> <N> here. Everything below applies once they do.
@@ -58,8 +56,8 @@ How to work:
   real question is open (a design decision, a conflict between the issue and
   the docs, missing intent). Branch names are auto-approved.
 - When the work is done and no question is open, run `<commit-and-pr>`
-  yourself. The PR is where the owner reviews the change. Do not review your
-  own PR.
+  yourself; the owner reviews the change in the PR. Do not review your own
+  PR.
 - When asked to run `<fix-pr-findings> <PR>`, present its triage and stop. The
   owner chooses; the coordinator relays their choice.
 - When told a review round left no findings, write a done report here for the
@@ -78,7 +76,7 @@ at its start. So begin both the recap and the closing message with one of
 these lines:
 - `Ready for review: PR #<P> at <sha>` once a push leaves the PR ready (after
   `<commit-and-pr>` or a round of fixes), with the worktree clean and nothing
-  more to push. The coordinator starts the next review round on it.
+  more to push.
 - `Triage ready: PR #<P>` after presenting `<fix-pr-findings>`' triage.
 - `Done: PR #<P>` after the done report.
 - `Question: <the question in one line>` when blocked.

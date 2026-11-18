@@ -41,18 +41,18 @@ you need (doc, body node, status enum) in the phase's memory file.
 - 🔄 and strikethrough in the tracks;
 - its Outside table row, if it has one.
 
-A missed place is how the doc drifts; check all five every time.
+Check all five every time.
 
 **Sync every placement** the same way: adding or removing a ticket changes its
 stage table, that stage's items in the overview, the intro's total, and the
 track step it joins or leaves.
 
-**Read before every edit.** People edit the doc between turns, the owner
-included (they often set chips themselves). Keep a bookmark of the last
-revision you read or wrote, and start each editing turn by reading what
-changed since it. Never write your text over theirs. If a guard refuses an
-edit, re-read and redo it from what stands now. (For a Markdown doc, re-read
-the file at the start of every editing turn.)
+**Read before every edit.** People edit the doc between turns; the owner
+often sets chips themselves. Keep a bookmark of the last revision you read
+or wrote, and start each editing turn by reading what changed since it.
+Never write your text over theirs. If a guard refuses an edit, re-read and
+redo it from what stands now. (For a Markdown doc, re-read the file at the
+start of every editing turn.)
 
 ## Connector mechanics
 
