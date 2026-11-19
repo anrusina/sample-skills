@@ -63,7 +63,7 @@ its section. With none loaded, the steps' generic text applies.
 
 ## input
 
-`$ARGUMENTS`: a commit hash (analyse that commit only), `--squash` to fold the branch's unpushed commits into one (step 10), `--no-push` to commit without pushing, or empty for the full workflow. `--push` is accepted and ignored: pushing is the default.
+`$ARGUMENTS`: a commit hash (analyse that commit only), `--squash` to fold the branch's unpushed commits into one (step 10), `--no-push` to commit without pushing, or empty for the full workflow.
 
 ## step 1 — inspect changes
 
