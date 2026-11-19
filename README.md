@@ -88,7 +88,7 @@ The plugin loads the assets whose conditions hold for the project in front of it
 
 | Kind | Ids |
 |---|---|
-| stack | `flutter`, `node`, `python`, `rust`, `go`, `jvm`, `ruby` |
+| stack | `flutter`, `node`, `python` |
 | field | `accessibility`, `i18n`, `frontend-ui`, `web-site`, `generated-artifacts`, `fonts` |
 
 A skill only has the assets it has something to say for: `commit` has a dependency-registry lookup per stack, `review-pr` has review checks per stack and field. The full contract (facts block, slots, ids) is in [docs/skill-anatomy.md](docs/skill-anatomy.md).

@@ -244,10 +244,6 @@ them at once.
 | stack | `flutter` | `pubspec.yaml` at the repo root |
 | stack | `node` | `package.json` at the repo root (covers TypeScript, React, Astro and other Node toolchains) |
 | stack | `python` | `pyproject.toml`, `requirements*.txt` or `setup.py` at the repo root |
-| stack | `rust` | `Cargo.toml` at the repo root |
-| stack | `go` | `go.mod` at the repo root |
-| stack | `jvm` | `pom.xml` or `build.gradle*` at the repo root |
-| stack | `ruby` | `Gemfile` or a `*.gemspec` at the repo root |
 | field | `accessibility` | AGENTS.md has accessibility rules (a section, or WCAG named) |
 | field | `i18n` | the project ships more than one locale, or AGENTS.md has localization rules (translation files, no hard-coded strings) |
 | field | `frontend-ui` | the project has a user interface with a theme or design tokens, or AGENTS.md has layout or theming rules |

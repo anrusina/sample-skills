@@ -21,10 +21,6 @@ allowed-tools:
   - Bash(curl -s https://pub.dev/*)
   - Bash(curl -s https://registry.npmjs.org/*)
   - Bash(curl -s https://pypi.org/*)
-  - Bash(curl -s https://crates.io/*)
-  - Bash(curl -s https://proxy.golang.org/*)
-  - Bash(curl -s https://repo1.maven.org/*)
-  - Bash(curl -s https://rubygems.org/*)
 ---
 
 You inspect changes, run quality gates, write the commit message, commit, and push.

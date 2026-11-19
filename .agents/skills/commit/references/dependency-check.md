@@ -20,8 +20,8 @@ answer. Either way, propose a stack asset for that registry
 (`assets/stack/<id>.md` with a *Dependency registry* section).
 
 When the project configures a private registry or mirror (an `.npmrc`,
-`pip.conf`, Cargo `config.toml`, `GOPROXY`, Maven `settings.xml`), check the
-public registry the package actually comes from and say which one you used.
+`pip.conf`), check the public registry the package actually comes from and
+say which one you used.
 
 ## 2. Assess the source repository
 
