@@ -3,7 +3,7 @@
 Source: https://agentskills.io/skill-creation/best-practices
 
 Evaluate each `.agents/skills/<name>/SKILL.md` against this checklist.
-Report findings as **Bloat**, **Scope**, **Calibration**, **Structure**, or **Frontmatter**.
+Report findings as **Bloat**, **Scope**, **Calibration**, **Structure**, **Frontmatter** or **Stale**.
 
 ---
 
@@ -80,3 +80,14 @@ Flag a missing pattern only when the task would benefit from it.
 Flag any dated model ID (`claude-haiku-4-5-20251001`, say) as stale — pin the `haiku` alias. Flag any non-haiku `model` pin as stale — judgment skills omit the field.
 Flag `haiku` on skills that require non-obvious judgment or cross-file synthesis as under-powered.
 Flag a routine mechanical skill with no `model` as over-powered — it should pin haiku.
+
+## 7. Stale references (Stale)
+
+If the skill names labels, fetch the label set (`gh label list`). Flag:
+
+- a label the skill names that no longer exists in the repository
+- a branch pattern that differs from [git-conventions.md](git-conventions.md) § Branch names
+- a hardcoded value (project board number, owner, repository name) that has changed
+- a reference to another skill (`/fix-pr-findings`, `/pre-merge`) that was renamed or removed
+
+Leave a facts block alone: in a project copy `/setup-skills` writes it.

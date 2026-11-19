@@ -76,12 +76,7 @@ its section. With none loaded, the steps' generic text applies.
 
 7. **Docs checks.** Apply the *Docs checks* section of each loaded asset to the changed files. With none loaded, skip this step.
 
-8. **Audit the skill files this branch changed** (under `.agents/skills/`; skip this step when it changed none) — load [../_shared/agentskills-best-practices.md](../_shared/agentskills-best-practices.md) and evaluate each changed `SKILL.md` against it. If one names labels, fetch the label set (`gh label list`). Check each for:
-   - Labels referenced in the skill that no longer exist in the repo
-   - Branch naming patterns that differ from the convention in the `commit` skill
-   - Hardcoded values (project board number, owner, repo name) that have changed
-   - Workflow references to other skills (e.g. `/fix-pr-findings`, `/pre-merge`) that have been renamed or removed
-   Report each as **Broken** or **Stale** in step 9, saying which reference category it is (bloat, scope, calibration, structure, frontmatter). Leave a facts block alone: in a project copy `/setup-skills` writes it.
+8. **Audit the skill files this branch changed** (under `.agents/skills/`; skip this step when it changed none) — load [../_shared/agentskills-best-practices.md](../_shared/agentskills-best-practices.md) and evaluate each changed `SKILL.md` against it, its stale-reference checks included. Report each as **Broken** or **Stale** in step 9, saying which category it is (bloat, scope, calibration, structure, frontmatter, stale).
 
 9. **Report gaps:**
    - **Broken** — factually wrong (missing spec, removed component still in HLD)
