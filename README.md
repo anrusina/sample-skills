@@ -170,7 +170,7 @@ Copy [`AGENTS.md`](AGENTS.md) too if the project has none (or merge its sections
       assets/            ← output templates, plus stack/ and field/ assets and their index.md
       references/        ← reference docs loaded on demand
       scripts/           ← fixed git/gh sequences the skill runs (see docs/skill-anatomy.md § Scripts)
-    _shared/             ← text, scripts and setup assets more than one skill uses (not a skill)
+    _shared/             ← text, scripts and stack assets more than one skill uses (not a skill)
 .claude/
   skills -> ../.agents/skills   ← symlink for Claude Code project discovery
 .claude-plugin/

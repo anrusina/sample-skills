@@ -63,6 +63,7 @@ die() { echo "setup.sh: $*" >&2; exit 1; }
 DEST=.agents/skills
 LOCK=.agents/skills-lock.json
 SHARED=_shared   # not a skill: the files skills share, installed with any of them
+KINDS="stack field doc-comments"   # assets/<kind>/<id>.md, connected per id
 
 # skills_of <profile>: the profile's skills (_shared is never one).
 skills_of() { pget "$1" skills | grep -vx "$SHARED" || true; }
@@ -197,7 +198,9 @@ facts_block() {
 present_assets() {
   local id
   for id in $(pget "$1" assets); do
-    if [ -f "$2/assets/stack/$id.md" ] || [ -f "$2/assets/field/$id.md" ]; then echo "$id"; fi
+    for k in $KINDS; do
+      if [ -f "$2/assets/$k/$id.md" ]; then echo "$id"; break; fi
+    done
   done
 }
 
@@ -259,7 +262,7 @@ wanted() {
   present=$(present_assets "$profile" "$dir")
   (cd "$dir" && find . -type f | sed 's|^\./||' | sort) | while IFS= read -r f; do
     case "$f" in
-      assets/stack/*|assets/field/*)
+      assets/stack/*|assets/field/*|assets/doc-comments/*)
         id=$(basename "$f" .md)
         if has_line "$present" "$id"; then echo "$f"; fi ;;
       assets/index.md) if [ -n "$present" ]; then echo "$f"; fi ;;
@@ -430,7 +433,7 @@ assets() {
   for s in $(installed_dirs "$profile" "$skills"); do
     [ -d "$DEST/$s" ] || continue
     present=$(present_assets "$profile" "$skills/$s")
-    for f in "$skills/$s"/assets/stack/*.md "$skills/$s"/assets/field/*.md; do
+    for f in $(for k in $KINDS; do echo "$skills/$s/assets/$k/"*.md; done); do
       [ -f "$f" ] || continue
       id=$(basename "$f" .md); rel=${f#"$skills/$s/"}
       if has_line "$present" "$id"; then
@@ -449,7 +452,8 @@ assets() {
     else
       rm -f "$DEST/$s/assets/index.md"
     fi
-    rmdir "$DEST/$s/assets/stack" "$DEST/$s/assets/field" "$DEST/$s/assets" 2>/dev/null || true
+    for k in $KINDS; do rmdir "$DEST/$s/assets/$k" 2>/dev/null || true; done
+    rmdir "$DEST/$s/assets" 2>/dev/null || true
     [ "$s" = "$SHARED" ] || rerender_one "$profile" "$s" "$skills/$s/SKILL.md"
   done
 }
