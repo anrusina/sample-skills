@@ -98,7 +98,7 @@ git -C <tmp> rev-parse HEAD
 `remove` on a managed copy, also check out the lock's commit
 (`git -C <tmp> checkout --quiet <old>`), so a new file matches the version
 the copy holds. The upstream skills are `<tmp>/.agents/skills/<name>/`, every
-folder there except `setup-skills`.
+folder there with a `SKILL.md` except `setup-skills` (`_shared` is not one).
 
 ## step 2 — work out the facts (install)
 
@@ -282,7 +282,8 @@ when nothing is left to decide).
 
 A new upstream skill is offered (`add <skill>`), not added; a new upstream
 asset id is listed, not connected. With no upstream change, `update` still
-rewrites the facts blocks from the profile.
+rewrites the facts blocks from the profile. If `.claude/skills` is a real
+folder without `_shared`, link it as install step 4.3 does.
 
 **Detached copy.** Read the facts back from the facts blocks into a temporary
 profile, print each upstream file with `setup.sh render-file` into a
