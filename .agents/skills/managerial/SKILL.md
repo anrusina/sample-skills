@@ -241,7 +241,7 @@ copies tracks out of the progress doc.
 3. Write the handoff for the next manager from
    [assets/handoff-template.md](assets/handoff-template.md) as
    `phase-<N+1>-handoff.md` in the primary checkout's `docs/local-planning/`
-   (see the skill names fact for the primary checkout), where it outlives
+   (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`), where it outlives
    this session's worktree until the owner removes it. Keep
    `docs/local-planning/` out of git: if `.gitignore` doesn't cover it, add
    it to the primary checkout's `.git/info/exclude`. Tell the owner it is

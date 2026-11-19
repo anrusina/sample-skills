@@ -285,7 +285,7 @@ Verify the merge first (`gh pr view <P> --json state,mergeCommit` shows
   `[its title](#local_<id>)`, with the id from the tool result or the linked
   sessions note.
 - **Status page.** Keep `docs/local-planning/coding-master-tracks.html` in
-  the primary checkout, which outlives this session's worktree. Keep it out
+  the primary checkout (`worktree.sh root` prints it), which outlives this session's worktree. Keep it out
   of git: if `.gitignore` doesn't cover `docs/local-planning/`, add that path
   to the primary checkout's `.git/info/exclude`. The page holds, under each
   track title, a plain `a -> b` flow line, then a table (Issue / Mode /
