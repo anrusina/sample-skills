@@ -2,10 +2,10 @@
 
 ## Setup
 
-A fresh worktree has no virtual environment. Create one and install into it,
-from each requirements file the build section's commands rely on (one venv
-per file, when the project keeps separate environments), or from
-`pyproject.toml` when there is none, unless the first gate run creates it:
+A fresh worktree has no virtual environment. Most projects' first gate
+creates one (a `make` target, `tox`, `nox`); when it doesn't, suggest one
+installed from the requirements file(s), or from `pyproject.toml` when there
+is none:
 
 ```bash
 python3 -m venv .venv
