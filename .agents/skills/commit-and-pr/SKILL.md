@@ -24,7 +24,9 @@ shell variable.
 <!-- facts:end -->
 
 If `/commit` or `/pr` does not load in the form the *skill names* row gives,
-run the plugin's (`/sample-skills:commit`, `/sample-skills:pr`).
+run the plugin's (`/sample-skills:commit`, `/sample-skills:pr`); failing that,
+read its `SKILL.md` beside this skill's folder (`../commit/`, or
+`../sample-skills-commit/` in a Codex install) and follow it.
 
 ## invocation
 
