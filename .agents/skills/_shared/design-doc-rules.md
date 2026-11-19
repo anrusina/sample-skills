@@ -19,7 +19,8 @@ says when it applies and how a breach is reported.
      icon"), unless it also restates the value: `` `errorFieldColor`
      (#d93025) `` is drift.
    - Display rules read as behaviour ("the system shall show X when Y").
-   - Content marked `<!-- UI concern -->` is a note, not a breach.
+   - A look-and-feel detail that can't be avoided is marked
+     `<!-- UI concern -->`; marked content is a note, not a breach.
    - Open-questions sections hold design and architecture decisions, not UI
      questions.
 
