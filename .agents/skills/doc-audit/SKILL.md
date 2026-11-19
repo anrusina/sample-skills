@@ -61,7 +61,7 @@ its section. With none loaded, the steps' generic text applies.
 3. **LLD checks.** For each changed subsystem:
    - Does `docs/specs/LLD-<subsystem>.md` exist?
    - Does it still accurately describe the current data flow and component boundaries?
-   - Check it against the [design-doc rules](../_shared/design-doc-rules.md): rules 1, 2 and 3 always; rule 4 only when AGENTS.md defines telemetry signals for LLDs, and rule 5 only when it has error-handling rules for LLDs. A breach is **Broken**, except a missing `## Telemetry signals` section, which is **Missing**.
+   - Check it against the [design-doc rules](../_shared/design-doc-rules.md): rules 1, 2 and 3 always; rule 4 only when AGENTS.md defines telemetry signals for LLDs, and rule 5 only when it has error-handling rules for LLDs. A breach is **Broken**, except a missing `## Telemetry signals` section, which is **Missing**, and a UI question in Open Questions, which is a note.
    - Apply the *LLD checks* section of each loaded asset.
 
 4. **Check `docs/specs/HLD.md`:**
