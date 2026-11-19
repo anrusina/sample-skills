@@ -133,7 +133,7 @@ Replies take the forms and commands in [../_shared/review-replies.md](../_shared
 
 8. **Reply on each fixed finding:** `Addressed in <short-sha> — <what changed>.`
 
-8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — …`; otherwise create the proposed issue (labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — …`. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
+8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — …`; otherwise create the proposed issue as `/pre-merge` phase 4 does (duplicate search, its issue-body template, labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — …`. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
 
 8c. **Reply on each finding the developer chose to leave as-is:** `Left as-is: <reason>.`
 
