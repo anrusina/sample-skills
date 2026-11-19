@@ -2,16 +2,17 @@
 
 ## Setup
 
-A fresh worktree has no virtual environment:
+A fresh worktree has no virtual environment. Create one and install into it,
+from each requirements file the build section's commands rely on (one venv
+per file, when the project keeps separate environments), or from
+`pyproject.toml` when there is none, unless the first gate run creates it:
 
 ```bash
 python3 -m venv .venv
-.venv/bin/pip install -r requirements.txt
+.venv/bin/pip install -r requirements.txt   # or: .venv/bin/pip install -e .
 ```
 
-Use each requirements file the build section's commands rely on (one venv
-per file, when the project keeps separate environments). If an install
-fails, stop and report it as a setup gap, not a finding.
+A failed install is a setup gap, not a finding: report it.
 
 ## Re-run
 
