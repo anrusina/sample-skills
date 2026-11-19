@@ -64,12 +64,15 @@ DEST=.agents/skills
 LOCK=.agents/skills-lock.json
 SHARED=_shared   # not a skill: the files skills share, installed with any of them
 
+# skills_of <profile>: the profile's skills (_shared is never one).
+skills_of() { pget "$1" skills | grep -vx "$SHARED" || true; }
+
 # installed_dirs <profile> <skills>: the folders a managed copy tracks, the
 # skills not kept plus _shared.
 installed_dirs() {
   local kept s
   kept=$(pget "$1" kept)
-  for s in $(pget "$1" skills) "$SHARED"; do
+  for s in $(skills_of "$1") "$SHARED"; do
     if ! has_line "$kept" "$s" && [ -d "$2/$s" ]; then echo "$s"; fi
   done
 }
@@ -125,7 +128,7 @@ facts_block() {
   local profile=$1 skill=$2 generic=$3
   local kind installed assets wrapper
   kind=$(pget "$profile" kind); kind=${kind:-managed}
-  installed=$(pget "$profile" skills; pget "$profile" kept)
+  installed=$(skills_of "$profile"; pget "$profile" kept)
   assets=$(present_assets "$profile" "$(dirname "$generic")")
   wrapper=$(pget "$profile" wrapper facts)
 
@@ -243,9 +246,9 @@ render_skill_md() {
 render_index() {
   local keep
   keep=$(present_assets "$1" "$2" | paste -sd'|' -)
-  awk -v keep="^(${keep:-.^})\$" '
-    /^\| (stack|field) \| \[?`/ { id = $0; sub(/^\| (stack|field) \| \[?`/, "", id); sub(/`.*/, "", id); if (id !~ keep) next }
-    /^\| `(stack|field)\/[^`]*\.md`/ { id = $0; sub(/^\| `(stack|field)\//, "", id); sub(/\.md`.*/, "", id); if (id !~ keep) next }
+  awk -v keep="^(${keep})\$" -v none="${keep:+0}" '
+    /^\| (stack|field) \| \[?`/ { id = $0; sub(/^\| (stack|field) \| \[?`/, "", id); sub(/`.*/, "", id); if (none != "0" || id !~ keep) next }
+    /^\| `(stack|field)\/[^`]*\.md`/ { id = $0; sub(/^\| `(stack|field)\//, "", id); sub(/\.md`.*/, "", id); if (none != "0" || id !~ keep) next }
     { print }' "$3"
 }
 
@@ -267,7 +270,7 @@ wanted() {
 
 # render_file <profile> <skill> <upstream file> <rel> [<upstream skill dir>]
 render_file() {
-  local profile=$1 skill=$2 file=$3 rel=$4 dir=${5:-$(dirname "$3")}
+  local profile=$1 skill=$2 file=$3 rel=$4 dir=${5:-${3%/"$4"}}
   case "$rel" in
     SKILL.md) render_skill_md "$profile" "$skill" "$file" "$file" ;;
     assets/index.md) render_index "$profile" "$dir" "$file" ;;
@@ -458,7 +461,7 @@ case "$cmd" in
   rerender)
     [ $# -ge 2 ] || usage
     profile=$1 skills=$2; shift 2
-    [ $# -gt 0 ] || set -- $(pget "$profile" skills)
+    [ $# -gt 0 ] || set -- $(skills_of "$profile")
     for s in "$@"; do
       [ -d "$DEST/$s" ] || continue
       rerender_one "$profile" "$s" "$skills/$s/SKILL.md"; echo "rerender $DEST/$s/SKILL.md"
