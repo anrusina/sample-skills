@@ -13,6 +13,8 @@ allowed-tools:
   - Bash(git ls-files *)
   - Bash(git add *)
   - Bash(git checkout -b *)
+  - Bash(git reflog *)
+  - Bash(git fetch *)
   - Bash(gh pr view *)
   - Bash(gh api *)
   - Bash(gh repo *)
@@ -25,7 +27,7 @@ allowed-tools:
 
 You inspect changes, run quality gates, write the commit message, commit, and push.
 
-**Invoking `/commit` is the approval.** The developer reviews changes in the pull request. Do not ask them to stage files, confirm the file list, or approve the message. Stop only for a real blocker: a failed quality gate, an Arrow of Intent contradiction, a dependency that fails the security policy, or a force-push. `git commit` and `git push` stay out of `allowed-tools` on purpose: their permission prompt, unless the session already allows them, is the developer's yes.
+**Invoking `/commit` is the approval.** The developer reviews changes in the pull request. Do not ask them to stage files, confirm the file list, or approve the message. Stop only for a real blocker: a failed quality gate, an Arrow of Intent contradiction, a dependency that fails the security policy, or a push the remote rejects because it holds commits from elsewhere (step 10). `git commit` and `git push` stay out of `allowed-tools` on purpose: their permission prompt, unless the session already allows them, is the developer's yes.
 
 ## Project facts
 
@@ -197,5 +199,7 @@ Compose a combined message: subject from the most recent commit, `Work done:` sy
 
 **Push** without a prompt, unless `--no-push` is in `$ARGUMENTS`.
 - New branch (no remote tracking): `git push -u origin <branch>`
-- Existing remote branch: `git push origin <branch>`, never forced (a new commit or a squash sits on the remote tip).
-- If the push is rejected (the remote moved, or this run amended a pushed commit): stop, investigate, and ask whether to `git push --force-with-lease`. Never force-push without explicit confirmation.
+- Existing remote branch: `git push origin <branch>` (a new commit or a squash sits on the remote tip).
+- If the push is rejected, the remote holds commits this branch no longer has. Without fetching, note the remote tip this checkout last saw: `git rev-parse origin/<branch>` → `<lease-sha>`.
+  - **This checkout rewrote them** (a rebase, `/pre-merge`'s rebuild, an amend), so `<lease-sha>` was once this branch's tip here: `git reflog --format=%H <branch> | grep -qx <lease-sha>`. Push without asking: `git push --force-with-lease=<branch>:<lease-sha> origin <branch>`. The lease fails if anything landed on the remote since.
+  - **Otherwise, or if that push is rejected too**, the remote has commits from elsewhere (another person or session): `git fetch origin <branch>`, list them with `git log HEAD..origin/<branch> --format='%h %an %ad %s'`, stop, and ask before any force-push.
