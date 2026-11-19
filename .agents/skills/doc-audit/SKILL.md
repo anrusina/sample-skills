@@ -87,7 +87,7 @@ its section. With none loaded, the steps' generic text applies.
 
 ## conventions
 
-Load [../_shared/code-doc-conventions.md](../_shared/code-doc-conventions.md) when a finding concerns documentation style or a Mermaid diagram (step 5) — it holds the documentation style, doc comment rules, anti-patterns, and Mermaid diagram conventions. For doc-comment syntax and an example, apply the *Doc comments* section of the loaded stack asset.
+Load [../_shared/code-doc-conventions.md](../_shared/code-doc-conventions.md) when a finding concerns documentation style or a Mermaid diagram (step 5) — it holds the documentation style, doc comment rules, anti-patterns, and Mermaid diagram conventions. For doc-comment syntax and an example, apply the *Code comments* section of the loaded stack asset.
 
 ## rules
 

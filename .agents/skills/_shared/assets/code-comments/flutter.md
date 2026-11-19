@@ -1,6 +1,6 @@
 # Flutter / Dart
 
-## Doc comments
+## Code comments
 
 - Dartdoc: `///` line comments, never `/** … */` or a plain `//` where a doc
   comment is meant.

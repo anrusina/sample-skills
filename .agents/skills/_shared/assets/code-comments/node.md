@@ -1,6 +1,6 @@
 # Node (TypeScript, JavaScript, React, Astro)
 
-## Doc comments
+## Code comments
 
 - TSDoc: `/** … */` blocks directly above the declaration. A `//` comment is
   not picked up by editors or doc tools.

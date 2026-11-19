@@ -1,5 +1,5 @@
 # Flutter / Dart
 
-## Doc comments
+## Code comments
 
-The *Doc comments* section of [../../../_shared/assets/doc-comments/flutter.md](../../../_shared/assets/doc-comments/flutter.md).
+The *Code comments* section of [../../../_shared/assets/code-comments/flutter.md](../../../_shared/assets/code-comments/flutter.md).

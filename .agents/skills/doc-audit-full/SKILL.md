@@ -58,7 +58,7 @@ Run `/doc-audit` (its `--review`) and report its findings; it loads its own asse
 
 ## --fix-comments
 
-1. Load [../_shared/code-doc-conventions.md](../_shared/code-doc-conventions.md); take the syntax from the *Doc comments* section of the loaded stack asset.
+1. Load [../_shared/code-doc-conventions.md](../_shared/code-doc-conventions.md); take the syntax from the *Code comments* section of the loaded stack asset.
 2. Add or update doc comments only on public API where the contract is non-obvious:
    - Imperative summary sentence.
    - Document parameters and return values as short fragments.

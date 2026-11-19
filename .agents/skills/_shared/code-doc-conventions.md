@@ -3,7 +3,7 @@
 Write for the developer who needs to understand intent, not implementation.
 
 Language-neutral rules for doc comments and diagrams. The doc-comment syntax,
-the identifier-linking style and an example come from the *Doc comments*
+the identifier-linking style and an example come from the *Code comments*
 section of the loaded stack asset (`assets/stack/<id>.md`).
 
 | Rule | What it means |

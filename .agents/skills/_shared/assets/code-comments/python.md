@@ -1,6 +1,6 @@
 # Python
 
-## Doc comments
+## Code comments
 
 - Docstrings (PEP 257): a triple-double-quoted string as the first statement
   of the module, class or function. A `#` comment above a `def` is not a

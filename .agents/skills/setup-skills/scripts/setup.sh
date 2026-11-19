@@ -63,7 +63,7 @@ die() { echo "setup.sh: $*" >&2; exit 1; }
 DEST=.agents/skills
 LOCK=.agents/skills-lock.json
 SHARED=_shared   # not a skill: the files skills share, installed with any of them
-KINDS="stack field doc-comments"   # assets/<kind>/<id>.md, connected per id
+KINDS="stack field code-comments"   # assets/<kind>/<id>.md, connected per id
 
 # skills_of <profile>: the profile's skills (_shared is never one).
 skills_of() { pget "$1" skills | grep -vx "$SHARED" || true; }
@@ -262,7 +262,7 @@ wanted() {
   present=$(present_assets "$profile" "$dir")
   (cd "$dir" && find . -type f | sed 's|^\./||' | sort) | while IFS= read -r f; do
     case "$f" in
-      assets/stack/*|assets/field/*|assets/doc-comments/*)
+      assets/stack/*|assets/field/*|assets/code-comments/*)
         id=$(basename "$f" .md)
         if has_line "$present" "$id"; then echo "$f"; fi ;;
       assets/index.md) if [ -n "$present" ]; then echo "$f"; fi ;;

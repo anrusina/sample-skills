@@ -1,5 +1,5 @@
 # Python
 
-## Doc comments
+## Code comments
 
-The *Doc comments* section of [../../../_shared/assets/doc-comments/python.md](../../../_shared/assets/doc-comments/python.md).
+The *Code comments* section of [../../../_shared/assets/code-comments/python.md](../../../_shared/assets/code-comments/python.md).

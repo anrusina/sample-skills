@@ -1,8 +1,8 @@
 # Node (TypeScript, JavaScript, React, Astro)
 
-## Doc comments
+## Code comments
 
-The *Doc comments* section of [../../../_shared/assets/doc-comments/node.md](../../../_shared/assets/doc-comments/node.md).
+The *Code comments* section of [../../../_shared/assets/code-comments/node.md](../../../_shared/assets/code-comments/node.md).
 
 ## Docs checks
 
