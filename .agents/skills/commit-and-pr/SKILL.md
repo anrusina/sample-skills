@@ -12,15 +12,13 @@ started with says to run it once the work is done.
 ## Project facts
 
 <!-- facts:begin -->
-This is the generic copy: no project facts are written into it. Work out each
-fact below once, at the start of the run, then write its value literally into
-every command that needs it. Each Bash call starts a fresh shell, so a variable
-set in one call is empty in the next; never carry a value across calls in a
-shell variable.
+This is the generic copy: work out the facts below as
+[../_shared/facts.md](../_shared/facts.md) says. A row marked *shared* takes
+its rule from there.
 
 | Fact | How to find it |
 |---|---|
-| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
+| skill names | *shared* |
 <!-- facts:end -->
 
 If `/commit` or `/pr` does not load in the form the *skill names* row gives,

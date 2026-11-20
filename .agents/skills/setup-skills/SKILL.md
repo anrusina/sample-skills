@@ -102,7 +102,8 @@ folder there with a `SKILL.md` except `setup-skills` (`_shared` is not one).
 
 ## step 2 — work out the facts (install)
 
-Work out each fact in the anatomy's table and note where each value came from
+Work out each fact (the shared rows in the clone's `.agents/skills/_shared/facts.md`,
+and the anatomy's optional rows) and note where each value came from
 (`gh`, an AGENTS.md section by name, a manifest, the Makefile, an existing
 skill, or "not found"). A value found here is never looked up again, so look
 wider than the skills' own rules:

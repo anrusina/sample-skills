@@ -30,39 +30,24 @@ No review item is optional: each one ends fixed in this PR or tracked as an issu
 ## Project facts
 
 <!-- facts:begin -->
-This is the generic copy: no project facts are written into it. Work out each
-fact below once, at the start of the run, then write its value literally into
-every command that needs it. Each Bash call starts a fresh shell, so a variable
-set in one call is empty in the next; never carry a value across calls in a
-shell variable.
+This is the generic copy: work out the facts below as
+[../_shared/facts.md](../_shared/facts.md) says. A row marked *shared* takes
+its rule from there.
 
 | Fact | How to find it |
 |---|---|
-| `<repo>` | `gh repo view --json nameWithOwner -q .nameWithOwner` |
-| `<base>` | `gh repo view --json defaultBranchRef -q .defaultBranchRef.name`; if that fails, `git symbolic-ref --short refs/remotes/origin/HEAD \| sed 's\|^origin/\|\|'` |
-| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'` (leave `--wrap` out when it is none); run every other command bare, so it matches `allowed-tools` |
-| gates | AGENTS.md build section: the format, lint/analyze and test commands, in order, or the one command that runs them all |
-| setup | AGENTS.md *Worktree setup*: the steps a fresh worktree needs (dependencies, code generation), or none |
-| build-input docs | AGENTS.md *Project structure*: Markdown the build reads, or none. Whatever AGENTS.md says, Markdown or MDX inside the source tree that the build reads (content collections, MDX pages, a docs site's sources) counts too. A change to any of it runs the gates like code |
+| `<repo>` | *shared* |
+| `<base>` | *shared* |
+| wrapper | *shared* |
+| gates | *shared* |
+| setup | *shared* |
+| build-input docs | *shared* |
 | pre-merge checks | AGENTS.md *Pre-merge checks*: the checks run only before a merge (local suites and their fixture folders, checks the developer runs by hand, a CI-equivalent workflow, a version bump with its command and the files it writes, release notes), or none (skip the steps that need it) |
 | releases | AGENTS.md *Releases*: whether releases are tagged, and the tag pattern, or none (skip the steps that need it) |
 | project board | AGENTS.md *Project board*: the board's owner and number, or none (skip the steps that need it) |
 | milestones | AGENTS.md *Milestones*: how a new issue's milestone is chosen, or none (skip the steps that need it) |
-| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
-| assets | the stack and field assets that apply: see *Assets* below |
-
-**AGENTS.md sections by role.** Projects name sections differently. The build
-section is the one that lists the build, format, lint and test commands,
-whatever it is called (*Build and test commands*, *Build commands*, *Tools*,
-*Commands*). Match every section this skill reads the same way: by what it
-holds, not by its exact title. When a required fact is missing, ask the
-developer once, use the answer, and tell them which AGENTS.md section to
-record it in.
-
-**Assets.** This skill keeps stack and field assets under `assets/stack/` and
-`assets/field/`; `assets/index.md` says when each applies. At the start of the
-run, load every asset whose condition holds, and apply each where a step names
-its section. With none loaded, the steps' generic text applies.
+| skill names | *shared* |
+| assets | *shared* |
 <!-- facts:end -->
 
 `<N>` below is the PR number and `origin/<base>` the remote default branch

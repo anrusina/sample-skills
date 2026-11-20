@@ -142,14 +142,18 @@ facts_block() {
   fi
   echo
 
-  # rows: "<fact name><TAB><rule>" between the markers
-  awk '/^<!-- facts:begin -->$/ { on = 1; next } /^<!-- facts:end -->$/ { on = 0 }
-       on && /^\| / && !/^\| Fact \|/ && !/^\|---/ {
-         gsub(/\\\|/, "\001")
-         n = split($0, c, "|"); name = c[2]; rule = c[3]
+  # rows: "<fact name><TAB><rule>" between the markers; a *shared* row takes
+  # its rule from _shared/facts.md
+  shared="$(dirname "$generic")/../$SHARED/facts.md"; [ -f "$shared" ] || shared=/dev/null
+  awk 'function row(line,  n, c, i) {
+         gsub(/\\\|/, "\001", line)
+         n = split(line, c, "|"); name = c[2]; rule = c[3]
          for (i = 4; i < n; i++) rule = rule "|" c[i]
-         gsub(/^ +| +$/, "", name); gsub(/^ +| +$/, "", rule); gsub("\001", "\\|", rule)
-         print name "\t" rule }' "$generic" |
+         gsub(/^ +| +$/, "", name); gsub(/^ +| +$/, "", rule); gsub("\001", "\\|", rule) }
+       /^\| Fact \|/ || /^\|---/ { next }
+       FILENAME == ARGV[1] { if (/^\| /) { row($0); rules[name] = rule } next }
+       /^<!-- facts:begin -->$/ { on = 1; next } /^<!-- facts:end -->$/ { on = 0 }
+       on && /^\| / { row($0); if (rule == "*shared*") rule = rules[name]; print name "\t" rule }' "$shared" "$generic" |
   while IFS="$(printf '\t')" read -r name rule; do
     key=$(printf '%s' "$name" | tr -d '`<>' | tr 'A-Z ' 'a-z-')
     case "$key" in

@@ -29,28 +29,18 @@ the handoff alone, so nothing lives only in chat.
 ## Project facts
 
 <!-- facts:begin -->
-This is the generic copy: no project facts are written into it. Work out each
-fact below once, at the start of the run, then write its value literally into
-every command that needs it. Each Bash call starts a fresh shell, so a variable
-set in one call is empty in the next; never carry a value across calls in a
-shell variable.
+This is the generic copy: work out the facts below as
+[../_shared/facts.md](../_shared/facts.md) says. A row marked *shared* takes
+its rule from there.
 
 | Fact | How to find it |
 |---|---|
-| `<repo>` | `gh repo view --json nameWithOwner -q .nameWithOwner` |
-| wrapper | AGENTS.md build section: the prefix the toolchain runs through (a version manager's exec command, for example), or none. Run the gates, and each tool the wrapper provides (the tools its config file lists), through it; pass it to this skill's scripts as `--wrap '<wrapper>'` (leave `--wrap` out when it is none); run every other command bare, so it matches `allowed-tools` |
-| skill names | `/<name>` when the primary checkout (`dirname "$(git rev-parse --path-format=absolute --git-common-dir)"`) holds the skill in `.agents/skills/<name>/` or `.claude/skills/<name>/`; otherwise the form this skill was installed in: `/sample-skills:<name>` from the plugin, `sample-skills-<name>` from a Codex install. Other skills are named in this file in their short form (`/<name>`); write each in the form this rule gives |
+| `<repo>` | *shared* |
+| wrapper | *shared* |
+| skill names | *shared* |
 | dependency policy | AGENTS.md dependency-policy section (for example *Security → Dependency policy*): when a new version may be adopted, or none (the default: once it has been published for at least 14 days) |
 | backlog milestone | AGENTS.md *Milestones*: the backlog milestone, or none (ask the owner once which existing milestone it is, and tell them to record it there) |
 | project board | AGENTS.md *Project board*: the board tickets are tracked on, or none (skip the steps that need it) |
-
-**AGENTS.md sections by role.** Projects name sections differently. The build
-section is the one that lists the build, format, lint and test commands,
-whatever it is called (*Build and test commands*, *Build commands*, *Tools*,
-*Commands*). Match every section this skill reads the same way: by what it
-holds, not by its exact title. When a required fact is missing, ask the
-developer once, use the answer, and tell them which AGENTS.md section to
-record it in.
 <!-- facts:end -->
 
 ## input
