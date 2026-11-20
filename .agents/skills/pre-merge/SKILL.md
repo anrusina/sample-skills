@@ -296,7 +296,7 @@ For every `FOLLOW-UP` item the developer confirmed in phase 1:
 
 1. Read the referenced code for context.
 2. Check for duplicates: `gh issue list --search "<keyword>" --state all --json number,title,state --limit 10`. If an open issue already covers it, reply on the thread (or in a PR comment) with `Tracked in #<issue> — <reason it can't be fixed here>.` instead of creating one.
-3. Pick a label that exists (`gh label list`): `design` for a missing spec, LLD gap or Arrow of Intent item; `feature`, `bug`, `spike` or `documentation` by what it is. Never create a label or a milestone: use the closest existing label, or none. Apply each loaded asset's *Follow-up issues* section. If the *milestones* fact is set, pick the milestone its rule gives, without asking; otherwise set none.
+3. Pick a label that exists (`gh label list --limit 100`): `design` for a missing spec, LLD gap or Arrow of Intent item; `feature`, `bug`, `spike` or `documentation` by what it is. Never create a label or a milestone: use the closest existing label, or none. Apply each loaded asset's *Follow-up issues* section. If the *milestones* fact is set, pick the milestone its rule gives, without asking; otherwise set none.
 4. Write the body from [assets/issue-body-template.md](assets/issue-body-template.md) and create the issue, all in one call (drop `--milestone` when there is none):
    ```bash
    body=$(mktemp)

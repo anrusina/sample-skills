@@ -127,7 +127,7 @@ in-progress workflow tickets get neither. For tickets without one, propose
 the split as two lists, apply it once the owner agrees, then do the same for
 the next phase's milestone. Use the labels when ordering, so autonomous
 work can be queued ahead of owner-gated work. If the repository has no `auto`/`curated` labels
-(`gh label list`), ask the owner once whether to create them.
+(`gh label list --limit 100`), ask the owner once whether to create them.
 
 **Once the plan is agreed,** create the progress doc: load
 [references/progress-doc.md](references/progress-doc.md) and follow it. Post

@@ -83,7 +83,7 @@ Flag a routine mechanical skill with no `model` as over-powered — it should pi
 
 ## 7. Stale references (Stale)
 
-If the skill names labels, fetch the label set (`gh label list`). Flag:
+If the skill names labels, fetch the label set (`gh label list --limit 100`). Flag:
 
 - a label the skill names that no longer exists in the repository
 - a branch pattern that differs from [git-conventions.md](git-conventions.md) § Branch names

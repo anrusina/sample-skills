@@ -122,7 +122,7 @@ If the file exists and has content, use it as the PR body template in step 7 ins
    gh pr create --title "<title>" --body-file "$body" --base <base> --assignee "$(gh api user -q '.login')"
    ```
 
-8. **Labels** — apply from existing labels only (`gh label list`); never create one:
+8. **Labels** — apply from existing labels only (`gh label list --limit 100`); never create one:
 
    | Signal | Label |
    |---|---|

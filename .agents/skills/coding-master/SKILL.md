@@ -285,7 +285,7 @@ Verify the merge first (`gh pr view <P> --json state,mergeCommit` shows
   strike its number in the flow line in the same turn.
 - **Mode labels follow the owner.** When the owner says an issue's mode
   differs from its `auto`/`curated` label, fix the label on GitHub. If the
-  repository has no such labels (`gh label list`), keep the mode on the
+  repository has no such labels (`gh label list --limit 100`), keep the mode on the
   status page only and never create labels unasked.
 - **Messages to sessions** go by id (`SendMessage` with `to: "local_<id>"`),
   with a self-contained first line, since that may be all the receiver's
