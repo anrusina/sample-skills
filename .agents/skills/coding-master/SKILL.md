@@ -47,7 +47,10 @@ its rule from there.
 [../_shared/track-format.md](../_shared/track-format.md): `->` for order,
 `[a, b]` for issues that run side by side (one task session each), `,`
 between tracks. A track copied from `/managerial`'s progress doc works as it
-is: read it as that file's *Reading a track* says.
+is: read it as that file's *Reading a track* says. When the owner describes
+the tracks in prose, or types a track with comments, write them in that
+notation, with any reason a ticket waits in its status-page row, and show
+them to the owner before starting anything.
 
 With no arguments, ask the owner which issues to run.
 
