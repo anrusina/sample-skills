@@ -1,6 +1,8 @@
 # Sub-agent prompt template
 
-Substitute all `<...>` placeholders before spawning. Values are written in literally: the sub-agent cannot see the orchestrator's shell or facts.
+Substitute all `<...>` placeholders before spawning. The sub-agent sees only
+this prompt, not the orchestrator's shell, facts or conversation: write every
+value in literally, the agreed fix included.
 
 ---
 
@@ -10,25 +12,22 @@ Repository: <repo>
 PR: #<number> on branch <head> → <base>
 Finding #<N>: [<Severity>] <Title>
 Description: <full description from the review comment>
+Agreed fix: <the fix as agreed with the developer: triage's solution for this finding, with any change or decision from the discussion that constrains it; for a partial fix, which half is fixed here>
 File(s): <path(s) and line(s)>
 Discussion URL: <URL>
 Tool wrapper: <the wrapper fact, or "none">
-Quality gates: <the gates fact, in order>
-Format fix: <the format-fix fact, or "none">
 Build-input docs: <the build-input docs fact, or "none">
 Field and stack rules: <the *Fix* section of each loaded asset, pasted in, or "none">
-Commit format: <the format from commit-format.md, pasted in with this finding's values>
+Commit skill: <the /commit skill, named as the skill names fact gives>
 
-Run the quality gates, and any tool the wrapper provides, through the tool
-wrapper; run git and other commands bare.
+Run any tool the wrapper provides through the tool wrapper; run git and other
+commands bare.
 
 Steps:
 1. Read AGENTS.md for project constraints.
 2. Read the referenced file(s) to understand the current code.
-3. Apply the fix described in the finding, following the field and stack rules above.
+3. Apply the agreed fix, following the field and stack rules above. Where it and the review comment differ, the agreed fix wins.
 4. If the fix changes code (production source or tests), add or update tests tagged with `@spec <SUBSYSTEM-NNN>` (in the language's comment syntax, on the line before the test) covering the happy path and the failure case. Tag only with an EARS spec that exists and states the behaviour; if none does, stop and report back "no spec covers this behaviour" rather than invent an ID. Skip this for a documentation-only fix (every changed file is Markdown or under `docs/`, and none is under a build-input docs path).
-5. If the fix changed code, tests, build configuration or any other build input (build-input docs included), run every quality gate above, in order, and fix any new failures before committing; when only the format gate fails, run the format fix. Skip the gates for a documentation-only fix.
-6. Stage only files relevant to this fix, plus anything the field and stack rules say to stage with them.
-7. Commit with the commit format above. Write the message into a `mktemp` file with a quoted heredoc and run `git commit -F` on it, in one call, so backticks in it stay literal. Always a new commit, never an amend.
-8. Push the commit with a plain `git push`. If the push is rejected, stop and report back: "push rejected: the remote branch moved". Never force-push, with or without a lease.
-9. Report back the commit hash and a one-line summary, or the failure and where it stopped.
+5. Stage only the files relevant to this fix, plus anything the field and stack rules say to stage with them, and run the commit skill: it runs the gates, commits what is staged as a new commit and pushes. Name the finding (`PR #<number> <Severity> #<N>`) and the discussion URL in its *Work done*.
+6. If the commit skill stops on a gate failure, fix it and run the commit skill again. If it stops for anything else (a rejected push, an Arrow of Intent contradiction), stop and report back what it said.
+7. Report back the commit hash and a one-line summary, or the failure and where it stopped.

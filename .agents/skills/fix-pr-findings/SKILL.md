@@ -18,16 +18,12 @@ its rule from there.
 |---|---|
 | `<repo>` | *shared* |
 | wrapper | *shared* |
-| gates | *shared* |
-| format fix | *shared* |
 | build-input docs | *shared* |
 | skill names | *shared* |
 | assets | *shared* |
 <!-- facts:end -->
 
 Pass the wrapper on to every sub-agent, with the row's rule.
-
-A **documentation-only fix** is one whose changed files are all Markdown or under `docs/`, and none of them under a *build-input docs* path.
 
 ## inputs
 
@@ -125,12 +121,7 @@ Replies take the forms and commands in [../_shared/review-replies.md](../_shared
 9. After all agents complete:
    - Table of findings fixed with commit hashes, and deferred findings with their issue numbers
    - Any findings that failed with the reason
-   - Reminder to run the project's quality gates (the *gates* fact) — unless every fix was documentation-only; then state that the gates were skipped
    - Anything the *Report* section of a loaded asset adds
-
-## commit format
-
-[assets/commit-format.md](assets/commit-format.md); the sub-agent prompt carries it pasted in.
 
 ## rules
 
