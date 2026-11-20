@@ -25,13 +25,12 @@ The progress doc, and the coordinator's status page, add markers to the same
 notation:
 
 ```
-Track A: ~~#12 (login form)~~ -> 🔄#15 (session refresh) -> [#17 (cart model) -> #18 (cart sync), #19 (cart badge)] -> ⏸ Wait for #20 (API merged) -> 👤#22 (pricing rules)
+Track A: ~~#12~~ -> 🔄#15 -> [#17 -> #18, #19] -> ⏸ Wait for #20 -> 👤#22
 ```
 
-- `#N (label)`: each ticket with a 2–3 word label.
 - `~~…~~`: done, struck through; the arrows aren't.
 - 🔄 prefix: in progress. Dropped once the item is struck.
-- `⏸ Wait for #N (what)`: a step of its own that holds the track until #N
+- `⏸ Wait for #N`: a step of its own that holds the track until #N
   merges; it doesn't start #N.
 - 👤 prefix: the owner takes part beyond the final check every ticket gets:
   the owner's own task (a session may only track it), or a `curated` ticket,
@@ -39,6 +38,5 @@ Track A: ~~#12 (login form)~~ -> 🔄#15 (session refresh) -> [#17 (cart model) 
 
 ## Reading a track
 
-Skip struck-out items, ignore labels and the 🔄 and 👤 markers (the mode
-comes from the issue's label), and treat `⏸ Wait for #N` as a hold until #N
-merges.
+Skip struck-out items, ignore the 🔄 and 👤 markers (the mode comes from the
+issue's label), and treat `⏸ Wait for #N` as a hold until #N merges.
