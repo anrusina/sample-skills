@@ -265,7 +265,9 @@ Verify the merge first (`gh pr view <P> --json state,mergeCommit` shows
   of git: if `.gitignore` doesn't cover `docs/local-planning/`, add that path
   to the primary checkout's `.git/info/exclude`. The page holds, under each
   track title, a flow line in the shared track format with its markers, then a table (Issue / Mode /
-  Status) with done rows greyed; a *Waiting on you* list; and a *Done since
+  Status) with done rows greyed, and a held issue's Status naming its wait and
+  why (`waiting for #20: needs its sync API`, from the progress doc or the
+  owner); a *Waiting on you* list; and a *Done since
   <date>* line. Update it on every change and resend it with `SendUserFile`
   (`display: "render"`). On a merge or a session archive, grey that row and
   strike its number in the flow line in the same turn.

@@ -112,7 +112,8 @@ phase needs a planning ticket; file one through `/issue` if it has none.
   store records), which a session may only track, and `curated` tickets,
   where the owner gives input before work starts, as real steps in the
   tracks. The owner's final check, which every ticket gets, needs no 👤.
-- **Waits** between tickets, as steps of their own.
+- **Waits** between tickets, as steps of their own, each with its reason in
+  the held ticket's table row.
 - **An Outside table** for related work not counted in the stage totals:
   workflow tooling, side work running alongside, and tickets deliberately
   pushed to the next phase, each with its reason and date gate.

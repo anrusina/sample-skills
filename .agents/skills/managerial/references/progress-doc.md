@@ -20,7 +20,8 @@ you need (doc, body node, status enum) in the phase's memory file.
 - **One table per stage,** with columns Ticket / What / Track / Status:
   - Ticket: the ticket link with its mode beside it: `#12 auto`,
     `#15 curated`, or `#18 you` for the owner's own task.
-  - What: a short description.
+  - What: a short description; for a ticket held by a wait, also what it
+    waits for and why (`waits for #20: needs its sync API`).
   - Track: the track's name (A, B, …), which ties the row to its track paragraph.
   - Status: a chip from the doc's status enum: Not started / In progress /
     In review / Waiting / Done. (In a Markdown doc, the same five words as

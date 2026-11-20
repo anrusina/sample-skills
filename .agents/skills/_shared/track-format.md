@@ -31,7 +31,8 @@ Track A: ~~#12~~ -> 🔄#15 -> [#17 -> #18, #19] -> ⏸ Wait for #20 -> 👤#22
 - `~~…~~`: done, struck through; the arrows aren't.
 - 🔄 prefix: in progress. Dropped once the item is struck.
 - `⏸ Wait for #N`: a step of its own that holds the track until #N
-  merges; it doesn't start #N.
+  merges; it doesn't start #N. Why it waits goes in the held ticket's table
+  row, not in the track.
 - 👤 prefix: the owner takes part beyond the final check every ticket gets:
   the owner's own task (a session may only track it), or a `curated` ticket,
   where the owner gives input before work starts.
