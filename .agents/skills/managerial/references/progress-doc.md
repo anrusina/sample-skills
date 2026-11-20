@@ -28,7 +28,7 @@ you need (doc, body node, status enum) in the phase's memory file.
 - **Outside table:** ticket link, what it is, and where or when it runs (e.g.
   "Phase 3; after #20 merges"). Done items are struck through, with
   "Done (PR #N merged <date>)".
-- **Track A and Track B paragraphs,** in the track format (SKILL.md § *track
+- **One paragraph per track,** in the track format (SKILL.md § *track
   format*).
 
 ## Keeping it current

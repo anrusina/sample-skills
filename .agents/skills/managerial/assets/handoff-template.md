@@ -36,7 +36,7 @@ before acting on it.
 
 ## Side work in flight
 
-- <tracks outside the two app tracks, and tickets deliberately pushed later>
+- <tracks outside the app tracks, and tickets deliberately pushed later>
 
 ## Gotchas learned in Phase <N>
 
