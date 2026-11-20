@@ -30,11 +30,6 @@ points on both sides (`git show origin/<base>:<manifest>`):
 Name every added or changed glyph with its code point in the commit body,
 and put each moved code point in its own bullet.
 
-## Follow-up issues
-
-For a glyph, *Current state* shows its source excerpt or manifest entry
-with the glyph's name and code point.
-
 ## Summary
 
 ```

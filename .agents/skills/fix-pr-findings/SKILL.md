@@ -60,7 +60,7 @@ Pass the wrapper on to every sub-agent, with the row's rule.
 3. **Triage each finding — recommend before asking.** Never fix on the reviewer's say-so alone: a reviewer can be wrong, out of scope, or contradicted by an upstream doc. Before presenting anything, verify each finding against the source file — and, for spec/doc findings, against the backing LLD and the Arrow of Intent — then assign exactly one recommendation:
 
    - **Fix** — correct and in scope for *this* PR; apply now.
-   - **Defer** — valid, but fixing it here is blocked by a stated reason: a product or design decision not yet made, another subsystem or open issue (name it), or a change too big for this PR (say why). Low severity alone is not a reason — a valid Low finding is **Fix**. A deferred finding is always tracked: name the open issue that already covers it, or propose a new issue (title + one-line scope) that phase 3 creates once the developer confirms. Never just a note.
+   - **Defer** — valid, but fixing it here is blocked by a stated reason: a product or design decision not yet made, another subsystem or open issue (name it), or a change too big for this PR (say why). Low severity alone is not a reason — a valid Low finding is **Fix**. A deferred finding is always tracked: name the open issue that already covers it, or propose a new issue (type, priority, title and one-line scope) that phase 3 creates once the developer confirms. Never just a note.
    - **Leave as-is (by design)** — the current spec/code is intentional and the finding misreads intent. State the design reason.
 
    Never default to "fix all". Where a finding conflicts with another finding, the task brief, or an upstream doc (HLD/LLD/EARS), **surface the conflict and let the developer decide** — never resolve it silently. A finding may also be **partially** fixed (apply the in-scope half, defer the rest) — say which half and why.
@@ -114,7 +114,7 @@ Replies take the forms and commands in [../_shared/review-replies.md](../_shared
 
 8. **Reply on each fixed finding:** `Addressed in <short-sha> — <what changed>.`
 
-8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — …`; otherwise create the proposed issue as `/pre-merge` phase 4 does (duplicate search, its issue-body template, labels and milestone chosen from those that exist on GitHub, never new ones) and reply `Captured as #<N> — …`. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
+8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — …`; otherwise search for a duplicate first (`gh issue list --search "<keyword>" --state all`), then run `/issue` for the proposed issue, with its type, priority and title, the finding, a link to the thread and the reason it can't be fixed in this PR, and reply `Captured as #<N> — …` with the number it reports. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
 
 8c. **Reply on each finding the developer chose to leave as-is:** `Left as-is: <reason>.`
 

@@ -75,8 +75,8 @@ project's profile):
 | fixtures | testing section: git-ignored fixture folders and how to link them | review-pr |
 | releases | *Releases* | pre-merge, coding-master |
 | manual workflows | build or release section: workflows run by hand | coding-master |
-| project board | *Project board* | issue, pre-merge, managerial |
-| milestones | *Milestones*: active vs backlog, and how one is chosen | issue, pre-merge, start-task |
+| project board | *Project board* | issue, managerial |
+| milestones | *Milestones*: active vs backlog, and how one is chosen | issue, start-task |
 | backlog milestone | *Milestones*: the backlog one | managerial, feedback-review |
 | feedback labels, inbox milestone | *Feedback* | feedback-review |
 | blast-radius map | a section mapping the project's parts to the blast-radius levels | review-pr |

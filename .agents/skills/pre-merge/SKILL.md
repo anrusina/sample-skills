@@ -44,8 +44,6 @@ its rule from there.
 | build-input docs | *shared* |
 | pre-merge checks | AGENTS.md *Pre-merge checks*: the checks run only before a merge (local suites and their fixture folders, checks the developer runs by hand, a CI-equivalent workflow, a version bump with its command and the files it writes, release notes), or none (skip the steps that need it) |
 | releases | AGENTS.md *Releases*: whether releases are tagged, and the tag pattern, or none (skip the steps that need it) |
-| project board | AGENTS.md *Project board*: the board's owner and number, or none (skip the steps that need it) |
-| milestones | AGENTS.md *Milestones*: how a new issue's milestone is chosen, or none (skip the steps that need it) |
 | skill names | *shared* |
 | assets | *shared* |
 <!-- facts:end -->
@@ -97,9 +95,9 @@ answer. If there is none, ask for a PR number.
    | #12 comment 456 | src/auth/login_form.ts:44 | Low | Stale doc comment names the old session store |
 
    FOLLOW-UP (becomes an issue before merge)
-   | # | Item | File | Severity | Summary | Reason it can't be fixed here | Suggested issue title |
-   |---|------|------|----------|---------|-------------------------------|-----------------------|
-   | 1 | review body, outside-diff #2 | src/cart/cart_service.ts:22 | Medium | Cart refetches prices on every quantity change | Needs the price-caching decision tracked in #18 | Decide cart price caching |
+   | # | Item | File | Severity | Summary | Reason it can't be fixed here | Suggested issue |
+   |---|------|------|----------|---------|-------------------------------|-----------------|
+   | 1 | review body, outside-diff #2 | src/cart/cart_service.ts:22 | Medium | Cart refetches prices on every quantity change | Needs the price-caching decision tracked in #18 | design, P2: Decide cart price caching |
 
    QUESTION (needs an answer)
    | Item | File | Summary | Suggested answer |
@@ -116,7 +114,9 @@ answer. If there is none, ask for a PR number.
 
 5. **If `FOLLOW-UP` items remain**, ask:
 
-   > FOLLOW-UP items above will each become a GitHub issue before merge. Reply `ok` to create them all, or name any item to move to FIX HERE instead (e.g. `fix 2`).
+   > FOLLOW-UP items above will each become a GitHub issue before merge. Reply `ok` to create them all as suggested, change an item's type or priority (e.g. `2 bug P1`), or name any item to move to FIX HERE instead (e.g. `fix 2`).
+
+   The suggested issue gives the type (`feature`, `bug`, `spike` or `design`), a priority when the repository defines priority labels, and the title.
 
    Wait for the answer; if an item moves to `FIX HERE`, stop as in step 4.
 
@@ -305,20 +305,14 @@ a person already answered in their own words, or whose latest reply is
 
 For every `FOLLOW-UP` item the developer confirmed in phase 1:
 
-1. Read the referenced code for context.
-2. Check for duplicates: `gh issue list --search "<keyword>" --state all --json number,title,state --limit 10`. If an open issue already covers it, reply on the thread (or in a PR comment) with `Tracked in #<issue> — <reason it can't be fixed here>.` instead of creating one.
-3. Pick a label that exists (`gh label list --limit 100`): `design` for a missing spec, LLD gap or Arrow of Intent item; `feature`, `bug`, `spike` or `documentation` by what it is. Never create a label or a milestone: use the closest existing label, or none. Apply each loaded asset's *Follow-up issues* section. If the *milestones* fact is set, pick the milestone its rule gives, without asking; otherwise set none.
-4. Write the body from [assets/issue-body-template.md](assets/issue-body-template.md) and create the issue, all in one call (drop `--milestone` when there is none):
-   ```bash
-   body=$(mktemp)
-   cat > "$body" <<'ISSUE_BODY_EOF'
-   <the filled-in template>
-   ISSUE_BODY_EOF
-   gh issue create --title "<title>" --label "<label>" --milestone "<milestone>" --body-file "$body"
-   rm -f "$body"
-   ```
-5. If the *project board* fact is set: `gh project item-add <number> --owner <owner> --url <issue-url>`.
-6. Reply on the thread, or in a PR comment for an item with no thread: `Captured as #<issue> — <reason it can't be fixed here>.`
+1. Check for duplicates: `gh issue list --search "<keyword>" --state all --json number,title,state --limit 10`. If an open issue already covers it, reply on the thread (or in a PR comment) with `Tracked in #<issue> — <reason it can't be fixed here>.` instead of creating one.
+2. Otherwise run `/issue` with the type flag and a description holding the
+   confirmed title and priority, the finding (quoted, with its severity),
+   the file and line, a link to the thread or review, and the reason it
+   can't be fixed in this PR. Ask it to keep the PR link and the reason in
+   the body. `/issue` traces the upstream docs, writes the body from its
+   template, and picks the labels, milestone and board.
+3. Reply on the thread, or in a PR comment for an item with no thread: `Captured as #<issue> — <reason it can't be fixed here>.`, with the number `/issue` reports.
 
 ## phase 5 — merge
 
