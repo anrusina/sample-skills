@@ -6,7 +6,7 @@ of these prefixes, word for word: the other skills match on them.
 
 | Reply | Written by | Means |
 |---|---|---|
-| `Addressed in <sha> — <what changed>.` | fix-pr-findings, pre-merge | fixed in `<sha>` |
+| `Addressed in <sha> — <what changed>.` | fix-pr-findings | fixed in `<sha>` |
 | `Tracked in #<N> — <why it can't be fixed here>.` | fix-pr-findings, pre-merge | deferred to an open issue that covers it |
 | `Captured as #<N> — <why it can't be fixed here>.` | fix-pr-findings | deferred to an issue created for it |
 | `Left as-is: <reason>.` | fix-pr-findings | the developer chose not to change it |

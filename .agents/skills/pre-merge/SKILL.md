@@ -1,6 +1,6 @@
 ---
 name: pre-merge
-description: "The last step before merging a pull request: classifies every review item, blocks on anything still fixable or unanswered, rebases onto the latest default branch, keeps EARS IDs unique, runs the gates and the project's pre-merge checks, rebuilds the history as docs then code, files follow-up issues, replies to threads, and merges after asking. Runs only on the developer's explicit OK for that PR, given here or relayed quoting their words ('/pre-merge [PR]', 'merge PR 12'), never because a PR looks ready. Not for fixing findings (/fix-pr-findings) or reviewing (/review-pr). Generic copy: if a project skill named `pre-merge` is also listed, use that one instead."
+description: "The last step before merging a pull request: classifies every review item, blocks on anything still fixable or unanswered, rebases onto the latest default branch, keeps EARS IDs unique, runs the gates and the project's pre-merge checks, rebuilds the history as docs then code, files follow-up issues, posts one summary comment for the addressed threads, and merges after asking. Runs only on the developer's explicit OK for that PR, given here or relayed quoting their words ('/pre-merge [PR]', 'merge PR 12'), never because a PR looks ready. Not for fixing findings (/fix-pr-findings) or reviewing (/review-pr). Generic copy: if a project skill named `pre-merge` is also listed, use that one instead."
 allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/review-threads.sh *)
   - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh *)
@@ -110,7 +110,7 @@ answer. If there is none, ask for a PR number.
    ...
    ```
 
-4. **If any `FIX HERE` item remains, stop here.** Report them and tell the developer to fix them first (`/fix-pr-findings`), then re-run `/pre-merge`. Do not reply to threads or create issues: phase 2 replaces every SHA, so a reply now would cite a commit that will not survive.
+4. **If any `FIX HERE` item remains, stop here.** Report them and tell the developer to fix them first (`/fix-pr-findings`), then re-run `/pre-merge`. Do not reply to threads, comment or create issues: those come after phase 2 makes the history final.
 
    **If any `QUESTION` remains, stop too**, with a suggested answer for each. The developer answers on the PR, or tells you the answers to post (phase 3 posts them); then re-run.
 
@@ -199,7 +199,8 @@ bump, and the CI-equivalent run (started at the end of phase 2).
 
 ## phase 2 — rebuild the branch's commits and push
 
-This runs before any reply is posted, so replies cite only surviving SHAs.
+This runs before any comment or reply is posted, so the summary comment
+names the final commits.
 
 A branch merges as **documentation first, implementation second**, never one
 squashed commit where both exist. List what goes in:
@@ -274,21 +275,31 @@ origin`, then `git merge-base --is-ancestor origin/<base> HEAD` fails), go
 back to phase 1a: the ID checks and a version bump hold only against the
 default branch they ran on.
 
-## phase 3 — reply to addressed threads
+## phase 3 — post the summary comment and answers
 
-For each `ADDRESSED` item fixed on this branch, and each `QUESTION` the
-developer gave an answer for (an item whose latest reply is `Tracked in`,
-`Captured as` or `Left as-is:` keeps it):
+When any item is `ADDRESSED`, post one PR conversation comment for all of
+them instead of a reply per thread. The SHAs in earlier `Addressed in`
+replies were replaced by the rebuild, and GitHub's rebase merge gives every
+commit a new SHA again, so the comment names the final commits by subject:
 
-- **Find the commit that carries the fix** by asking git, not guessing from
-  the path (files a *Rebuild* section sends to the docs commit ride with it):
-  `git log origin/<base>..HEAD --oneline -- <path from the thread>`.
-- **Reply** with that commit, unless a person already answered the thread
-  in their own words: their answer stands. A pipeline reply (`Addressed in
-  <sha>` from `/fix-pr-findings`) is not such an answer: its SHA was
-  replaced, so post the surviving one.
-  `Addressed in <short-sha> — <description>.`, posted as
-  [../_shared/review-replies.md](../_shared/review-replies.md) says. A `QUESTION` gets the developer's answer instead. One sentence at most.
+```bash
+body=$(mktemp)
+cat > "$body" <<'SUMMARY_EOF'
+This branch merges as these commits:
+
+- <subject of each final commit, in order>
+
+Every addressed review thread has its fix in one of them.
+SUMMARY_EOF
+gh pr comment <N> --body-file "$body"
+rm -f "$body"
+```
+
+Reply on a thread only to post a `QUESTION`'s answer from the developer,
+one sentence at most, as
+[../_shared/review-replies.md](../_shared/review-replies.md) says. A thread
+a person already answered in their own words, or whose latest reply is
+`Tracked in`, `Captured as` or `Left as-is:`, keeps that answer.
 
 ## phase 4 — create issues for FOLLOW-UP items
 
@@ -317,7 +328,8 @@ and report: re-run `/pre-merge`. Otherwise print:
 ```
 PR #<N> is ready to merge.
 
-Threads replied to:   <count>
+Summary comment:      <posted | none: nothing addressed>
+Answers posted:       <count>
 Follow-up issues:     <count> (#N, #N — created or already open)
 Rebased onto:         <base> at <short-sha>
 EARS spec IDs:        no duplicates (<renumbered IDs as old → new, or "none renumbered">)
