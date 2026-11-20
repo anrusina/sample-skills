@@ -1,6 +1,6 @@
 ---
 name: doc-audit-full
-description: "Bring the documentation back in line with the code: doc comments on public API, stale spec tags and LLD or HLD sections, READMEs and guides, Mermaid diagrams, and, only with --fix-skills, the skill files. Edits files across the repository but never commits. Use when the docs have drifted, after an audit, or when part of the codebase needs its docs written. Not for a report only (/doc-audit) or new design work (/design-docs). Generic copy: if a project skill named `doc-audit-full` is also listed, use that one instead."
+description: "Bring the documentation back in line with the code: doc comments on public API, stale spec tags and LLD or HLD sections, READMEs and guides, Mermaid diagrams, and, only with --fix-skills, the skill files. Edits files across the repository, then commits and opens a PR, unless it runs inside a larger task. Use when the docs have drifted, after an audit, or when part of the codebase needs its docs written. Not for a report only (/doc-audit) or new design work (/design-docs). Generic copy: if a project skill named `doc-audit-full` is also listed, use that one instead."
 allowed-tools:
   - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh *)
 ---
@@ -135,5 +135,5 @@ Load [../_shared/code-doc-conventions.md](../_shared/code-doc-conventions.md) fo
 
 ## rules
 
-- Do not commit: print a summary and let the developer review the diff first.
+- When the edits are done, print the summary, then run `/commit-and-pr`, or `/commit` when the branch already has an open PR: the developer reviews the change in the PR. When this run is a step of a larger task (a coordinator's brief, another skill), leave committing to that task.
 - Do not document generated code: the next generation run overwrites it.
