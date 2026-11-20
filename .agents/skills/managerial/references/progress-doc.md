@@ -16,12 +16,12 @@ you need (doc, body node, status enum) in the phase's memory file.
 
 - **Intro line:** "As of <date>, <done> of its <total> items are done", plus
   anything that changed the phase's shape (e.g. "Phase 1 is complete").
-- **Overview table:** one row per stage: stage, goal, items, done.
+- **Overview table:** one row per stage: stage, goal, items (bare ticket numbers), done.
 - **One table per stage,** with columns Ticket / What / Track / Status:
   - Ticket: the ticket link with its mode beside it: `#12 auto`,
     `#15 curated`, or `#18 you` for the owner's own task.
   - What: a short description.
-  - Track: A or B, which ties the row to the track paragraphs.
+  - Track: the track's name (A, B, …), which ties the row to its track paragraph.
   - Status: a chip from the doc's status enum: Not started / In progress /
     In review / Waiting / Done. (In a Markdown doc, the same five words as
     plain text.)

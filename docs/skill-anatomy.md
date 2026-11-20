@@ -193,6 +193,7 @@ skill keeps its own copy of a shared script.
 | `git-conventions.md` | commit, start-task, pre-merge | branch names, the commit message format |
 | `agentskills-best-practices.md`, `code-doc-conventions.md` | doc-audit, doc-audit-full, review-pr | the skill-file and code-doc references |
 | `facts.md` | every skill with a facts block | the shared facts rows, how facts are worked out, how AGENTS.md sections are matched, how assets load |
+| `track-format.md` | managerial, coding-master | the track notation, its markers, and how a copied track is read |
 | `assets/stack/<id>.md` | start-task, review-pr, pre-merge | a stack's setup steps and what makes them stale (connected like any asset) |
 | `assets/code-comments/<id>.md` | doc-audit, doc-audit-full | a stack's code-comment syntax and an example (connected like any asset) |
 

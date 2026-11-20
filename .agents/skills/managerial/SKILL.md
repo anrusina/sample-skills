@@ -109,7 +109,9 @@ phase needs a planning ticket; file one through `/issue` if it has none.
   framing the first phase, and keep them across phases. Keep tracks few: the
   owner's own tasks share their attention.
 - **Steps that need the owner** (👤): the owner's own tasks (accounts, DNS,
-  store records) and `curated` tickets, as real steps in the tracks.
+  store records), which a session may only track, and `curated` tickets,
+  where the owner gives input before work starts, as real steps in the
+  tracks. The owner's final check, which every ticket gets, needs no 👤.
 - **Waits** between tickets, as steps of their own.
 - **An Outside table** for related work not counted in the stage totals:
   workflow tooling, side work running alongside, and tickets deliberately
@@ -219,9 +221,10 @@ writes carry it.
 
 ## track format
 
-Write tracks in the format AGENTS.md gives, or else the default in
-[assets/tracks.md](assets/tracks.md), and keep to it exactly: the owner
-copies tracks out of the progress doc.
+Write tracks in the format AGENTS.md gives, or else
+[../_shared/track-format.md](../_shared/track-format.md), and keep to it
+exactly: the owner copies tracks out of the progress doc and passes them to
+`/coding-master` as they are.
 
 ## close the phase and hand off
 

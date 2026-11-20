@@ -43,25 +43,11 @@ its rule from there.
 ## input
 
 `$ARGUMENTS`: one or more issue numbers, arranged into **tracks** of
-**steps**.
-
-- `->` (or `→`) runs steps in order: the next step starts only once
-  everything in the previous step has merged.
-- `[a, b]` is one step whose issues run side by side, one task session each;
-  it is finished once all of them have merged. A bracket may hold chains: in
-  `[15 -> 16, 13]`, #16 follows #15 while #13 runs alongside.
-- `,` outside brackets separates tracks, which run side by side.
-- A track pasted from `/managerial`'s progress doc reads the same way, with
-  ` · ` joining the items of one step; skip struck-out (done) issues, ignore
-  markers and labels, and treat `⏸ Wait for #N` as a hold until #N merges,
-  never as a step that starts #N.
-
-Examples:
-
-- `12 -> [15, 13] -> 5`: #12; once it merges, #15 and #13 together; once
-  both have merged, #5.
-- `12 -> 15, 13 -> 5`: two tracks: #12 then #15, and alongside them #13
-  then #5.
+**steps** in the notation of
+[../_shared/track-format.md](../_shared/track-format.md): `->` for order,
+`[a, b]` for issues that run side by side (one task session each), `,`
+between tracks. A track copied from `/managerial`'s progress doc works as it
+is: read it as that file's *Reading a track* says.
 
 With no arguments, ask the owner which issues to run.
 
@@ -278,7 +264,7 @@ Verify the merge first (`gh pr view <P> --json state,mergeCommit` shows
   the primary checkout (`worktree.sh root` prints it), which outlives this session's worktree. Keep it out
   of git: if `.gitignore` doesn't cover `docs/local-planning/`, add that path
   to the primary checkout's `.git/info/exclude`. The page holds, under each
-  track title, a plain `a -> b` flow line, then a table (Issue / Mode /
+  track title, a flow line in the shared track format with its markers, then a table (Issue / Mode /
   Status) with done rows greyed; a *Waiting on you* list; and a *Done since
   <date>* line. Update it on every change and resend it with `SendUserFile`
   (`display: "render"`). On a merge or a session archive, grey that row and
