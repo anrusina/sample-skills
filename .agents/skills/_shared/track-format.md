@@ -1,7 +1,9 @@
 # Track format
 
-How `/managerial` writes tracks and `/coding-master` reads them, so a track
-copied from the progress doc can be passed to `/coding-master` as it is.
+The one notation for tracks. `/managerial` writes them in the progress doc;
+`/coding-master` reads them, and writes them itself when the owner describes
+tracks in prose or types one with comments. A track copied from the progress
+doc can be passed to `/coding-master` as it is.
 
 ## Notation
 
