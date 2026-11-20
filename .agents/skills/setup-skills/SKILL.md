@@ -1,6 +1,6 @@
 ---
 name: setup-skills
-description: "Copy the sample-skills into the current project and tailor them: write the project's facts into each skill, keep only the stack and field assets it uses, and later update the copy from upstream, connect or disconnect an asset, or add or remove a skill. Clones the upstream repository, writes only under .agents/ plus the .claude/skills link, and never commits. Trigger: /setup-skills [install|update|connect ID|disconnect ID|add SKILL|remove SKILL] [--dry-run] [--source OWNER/REPO[@REF]]."
+description: "Copy the sample-skills into the current project and tailor them: write the project's facts into each skill, keep only the stack and field assets it uses, and later update the copy from upstream, connect or disconnect an asset, or add or remove a skill. Clones the upstream repository, writes only under .agents/ plus the .claude/skills link, then commits and opens a PR with /commit-and-pr. Trigger: /setup-skills [install|update|connect ID|disconnect ID|add SKILL|remove SKILL] [--dry-run] [--source OWNER/REPO[@REF]]."
 disable-model-invocation: true
 allowed-tools:
   - Bash(git clone *)
@@ -33,9 +33,12 @@ merge) is `${CLAUDE_SKILL_DIR}/scripts/setup.sh`; run it with no argument for
 its usage. This file is the judgement half: which facts, which assets, which
 kind of copy, and every conflict.
 
-Nothing here commits, and nothing is written outside `.agents/skills/`,
-`.agents/skills-profile.md`, `.agents/skills-lock.json` and the
-`.claude/skills` link: the developer reviews the diff and commits it.
+Nothing is written outside `.agents/skills/`, `.agents/skills-profile.md`,
+`.agents/skills-lock.json` and the `.claude/skills` link. A run that wrote
+files ends, once nothing is left to decide, with `/commit-and-pr` (or
+`/commit` when the branch already has an open PR): the project's copy when it
+has one, otherwise `/sample-skills:commit-and-pr`. The developer reviews the
+change in the PR. A `--dry-run` writes and commits nothing.
 
 ## input
 
@@ -237,13 +240,15 @@ assets.
 Fact keys are the row names in lower case with dashes (`format fix` →
 `format-fix`, `<repo>` → `repo`); a fact left out renders as `none`.
 
-## step 5 — report
+## step 5 — commit and report
+
+Commit `.agents/` and `.claude/skills` together and open the PR, as the
+opening section says. Then report:
 
 - the kind of copy, the upstream source and commit (short), and the files
   written, grouped by skill;
 - the facts that came from the developer, with the AGENTS.md lines to add;
-- the next step: review `git status` and the diff, then commit `.agents/` and
-  `.claude/skills` in one commit;
+- the PR;
 - that the plugin's skills stay reachable as `/sample-skills:<skill>`, and the
   project's copies now answer to `/<skill>`.
 

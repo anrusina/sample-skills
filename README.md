@@ -7,10 +7,10 @@ Companion repository to: _[your article link here]_
 The same skills are used in three ways:
 
 - **As a Claude Code plugin.** Installed once per laptop, every skill is available in every project as `/sample-skills:<skill>`, so a new project can use them from its first session. These generic copies work out each project fact at run time.
-- **As a project's own copy.** Once a project wants skills tuned to it, `/sample-skills:setup-skills` copies them into the project's `.agents/skills/`, writes the project's facts into each one and keeps only the stack and field assets the project uses. The project commits that copy, tailors it, and runs it as `/<skill>`.
+- **As a project's own copy.** Once a project wants skills tuned to it, `/sample-skills:setup-skills` copies them into the project's `.agents/skills/`, writes the project's facts into each one and keeps only the stack and field assets the project uses. It commits that copy and opens a PR; the project tailors it and runs it as `/<skill>`.
 - **As a Codex skill set.** `scripts/install-codex.sh` copies the skills into `~/.agents/skills/` as `sample-skills-<skill>`, and their shared files as `sample-skills-_shared`.
 
-A typical path: install the plugin, start a new repository with the generic skills, then in one of the first commits run `/sample-skills:setup-skills`, review what it wrote, and commit the project's own copy.
+A typical path: install the plugin, start a new repository with the generic skills, then early on run `/sample-skills:setup-skills` and review the project's own copy in the PR it opens.
 
 ## What's included
 
