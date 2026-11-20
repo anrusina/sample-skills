@@ -16,7 +16,7 @@ its rule from there.
 | Fact | How to find it |
 |---|---|
 | wrapper | *shared* |
-| labels | `gh label list --limit 200`, read at run time: the type, priority and mode labels the repository defines |
+| labels | `gh label list --limit 100`, read at run time: the type, priority and mode labels the repository defines |
 | milestones | AGENTS.md *Milestones*: which milestones are active and which are backlog, and the rule for choosing one, or none (judge by the open milestones' titles, descriptions and due dates) |
 | project board | AGENTS.md *Project board*: the board's owner and number, and whether it adds new issues by itself, or none (skip step 9) |
 | skill names | *shared* |
@@ -58,7 +58,7 @@ Infer type if no flag:
 
 7. **Labels and milestone** — fetch current values on every run:
    ```bash
-   gh label list --limit 200
+   gh label list --limit 100
    gh api 'repos/{owner}/{repo}/milestones' --jq '.[] | {title, description, due_on}'
    ```
    Use existing labels and milestones only — never create one unasked.
