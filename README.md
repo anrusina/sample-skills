@@ -145,7 +145,7 @@ It works out the project's facts and assets, shows them in one proposal for you 
 - **Managed**: the facts live in `.agents/skills-profile.md`, and `.agents/skills-lock.json` records the upstream commit and a hash of each file as rendered. `/sample-skills:setup-skills update` later merges upstream changes with the project's own edits, leaving alone the files and skills the project added or kept; editing the profile and running `update` changes a fact in every skill.
 - **Detached**: the copy is the project's from then on, to reshape freely. `update` can still compare it with upstream and propose changes skill by skill.
 
-Either way it writes `.agents/skills/`, links `.claude/skills` to it for Claude Code, and commits nothing: review the diff, then commit it. Later:
+Either way it writes `.agents/skills/`, links `.claude/skills` to it for Claude Code, then commits the copy and opens a PR (a `--dry-run` writes and commits nothing); review it in the PR. Later:
 
 ```
 /sample-skills:setup-skills connect accessibility     # add an asset to every skill that has one
