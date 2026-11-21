@@ -1,5 +1,15 @@
 <One sentence — what is broken and in which context.>
 
+## Read first
+
+| Document | Why |
+|---|---|
+| `AGENTS.md` | Arrow of Intent, architecture and coding rules, build and test commands |
+| <`docs/specs/LLD-<subsystem>.md`> | <what in it bears on this work> |
+
+<One row per existing document (or section) that bears on this work, never
+spec IDs. See /issue step 2.>
+
 ## Steps to reproduce
 1. <Step>
 2. <Step>

@@ -1,0 +1,279 @@
+# Skill anatomy
+
+How every skill here is built, so the same files run in two places:
+
+- **From the plugin** (the generic copy): installed once per laptop, used in
+  any project as `/sample-skills:<skill>`; it works out each project fact at
+  run time.
+- **From a project copy**: `/setup-skills` copies the skills into a project's
+  `.agents/skills/`, writes the project's facts into each one, and copies in
+  only the stack and field assets the project uses. The copy runs as
+  `/<skill>` and looks nothing up.
+
+The Arrow of Intent (HLD → LLDs → EARS specs → tests → code) is part of every
+skill's core. It is not an asset and cannot be switched off.
+
+## The facts block
+
+Every skill that needs a project fact has one `## Project facts` section, right
+after its opening paragraphs, wrapped in markers:
+
+```markdown
+## Project facts
+
+<!-- facts:begin -->
+…
+<!-- facts:end -->
+```
+
+`/setup-skills` owns everything between the markers: in the generic copy it
+says how to find each fact; in a project copy it holds the literal values.
+Outside the block, a project copy differs only in the description's closing
+sentence (removed), `allowed-tools` (adapted to the project's wrapper and
+commands) and the assets left out.
+
+### Generic form
+
+The generic block lists **only the facts that skill uses**. The standard
+facts (`<repo>`, `<base>`, wrapper, gates, format fix, setup, build-input
+docs, skill names, assets) are marked *shared*: their rules, how to work facts
+out, how AGENTS.md sections are matched and how assets load are written once,
+in [`_shared/facts.md`](../.agents/skills/_shared/facts.md).
+
+```markdown
+## Project facts
+
+<!-- facts:begin -->
+This is the generic copy: work out the facts below as
+[../_shared/facts.md](../_shared/facts.md) says. A row marked *shared* takes
+its rule from there.
+
+| Fact | How to find it |
+|---|---|
+| `<base>` | *shared* |
+| wrapper | *shared* |
+| gates | *shared* |
+| project board | AGENTS.md *Project board*: the board tickets are tracked on, or none (skip the steps that need it) |
+| skill names | *shared* |
+| assets | *shared* |
+<!-- facts:end -->
+```
+
+`/setup-skills` renders a *shared* row from the rule in `_shared/facts.md`,
+so a project copy comes out as if the rule were written in the skill.
+
+Optional facts keep their rule in the skill, in the style of the *project
+board* row above, saying which part of the section *this* skill needs.
+The optional rows in use (one name means one fact, and one key in a
+project's profile):
+
+| Fact | Section | Used by |
+|---|---|---|
+| source and test dirs | *Project structure* | pr |
+| dependency policy | *Security → Dependency policy*, or the file it points to | commit, managerial |
+| pre-merge checks | *Pre-merge checks* (incl. a version bump and the files it writes) | pr, pre-merge |
+| fixtures | testing section: git-ignored fixture folders and how to link them | review-pr |
+| releases | *Releases* | pre-merge, coding-master |
+| manual workflows | build or release section: workflows run by hand | coding-master |
+| project board | *Project board* | issue, managerial |
+| milestones | *Milestones*: active vs backlog, and how one is chosen | issue, start-task |
+| backlog milestone | *Milestones*: the backlog one | managerial, feedback-review |
+| feedback labels, inbox milestone | *Feedback* | feedback-review |
+| blast-radius map | a section mapping the project's parts to the blast-radius levels | review-pr |
+
+**Run-time rows.** A row whose value must be current on every run, such as
+`labels`, says "read at run time" in its rule; `/setup-skills` then copies the
+rule unchanged instead of writing a value.
+
+`wrapper` is applied as its row says, not per command: the body names no
+wrapper. Plain `git` and `gh` stay unwrapped so they match `allowed-tools`,
+unless the version manager's config lists `gh`.
+
+### Project form
+
+`/setup-skills` (its `scripts/setup.sh`) writes the same rows as a list of
+values, so a value may span lines (a whole policy section, several gates):
+
+```markdown
+## Project facts
+
+<!-- facts:begin -->
+Written by /setup-skills from `.agents/skills-profile.md` (managed copy:
+edit the profile and run `/setup-skills update`, not this block).
+
+- **`<repo>`**: `acme/widgets`
+- **wrapper**: `mise exec --`. Run the gates, and each tool the wrapper provides …
+- **gates**:
+  1. `make check`
+- **dependency policy**:
+  > Check the registry's publish date: 14 days minimum.
+- **skill names**: `/commit`, `/pr` run from this project's copy; any other skill as `/sample-skills:<name>` from the plugin. …
+- **assets**: every file under `assets/stack/` and `assets/field/` applies (python, generated-artifacts)
+<!-- facts:end -->
+```
+
+How a rule becomes a value:
+
+- A rule's text after "or none." says how to apply the value (the wrapper
+  and build-input docs rows); it stays beside the value.
+- An empty value is `none`, followed by the rule's own parenthesis after
+  "or none" (`none (skip step 8.1)`), or by its "without that section, …"
+  fallback.
+- An optional fact holds the **whole** AGENTS.md section it names; each
+  skill takes the part it needs at run time.
+
+A **detached** copy has the same block with a first line that says it is the
+project's own copy, edited by hand.
+
+## Commands in the body
+
+- `<repo>` and `<base>` in a command are slots: write the fact's value in.
+- `gh api repos/{owner}/{repo}/…` is fine as is: `gh` fills `{owner}` and
+  `{repo}` itself from the current checkout.
+- Other per-run values (a PR number, a SHA) are also slots, written in
+  literally. A step that needs a value from an earlier call says so: "the SHA
+  noted in step 3".
+- Never `VAR=$(…)` in one fenced block and `$VAR` in another. A single block
+  that sets and uses a variable in one call is fine.
+- Body text files go through `mktemp`, never a fixed `/tmp/<name>` that two
+  sessions can share. A commit message is written with a quoted heredoc into
+  a `mktemp` file and committed with `git commit -F`, in one call, never
+  `-m "…"` (the shell would run its backticked identifiers).
+
+## Scripts
+
+A fixed sequence of `git` and `gh` calls the model would otherwise work out on
+every run is a script: in the skill's `scripts/` folder, or in
+`_shared/scripts/` when more than one skill runs it. The skill keeps the
+judgement (which fact, which bucket, whether to stop); the script does what
+has one right answer.
+
+- **Language:** bash 3.2 or later, git and gh, plus POSIX tools (`awk`,
+  `sed`, `grep`, `sort`). No `jq` (use gh's `--jq`), no Python.
+- **Calling it:** `${CLAUDE_SKILL_DIR}/scripts/<name>.sh` (a shared one:
+  `${CLAUDE_SKILL_DIR}/../_shared/scripts/<name>.sh`), in the body and in
+  `allowed-tools`, so one `Bash(<that path> *)` entry runs it without a
+  prompt. The Codex installer writes the installed
+  path in its place.
+- **Wrapper:** every script takes `--wrap '<wrapper>'` as its first argument
+  and runs its own `git` and `gh` through it.
+- **Shape:** the header comment is the usage text, printed on a wrong
+  argument with exit 2. Output is `key=value` lines or one record per line.
+  A script never asks or decides a question: it stops with a message and a
+  non-zero exit, and the skill takes it from there.
+
+| Script | In | Does |
+|---|---|---|
+| `_shared/scripts/review-threads.sh` | review-pr, fix-pr-findings, pre-merge | a PR's review threads, unresolved or all, one JSON object each |
+| `_shared/scripts/worktree.sh` | start-task, review-pr, pre-merge, coding-master | add, move and remove worktrees under the primary checkout's `.claude/worktrees/` |
+| `_shared/scripts/spec-ids.sh` | arrow-check, start-task, pre-merge, pr, doc-audit, doc-audit-full | defined EARS IDs (table or line form), duplicates, `@spec` tags, orphans, tags added on a branch |
+| `review-round.sh` | review-pr | resolve the PR and decide between a full and a follow-up round |
+| `rebuild.sh`, `ci-run.sh` | pre-merge | the docs-first rebuild with its content check; the CI-equivalent run |
+| `feedback.sh` | feedback-review | new feedback since the last review, and the review timestamp |
+| `setup.sh` | setup-skills | render, lock, plan and apply an update |
+
+## Shared files
+
+Text or a script more than one skill needs lives once, in
+`.agents/skills/_shared/`, not copied into each skill. It is not a skill (no
+`SKILL.md`), and it is installed with any skill: the plugin carries the whole
+folder, `/setup-skills` writes it into a project and tracks it in the lock,
+and the Codex installer installs it as `sample-skills-_shared`. A skill names
+a shared file by a relative path, `../_shared/<file>` from its `SKILL.md`
+(`../../../_shared/<file>` from an asset), which resolves the same through the
+`.claude/skills` link. Shared files carry no project facts, since only a
+skill's facts block is rendered per project. `scripts/check-shared.sh` fails
+when a named shared file is missing, a shared file is named by no skill, or a
+skill keeps its own copy of a shared script.
+
+| File | Used by | Holds |
+|---|---|---|
+| `review-replies.md` | review-pr, fix-pr-findings, pre-merge | the reply prefixes each matches on, and the reply and resolve commands |
+| `design-doc-rules.md` | arrow-check, design-docs, doc-audit, doc-audit-full, review-pr | the Arrow of Intent rules a design doc keeps |
+| `git-conventions.md` | commit, start-task, pre-merge | branch names, the commit message format |
+| `agentskills-best-practices.md`, `code-doc-conventions.md` | doc-audit, doc-audit-full, review-pr | the skill-file and code-doc references |
+| `facts.md` | every skill with a facts block | the shared facts rows, how facts are worked out, how AGENTS.md sections are matched, how assets load |
+| `track-format.md` | managerial, coding-master | the track notation, its markers, and how a copied track is read |
+| `assets/stack/<id>.md` | start-task, review-pr, pre-merge | a stack's setup steps and what makes them stale (connected like any asset) |
+| `assets/code-comments/<id>.md` | doc-audit, doc-audit-full | a stack's code-comment syntax and an example (connected like any asset) |
+
+## Assets
+
+Stack- and field-specific text lives in the skill that needs it, as small
+files under `assets/`:
+
+```
+<skill>/
+  SKILL.md
+  assets/
+    index.md            ← which assets exist and when each applies
+    stack/<id>.md       ← one per toolchain
+    field/<id>.md       ← one per kind of product concern
+    <templates>.md      ← output templates
+  references/           ← reference docs
+```
+
+A skill only has the assets it has something to say for. Each asset file has
+H2 sections named after the steps that load them (for example
+`## Review checks`, `## Dependency registry`); the step says "apply the
+*Review checks* section of each loaded asset", and an asset without that
+section adds nothing there.
+
+Assets point at the project's own rule lists and never copy them: "apply every
+rule in AGENTS.md's accessibility section", not a restated list.
+
+### Ids
+
+Ids are shared across skills, so `/setup-skills` connects one id in all of
+them at once.
+
+| Kind | Id | Applies when (generic copy) |
+|---|---|---|
+| stack | `flutter` | `pubspec.yaml` at the repo root |
+| stack | `node` | `package.json` at the repo root (covers TypeScript, React, Astro and other Node toolchains) |
+| stack | `python` | `pyproject.toml`, `requirements*.txt` or `setup.py` at the repo root |
+| field | `accessibility` | AGENTS.md has accessibility rules (a section, or WCAG named) |
+| field | `i18n` | the project ships more than one locale, or AGENTS.md has localization rules (translation files, no hard-coded strings) |
+| field | `frontend-ui` | the project has a user interface with a theme or design tokens, or AGENTS.md has layout or theming rules |
+| field | `web-site` | the project is a public web site with rules for search, links, product claims or a performance budget (AGENTS.md has such rules; a web *app* without them doesn't qualify) |
+| field | `generated-artifacts` | build outputs are committed alongside their sources (whatever AGENTS.md calls them: generated files, built assets, outputs a `make` target writes into the tree) |
+| field | `fonts` | the project **builds** fonts from sources (glyph drawings, manifests, code points); bundling or using fonts doesn't qualify |
+
+`assets/index.md` in each skill repeats the rows for the ids that skill has, with
+one line on what each provides there.
+
+## Descriptions
+
+The description decides whether a skill is used at all. It says, in this
+order:
+
+1. **What it does**, including every side effect a user would want to know
+   before it runs: it commits, pushes, posts to a PR, resolves threads,
+   creates a worktree or an issue, edits files across the repository.
+2. **When to use it**: the request in the words people use ("commit this",
+   "review PR 12"), and the coordinator's request where one relays it. Name
+   the triggers plainly.
+3. **What it isn't for**, naming the sibling to use instead, where a
+   neighbour is easy to confuse with it (commit and commit-and-pr, review-pr
+   and fix-pr-findings and pre-merge, the three doc skills).
+4. **The generic-copy sentence**: *"Generic copy: if a project skill named
+   `<name>` is also listed, use that one instead."* It tells Claude which of
+   two same-named listed skills to pick; `/setup-skills` removes it from
+   project copies.
+
+A skill a person runs by hand (`disable-model-invocation: true`) is never
+picked by its description, so its description is a listing: what it does and
+how to run it, no triggers. Keep a description well under the 1,536
+characters Claude Code shows of it, and write no angle brackets (they show
+as entities): `[PR]`, not `<N>`.
+
+`setup-skills` is the exception to this page: it is the installer, never
+copied into a project, so it has no facts block, no assets and no
+generic-copy sentence.
+
+## Model pins
+
+Pin a model only where a smaller one is enough: `commit`, `commit-and-pr`,
+`issue` and `pr` pin `haiku`. Pin the alias, never a dated model ID. Skills
+needing the strongest reasoning (review, design, coordination) set no
+`model`.

@@ -1,32 +1,57 @@
 ---
 name: pr
-description: "Create a pull request from the current branch"
-model: claude-haiku-4-5-20251001
-disable-model-invocation: true
+description: "Open a pull request from the current branch's pushed commits: writes the title and a body with what changed, the issue links (Closes, or Ref when an acceptance criterion is unmet), the specs it implements and a testing checklist, then adds existing labels and assigns it. Use when commits are pushed and need a PR: 'open a PR', 'raise a pull request', or the second half of /commit-and-pr. Not for committing (/commit) or reviewing a PR (/review-pr). Generic copy: if a project skill named `pr` is also listed, use that one instead."
+model: haiku
 allowed-tools:
-  - Bash(git *)
-  - Bash(gh pr *)
+  - Bash(git diff *)
+  - Bash(git log *)
+  - Bash(git rev-parse *)
+  - Bash(git grep *)
+  - Bash(git symbolic-ref *)
+  - Bash(git branch *)
+  - Bash(gh pr create *)
+  - Bash(gh pr edit *)
+  - Bash(gh pr view *)
   - Bash(gh api *)
   - Bash(gh label *)
-  - Bash(gh project *)
   - Bash(gh repo *)
+  - Bash(cat *)
+  - Bash(mktemp *)
+  - Bash(${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh *)
 ---
 
-You are a GitHub PR assistant for this project. You synthesise commits into a clear pull request — without requiring the developer to write boilerplate.
+You synthesise this branch's commits into a clear pull request, so the developer writes no boilerplate.
 
 > After the PR is open, use `/review-pr` for code review and `/pre-merge` for thread triage before merging.
+
+## Project facts
+
+<!-- facts:begin -->
+This is the generic copy: work out the facts below as
+[../_shared/facts.md](../_shared/facts.md) says. A row marked *shared* takes
+its rule from there.
+
+| Fact | How to find it |
+|---|---|
+| `<base>` | *shared* |
+| wrapper | *shared* |
+| gates | *shared* |
+| build-input docs | *shared* |
+| source and test dirs | AGENTS.md *Project structure*: the source and test directories, or none (then any changed file that is not Markdown, not under `docs/`, and not tooling, CI or editor config counts as source) |
+| pre-merge checks | AGENTS.md *Pre-merge checks*: checks that run only at `/pre-merge`, or none |
+| skill names | *shared* |
+| assets | *shared* |
+<!-- facts:end -->
 
 ## setup
 
 ```bash
-gh repo view --json nameWithOwner -q '.nameWithOwner'
 git branch --show-current
-DEFAULT_BRANCH=$(gh repo view --json defaultBranchRef -q '.defaultBranchRef.name')
 ```
 
 Check for an existing open PR first — if one exists, report its URL and stop:
 ```bash
-gh pr view --json url -q '.url' 2>/dev/null
+gh pr view --json url,state -q 'select(.state == "OPEN") | .url' 2>/dev/null
 ```
 
 Check for a PR body template:
@@ -39,12 +64,12 @@ If the file exists and has content, use it as the PR body template in step 7 ins
 
 1. **Collect commits:**
    ```bash
-   git log ${DEFAULT_BRANCH}..HEAD --oneline
-   git log ${DEFAULT_BRANCH}..HEAD --format="%s%n%n%b"
+   git log origin/<base>..HEAD --oneline
+   git log origin/<base>..HEAD --format="%s%n%n%b"
    ```
    Extract every `[#N]` issue reference from commit subjects.
 
-2. **Title:** single commit → use the commit subject verbatim (it already carries `[#N] type:`). Multiple commits → synthesise the theme with format `[#N] type: <theme>` where N and type come from the branch name (`feature-42/...` → `[#42]`, prefix `feature` → `feat`). If commits reference multiple issues, list all: `[#12][#13] feat: ...`. Max 72 chars.
+2. **Title:** single commit → use the commit subject verbatim (it already carries `[#N] type:`). Multiple commits → synthesise the theme with format `[#N] type: <theme>` where N and type come from the branch name (`feature-42/...` → `[#42]`, branch prefix `feature` → `feat`). If commits reference multiple issues, list all: `[#12][#13] feat: ...`. Max 72 chars.
 
 3. **`## What changed:`** group by concern — not one bullet per commit:
 
@@ -54,41 +79,50 @@ If the file exists and has content, use it as the PR body template in step 7 ins
    | ♻️ | Refactor | 🧪 | Tests |
    | 📝 | Docs / specs | 🔧 | Tooling / config |
 
+   Then add what the *What changed* section of each loaded asset asks for.
+
 4. **`## Related issues:`**
-   - `Closes #N` — fully resolved by this PR
-   - `Ref #N` — related but not closed
+   - `Closes #N` — every acceptance criterion is covered, or every excluded item is an agreed handoff (see 4.5)
+   - `Ref #N` — related but not closed, including an issue with an unagreed, uncovered criterion (see 4.5)
    - Omit section if none
 
-4.5. **Issue-coverage check** — for each `Closes #N` found in step 4, fetch the issue body and all its comments:
+4.5. **Issue-coverage check** — skip it if the PR has no `Closes #N`. For each `Closes #N` from step 4, fetch the issue body and all its comments (`gh` fills `{owner}` and `{repo}`; write the issue number in):
    ```bash
-   gh api repos/{owner}/{repo}/issues/{N} --jq '{title, body}'
-   gh api repos/{owner}/{repo}/issues/{N}/comments --jq '[.[].body] | join("\n---\n")'
+   gh api repos/{owner}/{repo}/issues/<N> --jq '{title, body}'
+   gh api repos/{owner}/{repo}/issues/<N>/comments --paginate --jq '.[] | .body + "\n---"'
    ```
-   Extract acceptance criteria from both body **and all comments** — `- [ ]` task list items and content under "Acceptance criteria", "Done when", or "Requirements" headers. Review the commit diff against each criterion. If any item appears unaddressed, surface it before creating the PR:
-   > "Issue #N has the following items not clearly covered by the commits:
-   > - [ ] \<item\>
-   > Confirm these are out of scope, or add the missing work first."
-   If the developer confirms intentional exclusions, add a `### Out of scope` section to the PR body. Skip if no `Closes #N` references.
+   Extract acceptance criteria from the body **and every comment** (later requirements and edge cases count equally): `- [ ]` task list items and content under "Acceptance criteria", "Done when", or "Requirements" headers. Review the commit diff against each criterion. Do not stop to ask. List every item that appears unaddressed in a `### Out of scope` section of the PR body:
+   - If the session already agreed the exclusion (e.g. work handed to another issue), say so, link where it went, and leave that issue's reference as `Closes #N`.
+   - Otherwise mark it `**Not covered — needs a decision**`, and change that issue's reference in `## Related issues:` from `Closes #N` to `Ref #N`.
 
-5. **`## Arrow of Intent:`** check whether the diff contains files under `lib/` or `test/`:
-   - **No `lib/` or `test/` changes** (tooling, docs, config only) → omit this section entirely.
-   - **`lib/` or `test/` changes present** → scan commit bodies for `@spec` tags and HLD references:
-     - If at least one `@spec SUBSYSTEM-NNN` tag is found, list all spec IDs covered and the HLD section.
-     - If **no `@spec` tags and no HLD reference** are found — **stop and ask the developer:**
-       > "This PR touches `lib/` but no `@spec` tags or HLD references were found in the commits. Please provide: the HLD section this change falls under, and the EARS spec IDs it implements (create them first if they don't exist yet)."
-     - Do not create the PR until the developer supplies this information or confirms the omission is intentional.
+   Name any downgraded or not-covered items in the final report next to the PR URL.
 
-6. **`## Testing:`** load [flutter/testing-checklist.md](flutter/testing-checklist.md) for the test gate items.
-   <!-- TODO: replace `flutter/` with your language or framework conventions file -->
-
-7. **Create** (fetch assignee first so assignment is atomic with PR creation):
+5. **`## Arrow of Intent:`** check whether the diff contains source or test files (the `source and test dirs` fact):
    ```bash
-   ASSIGNEE=$(gh api user -q '.login')
-   gh pr create --title "<title>" --body-file /tmp/pr-body.md --base ${DEFAULT_BRANCH} --assignee "${ASSIGNEE}"
-   rm /tmp/pr-body.md
+   git diff --name-only origin/<base>...HEAD
+   ```
+   - **No source or test changes** (tooling, docs, config only) → omit this section entirely.
+   - **Source or test changes present** → find the spec IDs the branch tags, from the diff itself, and HLD references in the commit bodies:
+     ```bash
+     ${CLAUDE_SKILL_DIR}/../_shared/scripts/spec-ids.sh --wrap '<wrapper>' added origin/<base>
+     ```
+     It prints each ID tagged on a line the branch adds, outside docs, skills and Markdown (pass the source and test dirs as arguments to narrow it).
+     - If it prints at least one ID, list all spec IDs covered and the HLD section.
+     - If **no ID and no HLD reference** are found — **stop and ask the developer**, and do not create the PR until they supply it or confirm the omission is intentional:
+       > "This PR touches source code but no `@spec` tags or HLD references were found in its changes. Please provide: the HLD section this change falls under, and the EARS spec IDs it implements (create them first if they don't exist yet)."
+
+6. **`## Testing:`** build this section as [assets/testing-checklist.md](assets/testing-checklist.md) describes, adding the *Testing checklist* lines of each loaded asset that apply to the diff.
+
+7. **Create** — write the body to a fresh `mktemp` file (never a fixed `/tmp` name) and create and assign the PR in the same call, so the file is removed even when `gh` fails:
+   ```bash
+   body=$(mktemp) && trap 'rm -f "$body"' EXIT
+   cat > "$body" <<'PR_BODY'
+   <the PR body>
+   PR_BODY
+   gh pr create --title "<title>" --body-file "$body" --base <base> --assignee "$(gh api user -q '.login')"
    ```
 
-8. **Labels** — apply from existing labels only (`gh label list`):
+8. **Labels** — apply from existing labels only (`gh label list --limit 100`); never create one:
 
    | Signal | Label |
    |---|---|
@@ -99,6 +133,8 @@ If the file exists and has content, use it as the PR body template in step 7 ins
    | Performance improvement | `performance` |
    | Security fix or hardening | `security` |
 
+   If the repository names a label differently (`enhancement` for `feature`, say), use the existing one that means the same; if none does, skip that label.
+
    ```bash
    gh pr edit <number> --add-label "<label>"
    ```
@@ -107,6 +143,5 @@ If the file exists and has content, use it as the PR body template in step 7 ins
 
 ## rules
 
-- Resolve default branch dynamically — never hardcode `main`.
-- Do not close or resolve PR threads.
-- No AI-attribution footers.
+- Do not close or resolve PR threads: that is the next review's call.
+- No AI-attribution footers unless AGENTS.md asks for one.
