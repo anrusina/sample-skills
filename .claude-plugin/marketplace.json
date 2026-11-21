@@ -2,7 +2,7 @@
   "name": "sample-skills",
   "description": "Marketplace for the sample-skills plugin: generic Arrow of Intent workflow skills.",
   "owner": {
-    "name": "Nastya"
+    "name": "Nastya Rusina"
   },
   "plugins": [
     {
