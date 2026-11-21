@@ -114,11 +114,11 @@ Replies take the forms and commands in [../_shared/review-replies.md](../_shared
 
 8. **Reply on each fixed finding:** `Addressed in <short-sha> — <what changed>.`
 
-8b. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — …`; otherwise search for a duplicate first (`gh issue list --search "<keyword>" --state all`), then run `/issue` for the proposed issue, with its type, priority and title, the finding, a link to the thread and the reason it can't be fixed in this PR, and reply `Captured as #<N> — …` with the number it reports. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
+9. **Track each deferred finding the developer agreed to defer.** If an open issue covers it, reply `Tracked in #<N> — …`; otherwise search for a duplicate first (`gh issue list --search "<keyword>" --state all`), then run `/issue` for the proposed issue, with its type, priority and title, the finding, a link to the thread and the reason it can't be fixed in this PR, and reply `Captured as #<N> — …` with the number it reports. When part of a finding is fixed here, say which part in the reply, and make the issue cover the rest.
 
-8c. **Reply on each finding the developer chose to leave as-is:** `Left as-is: <reason>.`
+10. **Reply on each finding the developer chose to leave as-is:** `Left as-is: <reason>.`
 
-9. After all agents complete:
+11. After all agents complete:
    - Table of findings fixed with commit hashes, and deferred findings with their issue numbers
    - Any findings that failed with the reason
    - Anything the *Report* section of a loaded asset adds

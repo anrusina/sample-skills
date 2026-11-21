@@ -5,7 +5,7 @@ H2 sections named after the step that applies them:
 
 - *Triage* — step 3: what to weigh before recommending Fix, Defer or Leave as-is
 - *Fix* — step 7: pasted into each sub-agent's prompt as its field and stack rules
-- *Report* — step 9: what the final report adds
+- *Report* — step 11: what the final report adds
 
 This skill has no stack assets: the gates and the wrapper come from the
 project facts.
