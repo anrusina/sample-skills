@@ -27,6 +27,7 @@ Use the full structure below for a full review, and the *Follow-up round* varian
 | <each command in the *gates* fact, in order, as AGENTS.md's build section names it — e.g. format, lint/analyze, test; one row per step when a single command runs several> | <pass / N files would change / N issues / N passed, N failed, N skipped> |
 | <each guard script `AGENTS.md` lists, if any> | <pass / N violations> |
 | <each row the *Verification* section of a loaded asset adds — a manual check, a budget table, a registry check> | <what was done and its result, or "not run" with the reason> |
+| Security review (step 6d) | <run: N candidates / not applicable: no server, API or untrusted input / not run: the reason> |
 
 <Name any tests that skipped (for missing fixtures, for example) and say what that leaves unverified. If a gate could not be run, say so here rather than omitting the row — a missing row reads as a gate that passed.>
 
@@ -87,6 +88,7 @@ A follow-up round reports only what changed since the last round. Findings and *
 | <each command in the *gates* fact, in order, as AGENTS.md's build section names it — e.g. format, lint/analyze, test> | <pass / N files would change / N issues / N passed, N failed, N skipped> |
 | <each guard script `AGENTS.md` lists, if any> | <pass / N violations> |
 | <each row the *Verification* section of a loaded asset adds> | <what was done and its result, or "not run" with the reason> |
+| Security review (step 6d) | <run: N candidates / not applicable: no server, API or untrusted input / not run: the reason> |
 
 <Skipped tests and gates that could not run, as in the full template.>
 
