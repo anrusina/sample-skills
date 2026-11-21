@@ -78,6 +78,8 @@ these lines:
   `<commit-and-pr>` or a round of fixes), with the worktree clean and nothing
   more to push.
 - `Triage ready: PR #<P>` after presenting `<fix-pr-findings>`' triage.
+- `Needs review: PR #<P> at <sha>, <files>` when `<pre-merge>` stops for a
+  review of code the rebase brought.
 - `Done: PR #<P>` after the done report.
 - `Question: <the question in one line>` when blocked.
 

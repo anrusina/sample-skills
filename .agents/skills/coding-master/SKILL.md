@@ -154,6 +154,11 @@ session's latest message before waiting further.
 - `Ready for review: PR #<P> at <sha>` after a round of fixes: message the
   reviewer to re-run `/review-pr <P> --post` (a fresh review of the current
   head, which also verifies or reopens the earlier threads).
+- `Needs review: PR #<P> at <sha>, <files>` from `/pre-merge` in the task
+  session: the rebase brought code no review has seen. Message the reviewer
+  to re-run `/review-pr <P> --post` (a full review, since the branch was
+  rebased); the fix loop then runs as usual, and the merge needs a new OK
+  from the owner, relayed quoting their words.
 - `Question: <the question in one line>` from the task session: see
   *relay, don't decide*.
 

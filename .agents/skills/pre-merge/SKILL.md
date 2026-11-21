@@ -143,7 +143,10 @@ runs on the code that will reach the default branch.
    keep both. When the sides state different intent for the same thing,
    stop, show both and ask. Apply each loaded asset's *After rebase*
    conflict rules on top. Never `git rebase --skip`; if the rebase can't be
-   finished, `git rebase --abort` and report.
+   finished, `git rebase --abort` and report. Note how each conflict ended,
+   for the summary's *Conflicts* row: kept both, the version taken from the
+   default branch, one side taken whole by the developer, or the two sides
+   blended by hand.
 
    **Exception — the version.** When the *pre-merge checks* fact includes a
    version bump, a conflict on the lines or files it writes is never a
@@ -182,7 +185,7 @@ runs on the code that will reach the default branch.
    one line, only when every changed path (`git diff --name-only
    origin/<base>...HEAD`) is Markdown or under `docs/` and none is a build
    input by the *build-input docs* fact. A failure stops the merge: fix it
-   on the branch, commit, and re-run this phase from step 2's rebase,
+   on the branch, commit (noting it as a gate fix, with its files), and re-run this phase from step 2's rebase,
    keeping the `<pre-rebase-sha>` already noted (still the PR's head, which
    phase 2's push leases against).
 
@@ -275,6 +278,16 @@ origin`, then `git merge-base --is-ancestor origin/<base> HEAD` fails), go
 back to phase 1a: the ID checks and a version bump hold only against the
 default branch they ran on.
 
+**Unreviewed code in a coordinated run.** When the OK reached this run
+relayed by a coordinator session, and a hand-blended conflict or a gate fix
+changed production source code (the source tree AGENTS.md's
+project-structure section names), no review has seen that code. Stop here,
+before any comment, reply or issue, and begin the closing message with
+`Needs review: PR #<N> at <short pushed-sha>, <files>`. The coordinator
+starts a review round, and `/pre-merge` runs again on the developer's next
+OK. In a run the developer started here, carry on: the *Conflicts* row shows
+it before the merge question.
+
 ## phase 3 — post the summary comment and answers
 
 When any item is `ADDRESSED`, post one PR conversation comment for all of
@@ -326,6 +339,7 @@ Summary comment:      <posted | none: nothing addressed>
 Answers posted:       <count>
 Follow-up issues:     <count> (#N, #N — created or already open)
 Rebased onto:         <base> at <short-sha>
+Conflicts:            <none | one entry per file: kept both, version from <base>, developer took one side, or blended by hand>; gate fixes: <files | none>
 EARS spec IDs:        no duplicates (<renumbered IDs as old → new, or "none renumbered">)
 <one row per loaded asset's Summary section>
 Quality gates:        <passed | skipped — documentation only>
