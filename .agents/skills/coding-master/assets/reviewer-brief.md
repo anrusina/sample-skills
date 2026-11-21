@@ -5,7 +5,10 @@ Leave only the session's own placeholders as they are: `<sha>`, `<n>`, `<r>`,
 `<count by severity>` and `<name>`. `<owner/repo>` and `<base>` are the
 `<repo>` and `<base>` facts, written in literally; `<review-pr>` is
 `review-pr`'s invocation form from the skill names fact (e.g. `/review-pr` or
-`/sample-skills:review-pr`). Give it nothing from the task session: no
+`/sample-skills:review-pr`). `<deep>` is ` --deep` when the PR changes
+production source code (the source tree AGENTS.md's project-structure section
+names; `gh pr diff <P> --name-only` lists the files), and empty otherwise.
+Give it nothing from the task session: no
 summary of the change, no reasons, no expected findings.
 
 Only when the reviewer starts before the task session has reported
@@ -18,7 +21,7 @@ Before running <review-pr> below, wait for the coordinator's message "Go: review
 ```
 
 ```text
-<review-pr> <P> --post
+<review-pr> <P> --post<deep>
 
 Review pull request #<P> in `<owner/repo>` with the `<review-pr>` skill and
 post the review to GitHub. A coordinator session started you; another session
@@ -42,7 +45,8 @@ Rules:
 - If AGENTS.md's build section says tools run through a wrapper, always run
   them that way.
 - When asked to re-run, run `<review-pr> <P> --post` again as a fresh review
-  of the PR's current head.
+  of the PR's current head, without `--deep`: the history lenses belong to
+  the first round.
 
 The coordinator receives your wrap-up recap (if you give one), then your
 closing message, the first 400 characters in all, and acts on the signal at

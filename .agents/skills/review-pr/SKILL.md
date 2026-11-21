@@ -61,7 +61,7 @@ its rule from there.
 - A PR number (e.g. `42`) — uses the current repo's remote
 - A branch name — finds the open PR for that branch
 - Just "review the PR" — finds the open PR for the current branch
-- Optional `--deep` — adds the three history-and-context lenses in step 6a. Without it the review is a single pass.
+- Optional `--deep` — adds the three history-and-context lenses in step 6a. Without it the review is a single pass. Use it on the first full review of a PR that changes existing production code, above all an area with a history of fixes (storage and migrations, concurrency, parsing, security). Skip it on follow-up rounds, documentation-only PRs and PRs that mostly add new files: the lenses read the changed lines' history, and those have little.
 - Optional `--full` — forces a full review even when an earlier `/review-pr` round exists (see *Follow-up round* in phase 0).
 - Optional `--post` — post without the approval stop in step 12.
 
